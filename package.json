@@ -1,0 +1,11 @@
+{
+  "name": "crispy-potato",
+  "version": "1.0.0",
+  "description": "Refactoring demonstration project",
+  "main": "src/utils/userProcessor.js",
+  "scripts": {
+    "test": "node src/utils/userProcessor.test.js"
+  },
+  "keywords": ["refactoring", "clean-code"],
+  "license": "MIT"
+}
