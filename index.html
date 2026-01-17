@@ -1417,7 +1417,9 @@ SADECE JSON döndür, başka bir şey yazma!`
                     }
 
                     // 0.5 Barkod ve Model Kodu
-                    document.getElementById('seoBarcode').value = seoData.barcode || '';
+                    // Barkod: Her zaman yeni benzersiz barkod üret (8680 + 9 rastgele rakam)
+                    const uniqueBarcode = '8680' + Math.floor(Math.random() * 900000000 + 100000000).toString();
+                    document.getElementById('seoBarcode').value = uniqueBarcode;
                     document.getElementById('seoModelCode').value = seoData.modelCode || '';
 
                     // 1. Ana Başlık
