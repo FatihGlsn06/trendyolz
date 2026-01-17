@@ -3560,16 +3560,19 @@ Görseldeki kolye BİREBİR AYNI kalmalı:
 - Kolye tam görünsün, kesilmesin
 - Boyutlar: ${state.originalWidth || 1024}x${state.originalHeight || 1024}
 
-👗 KIYAFETİ:
+👗 KIYAFET & SAHNE:
 - ${frameSetting.neckline} - kolyeyi gösterecek açık yaka
-- Siyah veya koyu düz renk
 - Kolye kıyafetin üstünde otursun
+${outfitSceneInstructions}
 
 👩 MODEL:
 - ${profile.desc}
 - ${style.prompt}
 - Profesyonel stüdyo ışıklandırması
-- ${hasAngleInstruction ? smartPromptInstructions : 'Önden, omuzlar görünür'}
+
+📸 POZ / AÇI:
+- ${pose?.prompt || 'Front facing, clear view of neck area'}
+- ${hasAngleInstruction ? smartPromptInstructions : ''}
 
 ✅ SONUÇ:
 - Kolye DOĞAL şekilde boyunda otursun
