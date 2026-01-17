@@ -1008,15 +1008,15 @@
     <script>
         // ========== GEMINI MODEL CONFIG ==========
         const GEMINI_CONFIG = {
-            // Gemini 3 - Text analiz için
-            textModel: 'gemini-3-flash-preview',           // Analiz, SEO, JSON çıktı (hızlı)
+            // Gemini 2.0 Flash - Text analiz için
+            textModel: 'gemini-2.0-flash',           // Analiz, SEO, JSON çıktı (hızlı, stabil)
 
-            // Gemini 2.5 Flash Image - Edit için (daha sadık, az halüsinasyon)
-            // NOT: Gemini 3 Pro Image çok yaratıcı, renkleri değiştiriyor!
-            imageModel: 'gemini-2.5-flash-image',  // Eski çalışan model - renkleri koruyor
+            // Gemini 2.0 Flash Exp - Image generation için
+            // Native image generation destekli model
+            imageModel: 'gemini-2.0-flash-exp',  // Çalışan görsel model
 
             // Fallback modeller
-            fallbackTextModel: 'gemini-2.5-flash',
+            fallbackTextModel: 'gemini-1.5-flash',
             fallbackImageModel: 'gemini-2.0-flash-exp',
 
             // API ayarları
