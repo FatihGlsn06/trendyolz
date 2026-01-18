@@ -962,10 +962,25 @@
 
             <div class="space-y-4">
                 <!-- Gemini 2.5 -->
+                <!-- OpenAI GPT-4o - Görsel Üretim -->
+                <div class="p-4 bg-slate-800/30 rounded-xl border border-blue-500/30">
+                    <label class="text-sm font-medium text-white mb-2 block flex items-center gap-2">
+                        <i class="fa-solid fa-image text-blue-400"></i> OpenAI GPT-4o
+                        <span class="text-[10px] px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-full">GÖRSEL ÜRETİM</span>
+                    </label>
+                    <input type="password" id="openaiKeyInput"
+                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:border-blue-500 outline-none"
+                           placeholder="OpenAI API Key">
+                    <p class="text-xs text-slate-500 mt-1">
+                        <a href="https://platform.openai.com/api-keys" target="_blank" class="text-blue-400 hover:underline">OpenAI API key al →</a>
+                    </p>
+                </div>
+
+                <!-- Gemini - SEO/Analiz -->
                 <div class="p-4 bg-slate-800/30 rounded-xl border border-purple-500/30">
                     <label class="text-sm font-medium text-white mb-2 block flex items-center gap-2">
-                        <i class="fa-solid fa-brain text-purple-400"></i> Gemini 2.5 Flash
-                        <span class="text-[10px] px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded-full">CİLT ÜRETİM</span>
+                        <i class="fa-solid fa-brain text-purple-400"></i> Gemini
+                        <span class="text-[10px] px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded-full">SEO & ANALİZ</span>
                     </label>
                     <input type="password" id="geminiKeyInput"
                            class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:border-purple-500 outline-none"
@@ -1024,6 +1039,136 @@
             maxRetries: 3,
             retryDelayMs: 1000
         };
+
+        // ========== OPENAI GPT-4o CONFIG ==========
+        const OPENAI_CONFIG = {
+            model: 'gpt-4o',
+            baseUrl: 'https://api.openai.com/v1',
+            maxRetries: 3,
+            retryDelayMs: 1000
+        };
+
+        // GPT-4o ile görsel üretim (native image generation)
+        async function callGPT4oImageAPI(prompt, inputImageBase64, apiKey) {
+            const url = `${OPENAI_CONFIG.baseUrl}/chat/completions`;
+
+            const messages = [
+                {
+                    role: 'user',
+                    content: [
+                        { type: 'text', text: prompt },
+                        ...(inputImageBase64 ? [{
+                            type: 'image_url',
+                            image_url: {
+                                url: inputImageBase64.startsWith('data:') ? inputImageBase64 : `data:image/png;base64,${inputImageBase64}`
+                            }
+                        }] : [])
+                    ]
+                }
+            ];
+
+            for (let attempt = 1; attempt <= OPENAI_CONFIG.maxRetries; attempt++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: OPENAI_CONFIG.model,
+                            messages: messages,
+                            max_tokens: 4096,
+                            response_format: { type: 'json_object' }
+                        })
+                    });
+
+                    if (response.ok) {
+                        return await response.json();
+                    }
+
+                    if (response.status === 429 || response.status >= 500) {
+                        if (attempt < OPENAI_CONFIG.maxRetries) {
+                            const delay = OPENAI_CONFIG.retryDelayMs * Math.pow(2, attempt - 1);
+                            console.log(`⏳ OpenAI API hatası (${response.status}), ${delay}ms sonra tekrar deneniyor...`);
+                            await new Promise(r => setTimeout(r, delay));
+                            continue;
+                        }
+                    }
+
+                    const err = await response.json();
+                    throw new Error(err.error?.message || `OpenAI API Error: ${response.status}`);
+                } catch (error) {
+                    if (attempt === OPENAI_CONFIG.maxRetries) throw error;
+                    await new Promise(r => setTimeout(r, OPENAI_CONFIG.retryDelayMs));
+                }
+            }
+        }
+
+        // GPT-4o ile görsel oluşturma (DALL-E 3 entegre)
+        async function generateImageWithGPT4o(prompt, inputImageBase64, apiKey) {
+            // GPT-4o image generation endpoint kullan
+            const response = await fetch(`${OPENAI_CONFIG.baseUrl}/images/generations`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: 'dall-e-3',
+                    prompt: prompt,
+                    n: 1,
+                    size: '1024x1024',
+                    quality: 'hd',
+                    response_format: 'b64_json'
+                })
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error?.message || 'GPT-4o görsel üretim hatası');
+            }
+
+            const data = await response.json();
+            return `data:image/png;base64,${data.data[0].b64_json}`;
+        }
+
+        // GPT-4o ile görsel düzenleme (image edit)
+        async function editImageWithGPT4o(prompt, imageBase64, apiKey) {
+            // Base64'ü blob'a çevir
+            const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+            const byteCharacters = atob(base64Data);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: 'image/png' });
+
+            const formData = new FormData();
+            formData.append('model', 'dall-e-2');  // Edit sadece DALL-E 2'de var
+            formData.append('image', blob, 'image.png');
+            formData.append('prompt', prompt);
+            formData.append('n', '1');
+            formData.append('size', '1024x1024');
+            formData.append('response_format', 'b64_json');
+
+            const response = await fetch(`${OPENAI_CONFIG.baseUrl}/images/edits`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error?.message || 'GPT-4o görsel düzenleme hatası');
+            }
+
+            const data = await response.json();
+            return `data:image/png;base64,${data.data[0].b64_json}`;
+        }
 
         // Retry mekanizması ile API çağrısı
         async function callGeminiAPI(model, body, apiKey, retries = GEMINI_CONFIG.maxRetries) {
@@ -2127,8 +2272,12 @@ ${seo.hashtags || ''}
 
         // ========== SETTINGS ==========
         function loadSettings() {
+            const openaiKey = localStorage.getItem('openai_api_key');
             const geminiKey = localStorage.getItem('gemini_api_key');
             const falKey = localStorage.getItem('fal_api_key');
+            if (openaiKey) {
+                document.getElementById('openaiKeyInput').value = openaiKey;
+            }
             if (geminiKey) {
                 document.getElementById('geminiKeyInput').value = geminiKey;
             }
@@ -2139,14 +2288,19 @@ ${seo.hashtags || ''}
         }
 
         function updateApiStatus() {
+            const hasOpenai = localStorage.getItem('openai_api_key');
             const hasGemini = localStorage.getItem('gemini_api_key');
             const hasFal = localStorage.getItem('fal_api_key');
 
-            if (hasGemini && hasFal) {
+            if (hasOpenai && hasGemini && hasFal) {
                 document.getElementById('apiDot').className = 'w-2 h-2 rounded-full bg-green-500';
-                document.getElementById('apiStatus').textContent = 'Hibrit Mod Hazır';
+                document.getElementById('apiStatus').textContent = 'GPT-4o + Gemini Hazır';
                 document.getElementById('apiStatus').className = 'text-xs text-green-400';
-            } else if (hasGemini || hasFal) {
+            } else if (hasOpenai && hasFal) {
+                document.getElementById('apiDot').className = 'w-2 h-2 rounded-full bg-blue-500';
+                document.getElementById('apiStatus').textContent = 'GPT-4o Hazır (SEO yok)';
+                document.getElementById('apiStatus').className = 'text-xs text-blue-400';
+            } else if ((hasOpenai || hasGemini) && hasFal) {
                 document.getElementById('apiDot').className = 'w-2 h-2 rounded-full bg-yellow-500';
                 document.getElementById('apiStatus').textContent = 'API Eksik';
                 document.getElementById('apiStatus').className = 'text-xs text-yellow-400';
@@ -2166,19 +2320,21 @@ ${seo.hashtags || ''}
         }
 
         function saveSettings() {
+            const openaiKey = document.getElementById('openaiKeyInput').value.trim();
             const geminiKey = document.getElementById('geminiKeyInput').value.trim();
             const falKey = document.getElementById('falKeyInput').value.trim();
 
-            if (!geminiKey || !falKey) {
-                showToast('Lütfen her iki API Key girin', 'error');
+            if (!openaiKey || !falKey) {
+                showToast('OpenAI ve Fal.ai API Key zorunlu', 'error');
                 return;
             }
 
+            localStorage.setItem('openai_api_key', openaiKey);
             localStorage.setItem('gemini_api_key', geminiKey);
             localStorage.setItem('fal_api_key', falKey);
             updateApiStatus();
             closeSettings();
-            showToast('Hibrit mod hazır!', 'success');
+            showToast('GPT-4o + BiRefNet hazır!', 'success');
         }
 
         // ========== FILE UPLOAD ==========
@@ -2791,12 +2947,20 @@ The jewelry must remain EXACTLY as provided - do not modify the jewelry in any w
             }
         }
 
-        // ========== MAIN IMAGE GENERATION - GEMINI 2.5 ONLY ==========
+        // ========== MAIN IMAGE GENERATION - GPT-4o + BiRefNet ==========
         async function generateImage() {
-            const geminiKey = localStorage.getItem('gemini_api_key');
-            if (!geminiKey) {
+            const openaiKey = localStorage.getItem('openai_api_key');
+            const falKey = localStorage.getItem('fal_api_key');
+
+            if (!openaiKey) {
                 openSettings();
-                showToast('Lütfen Gemini API Key girin', 'error');
+                showToast('Lütfen OpenAI API Key girin', 'error');
+                return;
+            }
+
+            if (!falKey) {
+                openSettings();
+                showToast('Lütfen Fal.ai API Key girin', 'error');
                 return;
             }
 
@@ -2805,7 +2969,7 @@ The jewelry must remain EXACTLY as provided - do not modify the jewelry in any w
                 return;
             }
 
-            showLoader('Stüdyo Pro...', '1/3 Ürün çıkarılıyor');
+            showLoader('GPT-4o + BiRefNet...', '1/4 Başlatılıyor');
 
             try {
                 // Tek mod: Halüsinasyonsuz Stüdyo Pro
@@ -3400,18 +3564,24 @@ OUTPUT: The product must be PIXEL-PERFECT identical to Input Image 1, naturally 
             });
         }
 
-        // ========== GEMINI EDIT MODE - HALÜSİNASYON-FREE ==========
+        // ========== GPT-4o + BiRefNet MODE - HALÜSİNASYON-FREE ==========
         // 1. BiRefNet ile takıyı çıkar (orijinal korunur)
-        // 2. Gemini ile model/sahne oluştur (takısız)
-        // 3. Gemini Edit ile orijinal takıyı yerleştir
+        // 2. Gemini ile takı analizi (metin - ucuz)
+        // 3. GPT-4o vision ile detaylı takı analizi
+        // 4. DALL-E 3 ile model + takı oluştur
         async function generateWithGemini25() {
+            const openaiKey = localStorage.getItem('openai_api_key');
             const geminiKey = localStorage.getItem('gemini_api_key');
             const falKey = localStorage.getItem('fal_api_key');
             const profile = modelProfiles[state.settings.modelProfile];
             const style = stylePresets[state.settings.style];
             const pose = posePresets[state.settings.pose];
 
-            console.log('🎨 Manken Modu (Hallucination-Free) başlatılıyor...');
+            console.log('🎨 GPT-4o + BiRefNet Modu (Hallucination-Free) başlatılıyor...');
+
+            if (!openaiKey) {
+                throw new Error('OpenAI API key gerekli - Görsel üretim için GPT-4o lazım');
+            }
 
             // ===== ADIM 1: BiRefNet ile takıyı çıkar =====
             showLoader('Manken Modu...', '1/3 Takı çıkarılıyor (BiRefNet)');
@@ -3522,19 +3692,12 @@ Return ONLY the JSON, no other text.`;
                 console.log('⚠️ Takı analizi başarısız, varsayılan kullanılıyor:', e.message);
             }
 
-            // ===== ADIM 2: Gemini ile model + kolye TEK ADIMDA =====
-            // Model ayrı üretip birleştirmek yerine, kolyeyi verip direkt model oluştur
-            showLoader('Manken Modu...', '3/3 Model + kolye oluşturuluyor');
+            // ===== ADIM 2: DALL-E 3 ile TAKISIZ model oluştur =====
+            showLoader('GPT-4o Modu...', '3/4 Model oluşturuluyor (DALL-E 3)');
 
             const outfitSceneInstructions = getOutfitScenePrompt();
             const smartPromptInstructions = getSmartPromptInstructions();
             const hasAngleInstruction = smartPromptInstructions.includes('CAMERA ANGLE:');
-
-            const aspectRatio = state.originalWidth && state.originalHeight
-                ? (state.originalWidth / state.originalHeight).toFixed(2)
-                : 1;
-            const isPortrait = aspectRatio < 1;
-            const isLandscape = aspectRatio > 1;
 
             // Takı analizine göre frame ayarları
             const frameSettings = {
@@ -3546,85 +3709,143 @@ Return ONLY the JSON, no other text.`;
             };
             const frameSetting = frameSettings[jewelryAnalysis.length] || frameSettings.medium;
 
-            // TEK ADIM: Kolyeyi verip model oluştur
-            const singleStepPrompt = `Görseldeki kolyeyi/takıyı takan profesyonel bir model fotoğrafı oluştur.
+            // DALL-E 3: TAKISIZ model oluştur (halüsinasyon YOK)
+            const modelOnlyPrompt = `Professional e-commerce jewelry model photo.
 
-🚨 EN ÖNEMLİ KURAL - MUTLAKA UYULMALI 🚨
-Görseldeki kolye BİREBİR AYNI kalmalı:
-- AYNI boyut (küçültme/büyütme YOK)
-- AYNI renkler (değiştirme YOK)
-- AYNI taşlar, boncuklar, zincir detayları
-- AYNI pendant/uç kısmı
-- Kolyeyi YENİDEN ÜRETME - görseldekini AYNEN kullan
+CRITICAL: The model must have a COMPLETELY BARE neck - NO jewelry, NO necklace, NO accessories whatsoever.
 
-📐 FRAME/ÇERÇEVELEME:
-- ${frameSetting.frame}
-- Kolye tam görünsün, kesilmesin
-- Boyutlar: ${state.originalWidth || 1024}x${state.originalHeight || 1024}
-
-👗 KIYAFET & SAHNE:
-- ${frameSetting.neckline} - kolyeyi gösterecek açık yaka
-- Kolye kıyafetin üstünde otursun
-${outfitSceneInstructions}
-
-👩 MODEL:
+MODEL:
 - ${profile.desc}
 - ${style.prompt}
-- Profesyonel stüdyo ışıklandırması
+- Professional studio lighting
 
-📸 POZ / AÇI:
+OUTFIT:
+- ${frameSetting.neckline} neckline to showcase jewelry area
+- Dark or neutral colored clothing
+${outfitSceneInstructions}
+
+POSE:
 - ${pose?.prompt || 'Front facing, clear view of neck area'}
 - ${hasAngleInstruction ? smartPromptInstructions : ''}
 
-✅ SONUÇ:
-- Kolye DOĞAL şekilde boyunda otursun
-- Zincir boyunun arkasına doğal kavisli
-- Gerçekçi gölgeler
-- E-ticaret ürün fotoğrafı kalitesi
+FRAMING:
+- ${frameSetting.frame}
+- Clear, unobstructed neck and chest area visible
+- Perfect for jewelry overlay
 
-TEKRAR: Görseldeki kolyeyi DEĞİŞTİRME, AYNEN koru!`;
+STYLE:
+- High-end e-commerce product photography
+- Soft, even studio lighting
+- Clean background (white or gradient gray)
+- Sharp focus on neck/chest area
 
-            const response = await fetch(`${GEMINI_CONFIG.baseUrl}/${GEMINI_CONFIG.imageModel}:generateContent?key=${geminiKey}`, {
+ABSOLUTELY NO JEWELRY - the neck must be completely bare for jewelry placement.`;
+
+            // ===== ADIM 2: GPT-4o ile TEK ADIMDA model + takı oluştur =====
+            // Takıyı referans olarak verip, model üzerinde göster
+            const jewelryDescription = jewelryAnalysis.description || 'elegant jewelry piece';
+
+            const fullPrompt = `Professional e-commerce jewelry product photography.
+
+Create a photo of a model wearing the EXACT jewelry shown in the reference image.
+
+JEWELRY (from reference image):
+- Type: ${jewelryAnalysis.type || 'necklace'}
+- Style: ${jewelryDescription}
+- COPY THE JEWELRY EXACTLY as shown - same colors, same design, same size proportions
+
+MODEL:
+- ${profile.desc}
+- ${style.prompt}
+- Professional studio lighting
+
+OUTFIT:
+- ${frameSetting.neckline} neckline to showcase the jewelry
+- Dark or neutral colored clothing
+${outfitSceneInstructions}
+
+POSE:
+- ${pose?.prompt || 'Front facing, clear view of neck area'}
+- ${hasAngleInstruction ? smartPromptInstructions : ''}
+
+FRAMING:
+- ${frameSetting.frame}
+- Jewelry must be fully visible, not cropped
+
+STYLE:
+- High-end e-commerce product photography
+- Soft, even studio lighting
+- Clean background
+- The jewelry must look IDENTICAL to the reference - same design, colors, and proportions`;
+
+            console.log('🎨 GPT-4o ile model + takı oluşturuluyor...');
+
+            // GPT-4o vision ile takıyı analiz et ve DALL-E 3 ile oluştur
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${openaiKey}`
+                },
                 body: JSON.stringify({
-                    contents: [{
-                        parts: [
-                            { text: singleStepPrompt },
-                            {
-                                inlineData: {
-                                    mimeType: 'image/png',
-                                    data: jewelryBase64.replace(/^data:image\/\w+;base64,/, '')
+                    model: 'gpt-4o',
+                    messages: [
+                        {
+                            role: 'user',
+                            content: [
+                                {
+                                    type: 'text',
+                                    text: `Analyze this jewelry image in detail. Describe EXACTLY: colors, materials, chain type, pendant design, any stones/gems, size proportions. Be very specific so it can be recreated perfectly.`
+                                },
+                                {
+                                    type: 'image_url',
+                                    image_url: { url: jewelryBase64 }
                                 }
-                            }
-                        ]
-                    }],
-                    generationConfig: {
-                        responseModalities: ["image", "text"],
-                        temperature: 0.1  // Çok düşük = yaratıcılık minimum
-                    }
+                            ]
+                        }
+                    ],
+                    max_tokens: 500
                 })
             });
 
             if (!response.ok) {
                 const err = await response.json();
-                throw new Error('Gemini hatası: ' + (err.error?.message || 'Model oluşturulamadı'));
+                throw new Error('GPT-4o analiz hatası: ' + (err.error?.message || 'Bilinmeyen hata'));
             }
 
-            const data = await response.json();
-            const parts = data.candidates?.[0]?.content?.parts || [];
+            const analysisData = await response.json();
+            const jewelryDetailedDescription = analysisData.choices?.[0]?.message?.content || jewelryDescription;
+            console.log('✅ Takı detaylı analiz edildi:', jewelryDetailedDescription.substring(0, 100) + '...');
 
-            for (const part of parts) {
-                if (part.inlineData?.data) {
-                    console.log('✅ Model + kolye tek adımda oluşturuldu!');
-                    return `data:image/png;base64,${part.inlineData.data}`;
-                }
-            }
+            // DALL-E 3 ile final görsel oluştur
+            showLoader('GPT-4o Modu...', '4/4 Final görsel oluşturuluyor');
 
-            throw new Error('Görsel oluşturulamadı');
+            const finalPrompt = `Professional e-commerce jewelry model photo.
+
+MODEL wearing this EXACT jewelry:
+${jewelryDetailedDescription}
+
+MODEL:
+- ${profile.desc}
+- ${style.prompt}
+
+OUTFIT:
+- ${frameSetting.neckline} neckline
+- Dark elegant clothing
+${outfitSceneInstructions}
+
+POSE: ${pose?.prompt || 'Front facing'}
+
+CRITICAL: The jewelry must match the description EXACTLY - every detail matters for e-commerce accuracy.
+Professional studio lighting, clean background, high-end product photography style.`;
+
+            const finalImage = await generateImageWithGPT4o(finalPrompt, null, openaiKey);
+            console.log('✅ Final görsel oluşturuldu!');
+
+            return finalImage;
         }
 
-        // ========== CANVAS COMPOSITE (Yedek - şu an kullanılmıyor) ==========
+        // ========== CANVAS COMPOSITE - Takıyı modele yerleştir ==========
         async function createCanvasComposite(jewelryBase64, modelBase64, jewelryAnalysis) {
             return new Promise((resolve, reject) => {
                 const canvas = document.createElement('canvas');
