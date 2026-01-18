@@ -1143,12 +1143,14 @@
             // input_fidelity = high (ÜRÜNÜ KORU!)
             // ─────────────────────────────────────────
 
-            formData.append('image[]', blob, 'product.png');
+            // Önce gpt-image-1 dene, olmazsa dall-e-2
+            formData.append('image', blob, 'product.png');  // tek görsel için 'image'
             formData.append('model', 'gpt-image-1');
-            formData.append('input_fidelity', 'high');  // ÇOK ÖNEMLİ!
+            formData.append('input_fidelity', 'high');
             formData.append('quality', 'high');
             formData.append('size', '1024x1024');
             formData.append('n', '1');
+            formData.append('response_format', 'b64_json');  // base64 olarak al
 
             // 3. EDIT PROMPT - Ürün asla değişmemeli!
             const editPrompt = `
@@ -1216,11 +1218,17 @@ FINAL CHECK:
                         console.error('   Type:', errorType);
                         console.error('   Message:', errorMsg);
 
-                        // Model yok hatası
-                        if (errorCode === 'model_not_found' || errorMsg.includes('model')) {
-                            console.log('⚠️ gpt-image-1 erişilemedi');
-                            console.log('   API key\'in bu modele erişimi olmayabilir');
-                            throw new Error(`Model erişim hatası: ${errorMsg}\n\nNot: OpenAI API key'inizin gpt-image-1 modeline erişimi olduğundan emin olun.`);
+                        // Model yok hatası - dall-e-2'ye düş
+                        if (errorCode === 'model_not_found' || errorMsg.includes('model') || errorMsg.includes('invalid')) {
+                            const currentModel = formData.get('model');
+                            if (currentModel === 'gpt-image-1') {
+                                console.log('⚠️ gpt-image-1 erişilemedi, dall-e-2 deneniyor...');
+                                formData.set('model', 'dall-e-2');
+                                formData.delete('input_fidelity');  // dall-e-2 bunu desteklemiyor
+                                formData.delete('quality');  // dall-e-2 bunu desteklemiyor
+                                formData.set('size', '1024x1024');
+                                continue;  // Tekrar dene
+                            }
                         }
 
                         // Diğer hatalar
