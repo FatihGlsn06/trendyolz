@@ -1110,32 +1110,56 @@
 
         // GPT Image Edit API - gpt-image-1 modeli ile görsel düzenleme
         // Girdi görseli (takı) alır ve prompt'a göre yeni görsel üretir
-        // ÖNEMLİ: Ürün asla değişmez - sadece model/arka plan/ışık değişir
+        // ÖNEMLİ: input_fidelity=high ile ürün korunur
         async function generateImageWithGPT4o(prompt, inputImageBase64, apiKey) {
             console.log('🖼️ GPT images/edits API kullanılıyor (gpt-image-1)...');
 
             if (!apiKey) throw new Error('OpenAI API key yok');
             if (!inputImageBase64) throw new Error('Ürün görseli yok (base64 boş)');
 
-            // Base64'ü Blob'a çevir (temiz yöntem)
+            // Base64'ü Blob'a çevir
             const blob = await (await fetch(inputImageBase64)).blob();
+            console.log('📦 Görsel blob oluşturuldu:', blob.size, 'bytes', blob.type);
 
-            // FormData oluştur
+            // FormData oluştur - multipart/form-data
             const formData = new FormData();
-            formData.append('image', blob, 'jewelry.png');
+
+            // KRİTİK: image[] formatı (array notation) - OpenAI bunu bekliyor
+            formData.append('image[]', blob, 'jewelry.png');
+
+            // Model - gpt-image-1 veya gpt-image-1.5
             formData.append('model', 'gpt-image-1');
 
-            // Kritik prompt: Ürün asla değişmemeli
+            // KRİTİK: input_fidelity=high - ürün detaylarını korur!
+            formData.append('input_fidelity', 'high');
+
+            // Kalite ve boyut
+            formData.append('quality', 'high');
+            formData.append('size', '1024x1024');
+            formData.append('n', '1');
+
+            // Prompt: Ürün asla değişmemeli
             const preservationPrompt = `
-ÜRÜN ASLA DEĞİŞMEZ. YÜKLENEN TAKI BİREBİR AYNI KALACAK.
-Boncuk sayısı, dizilim, taş şekli, renk tonu, metal formu değişmeyecek.
-Sadece: model/arka plan/ışık/giysi değişebilir.
+CRITICAL: The jewelry/product in the input image must remain EXACTLY the same.
+Do NOT modify, redesign, or reimagine the jewelry in any way.
+Keep exact: bead count, arrangement, stone shapes, colors, metal forms, proportions.
+
+ONLY CHANGE: Add a professional model wearing this EXACT jewelry.
+- Model: elegant woman, studio lighting
+- Outfit: dark V-neck top
+- Background: clean studio background
 
 ${prompt}
+
+IMPORTANT: The output jewelry must be IDENTICAL to the input - same design, same details.
             `.trim();
 
             formData.append('prompt', preservationPrompt);
-            formData.append('size', '1024x1024');
+
+            console.log('📤 API isteği gönderiliyor...');
+            console.log('   Model: gpt-image-1');
+            console.log('   input_fidelity: high');
+            console.log('   Prompt length:', preservationPrompt.length);
 
             // Retry mekanizması
             for (let attempt = 1; attempt <= OPENAI_CONFIG.maxRetries; attempt++) {
@@ -1150,39 +1174,56 @@ ${prompt}
                         body: formData
                     });
 
-                    if (!response.ok) {
-                        const errText = await response.text();
-                        console.error('❌ API Hatası:', errText);
+                    const responseText = await response.text();
+                    console.log('📥 API Response Status:', response.status);
 
-                        // Model desteklenmiyorsa DALL-E 3'e fallback
-                        if (errText.includes('model_not_found') || errText.includes('gpt-image')) {
-                            console.log('⚠️ gpt-image-1 bulunamadı, DALL-E 3 deneniyor...');
-                            return await generateImageWithDALLE3(prompt, apiKey);
+                    if (!response.ok) {
+                        console.error('❌ API Hatası:', responseText);
+
+                        // Hata detayını parse et
+                        let errorMsg = responseText;
+                        try {
+                            const errJson = JSON.parse(responseText);
+                            errorMsg = errJson.error?.message || responseText;
+                            console.error('   Error code:', errJson.error?.code);
+                            console.error('   Error type:', errJson.error?.type);
+                        } catch (e) {}
+
+                        // Model bulunamadıysa - gpt-image-1.5 dene
+                        if (responseText.includes('model_not_found') || responseText.includes('invalid_model')) {
+                            console.log('⚠️ gpt-image-1 bulunamadı, gpt-image-1.5 deneniyor...');
+                            formData.set('model', 'gpt-image-1.5');
+                            continue;
                         }
 
-                        throw new Error(errText || `API Error: ${response.status}`);
+                        throw new Error(errorMsg);
                     }
 
-                    const data = await response.json();
+                    // Başarılı response
+                    const data = JSON.parse(responseText);
                     console.log('✅ GPT images/edits başarılı!');
 
                     // Response base64 veya URL olabilir
                     if (data.data?.[0]?.b64_json) {
+                        console.log('   Format: base64');
                         return `data:image/png;base64,${data.data[0].b64_json}`;
                     }
 
                     if (data.data?.[0]?.url) {
+                        console.log('   Format: URL, dönüştürülüyor...');
                         return await fetchImageAsBase64(data.data[0].url);
                     }
 
-                    throw new Error('GPT API beklenmeyen response formatı');
+                    throw new Error('GPT API beklenmeyen response formatı: ' + JSON.stringify(data));
 
                 } catch (error) {
                     console.error(`❌ Deneme ${attempt} başarısız:`, error.message);
 
                     if (attempt === OPENAI_CONFIG.maxRetries) {
-                        console.log('⚠️ Tüm denemeler başarısız, DALL-E 3 kullanılıyor...');
-                        return await generateImageWithDALLE3(prompt, apiKey);
+                        // DALL-E 3'e düşme - çünkü input image almıyor
+                        // Bunun yerine hata fırlat
+                        throw new Error('GPT Image API başarısız: ' + error.message +
+                            '\n\nNot: Lütfen OpenAI API key\'inizin gpt-image-1 modeline erişimi olduğundan emin olun.');
                     }
 
                     // Bekleme süresi (exponential backoff)
