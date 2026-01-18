@@ -1011,13 +1011,13 @@
             // Gemini 3 - Text analiz için
             textModel: 'gemini-3-flash-preview',           // Analiz, SEO, JSON çıktı (hızlı)
 
-            // Gemini 2.5 Flash Image - Edit için (daha sadık, az halüsinasyon)
-            // NOT: Gemini 3 Pro Image çok yaratıcı, renkleri değiştiriyor!
-            imageModel: 'gemini-2.5-flash-image',  // Eski çalışan model - renkleri koruyor
+            // Gemini 2.5 Pro - Görsel üretim için (daha az halüsinasyon)
+            // NOT: Pro model daha pahalı ama talimatları daha iyi takip ediyor
+            imageModel: 'gemini-2.5-pro-preview-05-06',  // Pro model - az halüsinasyon
 
             // Fallback modeller
             fallbackTextModel: 'gemini-2.5-flash',
-            fallbackImageModel: 'gemini-2.0-flash-exp',
+            fallbackImageModel: 'gemini-2.5-flash-image',
 
             // API ayarları
             baseUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
