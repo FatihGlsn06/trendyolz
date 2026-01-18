@@ -3692,9 +3692,7 @@ Return ONLY the JSON, no other text.`;
                 console.log('⚠️ Takı analizi başarısız, varsayılan kullanılıyor:', e.message);
             }
 
-            // ===== ADIM 2: DALL-E 3 ile TAKISIZ model oluştur =====
-            showLoader('GPT-4o Modu...', '3/4 Model oluşturuluyor (DALL-E 3)');
-
+            // ===== ADIM 2: GPT-4o Vision ile takıyı DETAYLI analiz et =====
             const outfitSceneInstructions = getOutfitScenePrompt();
             const smartPromptInstructions = getSmartPromptInstructions();
             const hasAngleInstruction = smartPromptInstructions.includes('CAMERA ANGLE:');
@@ -3708,80 +3706,10 @@ Return ONLY the JSON, no other text.`;
                 'choker': { neckline: 'open neckline', frame: 'neck area visible' }
             };
             const frameSetting = frameSettings[jewelryAnalysis.length] || frameSettings.medium;
+            showLoader('GPT-4o Modu...', '3/4 Takı detaylı analiz ediliyor');
+            console.log('🔍 GPT-4o Vision ile takı analiz ediliyor...');
 
-            // DALL-E 3: TAKISIZ model oluştur (halüsinasyon YOK)
-            const modelOnlyPrompt = `Professional e-commerce jewelry model photo.
-
-CRITICAL: The model must have a COMPLETELY BARE neck - NO jewelry, NO necklace, NO accessories whatsoever.
-
-MODEL:
-- ${profile.desc}
-- ${style.prompt}
-- Professional studio lighting
-
-OUTFIT:
-- ${frameSetting.neckline} neckline to showcase jewelry area
-- Dark or neutral colored clothing
-${outfitSceneInstructions}
-
-POSE:
-- ${pose?.prompt || 'Front facing, clear view of neck area'}
-- ${hasAngleInstruction ? smartPromptInstructions : ''}
-
-FRAMING:
-- ${frameSetting.frame}
-- Clear, unobstructed neck and chest area visible
-- Perfect for jewelry overlay
-
-STYLE:
-- High-end e-commerce product photography
-- Soft, even studio lighting
-- Clean background (white or gradient gray)
-- Sharp focus on neck/chest area
-
-ABSOLUTELY NO JEWELRY - the neck must be completely bare for jewelry placement.`;
-
-            // ===== ADIM 2: GPT-4o ile TEK ADIMDA model + takı oluştur =====
-            // Takıyı referans olarak verip, model üzerinde göster
-            const jewelryDescription = jewelryAnalysis.description || 'elegant jewelry piece';
-
-            const fullPrompt = `Professional e-commerce jewelry product photography.
-
-Create a photo of a model wearing the EXACT jewelry shown in the reference image.
-
-JEWELRY (from reference image):
-- Type: ${jewelryAnalysis.type || 'necklace'}
-- Style: ${jewelryDescription}
-- COPY THE JEWELRY EXACTLY as shown - same colors, same design, same size proportions
-
-MODEL:
-- ${profile.desc}
-- ${style.prompt}
-- Professional studio lighting
-
-OUTFIT:
-- ${frameSetting.neckline} neckline to showcase the jewelry
-- Dark or neutral colored clothing
-${outfitSceneInstructions}
-
-POSE:
-- ${pose?.prompt || 'Front facing, clear view of neck area'}
-- ${hasAngleInstruction ? smartPromptInstructions : ''}
-
-FRAMING:
-- ${frameSetting.frame}
-- Jewelry must be fully visible, not cropped
-
-STYLE:
-- High-end e-commerce product photography
-- Soft, even studio lighting
-- Clean background
-- The jewelry must look IDENTICAL to the reference - same design, colors, and proportions`;
-
-            console.log('🎨 GPT-4o ile model + takı oluşturuluyor...');
-
-            // GPT-4o vision ile takıyı analiz et ve DALL-E 3 ile oluştur
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            const visionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -3791,53 +3719,95 @@ STYLE:
                     model: 'gpt-4o',
                     messages: [
                         {
+                            role: 'system',
+                            content: 'You are a jewelry expert. Describe jewelry in EXTREME detail for perfect recreation. Be precise about every element.'
+                        },
+                        {
                             role: 'user',
                             content: [
                                 {
                                     type: 'text',
-                                    text: `Analyze this jewelry image in detail. Describe EXACTLY: colors, materials, chain type, pendant design, any stones/gems, size proportions. Be very specific so it can be recreated perfectly.`
+                                    text: `Analyze this jewelry and describe it in EXTREME detail:
+
+1. CHAIN/BAND:
+   - Material appearance (gold, silver, rose gold, etc.)
+   - Chain style (cable, rope, snake, box, etc.)
+   - Thickness and length
+
+2. PENDANT/CENTERPIECE (if any):
+   - Shape and design
+   - Size relative to chain
+   - Any engravings or patterns
+
+3. STONES/GEMS (if any):
+   - Type (diamond, pearl, crystal, etc.)
+   - Colors (be very specific)
+   - Cut style
+   - Arrangement pattern
+
+4. OVERALL:
+   - Style (minimal, bohemian, vintage, statement, etc.)
+   - Color palette (exact descriptions)
+   - Total length/size category
+
+Write a detailed paragraph that could be used to recreate this EXACT piece.`
                                 },
                                 {
                                     type: 'image_url',
-                                    image_url: { url: jewelryBase64 }
+                                    image_url: { url: jewelryBase64, detail: 'high' }
                                 }
                             ]
                         }
                     ],
-                    max_tokens: 500
+                    max_tokens: 800
                 })
             });
 
-            if (!response.ok) {
-                const err = await response.json();
-                throw new Error('GPT-4o analiz hatası: ' + (err.error?.message || 'Bilinmeyen hata'));
+            let detailedJewelryDescription = jewelryAnalysis.description || 'elegant necklace';
+
+            if (visionResponse.ok) {
+                const visionData = await visionResponse.json();
+                detailedJewelryDescription = visionData.choices?.[0]?.message?.content || detailedJewelryDescription;
+                console.log('✅ Takı detaylı analiz edildi');
+            } else {
+                console.log('⚠️ GPT-4o vision başarısız, temel analiz kullanılıyor');
             }
 
-            const analysisData = await response.json();
-            const jewelryDetailedDescription = analysisData.choices?.[0]?.message?.content || jewelryDescription;
-            console.log('✅ Takı detaylı analiz edildi:', jewelryDetailedDescription.substring(0, 100) + '...');
+            // ===== ADIM 3: DALL-E 3 ile TEK ADIMDA model + takı oluştur =====
+            showLoader('GPT-4o Modu...', '4/4 Model + takı oluşturuluyor');
+            console.log('🎨 DALL-E 3 ile final görsel oluşturuluyor...');
 
-            // DALL-E 3 ile final görsel oluştur
-            showLoader('GPT-4o Modu...', '4/4 Final görsel oluşturuluyor');
+            const finalPrompt = `Professional e-commerce jewelry product photography.
 
-            const finalPrompt = `Professional e-commerce jewelry model photo.
+CREATE A MODEL WEARING THIS EXACT JEWELRY:
+${detailedJewelryDescription}
 
-MODEL wearing this EXACT jewelry:
-${jewelryDetailedDescription}
-
-MODEL:
+MODEL SPECIFICATIONS:
 - ${profile.desc}
 - ${style.prompt}
+- Professional studio lighting
+- Confident, elegant expression
 
 OUTFIT:
-- ${frameSetting.neckline} neckline
-- Dark elegant clothing
+- ${frameSetting.neckline} neckline to showcase the jewelry
+- Dark solid color (black or charcoal)
+- Simple, elegant top
 ${outfitSceneInstructions}
 
-POSE: ${pose?.prompt || 'Front facing'}
+POSE & FRAMING:
+- ${pose?.prompt || 'Front facing, clear view of neck and jewelry'}
+- ${frameSetting.frame}
+- Jewelry must be the focal point
+- Full jewelry visible, not cropped
 
-CRITICAL: The jewelry must match the description EXACTLY - every detail matters for e-commerce accuracy.
-Professional studio lighting, clean background, high-end product photography style.`;
+STYLE:
+- High-end e-commerce product photography
+- Soft, even studio lighting
+- Clean white or gradient gray background
+- Sharp focus on jewelry
+
+CRITICAL: The jewelry must match the description EXACTLY - same colors, same style, same proportions.
+This is for e-commerce - accuracy is essential.`;
 
             const finalImage = await generateImageWithGPT4o(finalPrompt, null, openaiKey);
             console.log('✅ Final görsel oluşturuldu!');
