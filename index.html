@@ -1041,10 +1041,10 @@
         };
 
         // ========== OPENAI GPT IMAGE CONFIG ==========
-        // gpt-image-1: Görsel üretim ve düzenleme modeli
+        // gpt-image-1.5: Görsel üretim ve düzenleme modeli
         // images/edits endpoint: Girdi görseli alarak yeni görsel üretir
         const OPENAI_CONFIG = {
-            imageModel: 'gpt-image-1',
+            imageModel: 'gpt-image-1.5',
             textModel: 'gpt-4o',
             baseUrl: 'https://api.openai.com/v1',
             maxRetries: 3,
@@ -1110,13 +1110,13 @@
 
         // ========== GPT IMAGE EDIT API ==========
         // Endpoint: /v1/images/edits
-        // Model: gpt-image-1 (görsel motoru)
+        // Model: gpt-image-1.5 (görsel motoru)
         // Amaç: Ürünü BOZMADAN edit yapmak (image-to-image)
         async function editProductImage(productImageBase64, editInstructions, apiKey) {
             console.log('═══════════════════════════════════════════');
             console.log('🖼️ GPT IMAGE EDIT API');
             console.log('   Endpoint: /v1/images/edits');
-            console.log('   Model: gpt-image-1');
+            console.log('   Model: gpt-image-1.5');
             console.log('   Mod: IMAGE EDIT (text-to-image DEĞİL!)');
             console.log('═══════════════════════════════════════════');
 
@@ -1139,13 +1139,13 @@
             // KRİTİK PARAMETRELER:
             // ─────────────────────────────────────────
             // image[] = ürün görseli (array notation!)
-            // model = gpt-image-1 (görsel motoru)
+            // model = gpt-image-1.5 (görsel motoru)
             // input_fidelity = high (ÜRÜNÜ KORU!)
             // ─────────────────────────────────────────
 
             // KRİTİK: image[] formatı - array notation!
             formData.append('image[]', blob, 'product.png');
-            formData.append('model', 'gpt-image-1');
+            formData.append('model', 'gpt-image-1.5.5');  // En güncel model
             formData.append('input_fidelity', 'high');
             formData.append('quality', 'high');
             formData.append('size', '1024x1024');
@@ -1165,7 +1165,7 @@ FINAL CHECK: Product must be pixel-perfect identical to input.`.trim();
 
             console.log('📤 Request Parameters:');
             console.log('   • image[]: ✓ (ürün görseli)');
-            console.log('   • model: gpt-image-1');
+            console.log('   • model: gpt-image-1.5');
             console.log('   • input_fidelity: high');
             console.log('   • quality: high');
             console.log('   • size: 1024x1024');
@@ -1211,7 +1211,7 @@ FINAL CHECK: Product must be pixel-perfect identical to input.`.trim();
 
                         // Model yok hatası - dall-e-2'ye DÜŞME! Ürünü koruyamaz.
                         if (errorCode === 'model_not_found' || errorMsg.includes('model')) {
-                            throw new Error(`gpt-image-1 modeline erişim yok!\n\nOpenAI API key'inizin gpt-image-1 modeline erişimi olmalı.\nBu model olmadan ürün korumalı edit yapılamaz.`);
+                            throw new Error(`gpt-image-1.5 modeline erişim yok!\n\nOpenAI API key'inizin gpt-image-1.5 modeline erişimi olmalı.\nBu model olmadan ürün korumalı edit yapılamaz.`);
                         }
 
                         // Diğer hatalar
