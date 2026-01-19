@@ -1152,25 +1152,24 @@
             formData.append('n', '1');
             // NOT: gpt-image-1 response_format desteklemiyor, URL döner
 
-            // 3. EDIT PROMPT - Ürün asla değişmemeli!
-            const editPrompt = `
-STRICT IMAGE EDIT RULES - MUST FOLLOW:
-══════════════════════════════════════
-1. The PRODUCT in this image is SACRED
-2. DO NOT modify the product in ANY way
-3. Keep EXACTLY: shape, color, texture, details, proportions
-4. This is an EDIT operation, NOT a regeneration
+            // 3. EDIT PROMPT - Model'e göre kısa veya uzun
+            let editPrompt;
+            const currentModel = formData.get('model');
 
-WHAT TO EDIT:
+            if (currentModel === 'dall-e-2') {
+                // dall-e-2: Max 1000 karakter - çok kısa tut
+                editPrompt = `Keep the jewelry EXACTLY as is. Add elegant woman model wearing it. Dark V-neck outfit, studio lighting, clean background.`;
+            } else {
+                // gpt-image-1: 32000 karakter - detaylı olabilir
+                editPrompt = `STRICT RULES: Product must stay IDENTICAL. Only add: model, background, lighting.
+
 ${editInstructions}
 
-FINAL CHECK:
-- Product must be pixel-perfect identical to input
-- Only background/model/lighting can change
-══════════════════════════════════════
-            `.trim();
+Keep exact: shape, color, texture, all details.`.trim();
+            }
 
             formData.append('prompt', editPrompt);
+            console.log('📝 Prompt (' + editPrompt.length + ' chars):', editPrompt.substring(0, 100) + '...');
 
             console.log('📤 Request Parameters:');
             console.log('   • image[]: ✓ (ürün görseli)');
@@ -1227,6 +1226,10 @@ FINAL CHECK:
                                 formData.delete('input_fidelity');  // dall-e-2 bunu desteklemiyor
                                 formData.delete('quality');  // dall-e-2 bunu desteklemiyor
                                 formData.set('size', '1024x1024');
+                                // dall-e-2 için kısa prompt (max 1000 karakter)
+                                const shortPrompt = 'Keep jewelry EXACTLY as is. Add woman model wearing it. V-neck dark outfit, studio light.';
+                                formData.set('prompt', shortPrompt);
+                                console.log('📝 Kısa prompt ayarlandı:', shortPrompt.length, 'chars');
                                 continue;  // Tekrar dene
                             }
                         }
