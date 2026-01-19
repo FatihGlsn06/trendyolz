@@ -1196,7 +1196,7 @@
             return `data:image/png;base64,${data.data[0].b64_json}`;
         }
 
-        // GPT-4o ile görsel düzenleme (image edit)
+        // GPT Image Edit - gpt-image-1 ile görsel düzenleme
         async function editImageWithGPT4o(prompt, imageBase64, apiKey) {
             // Base64'ü blob'a çevir
             const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
@@ -1209,12 +1209,11 @@
             const blob = new Blob([byteArray], { type: 'image/png' });
 
             const formData = new FormData();
-            formData.append('model', 'dall-e-2');  // Edit sadece DALL-E 2'de var
-            formData.append('image', blob, 'image.png');
+            formData.append('model', 'gpt-image-1');  // Doğru model
+            formData.append('image[]', blob, 'image.png');  // Array notation
             formData.append('prompt', prompt);
             formData.append('n', '1');
             formData.append('size', '1024x1024');
-            formData.append('response_format', 'b64_json');
 
             const response = await fetch(`${OPENAI_CONFIG.baseUrl}/images/edits`, {
                 method: 'POST',
@@ -1226,11 +1225,18 @@
 
             if (!response.ok) {
                 const err = await response.json();
-                throw new Error(err.error?.message || 'GPT-4o görsel düzenleme hatası');
+                throw new Error(err.error?.message || 'GPT görsel düzenleme hatası');
             }
 
             const data = await response.json();
-            return `data:image/png;base64,${data.data[0].b64_json}`;
+            // base64 veya URL olabilir
+            if (data.data[0].b64_json) {
+                return `data:image/png;base64,${data.data[0].b64_json}`;
+            }
+            if (data.data[0].url) {
+                return await fetchImageAsBase64(data.data[0].url);
+            }
+            throw new Error('Beklenmeyen response formatı');
         }
 
         // Retry mekanizması ile API çağrısı
