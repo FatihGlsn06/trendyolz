@@ -1150,7 +1150,7 @@
             formData.append('quality', 'high');
             formData.append('size', '1024x1024');
             formData.append('n', '1');
-            formData.append('response_format', 'b64_json');  // base64 olarak al
+            // NOT: gpt-image-1 response_format desteklemiyor, URL döner
 
             // 3. EDIT PROMPT - Ürün asla değişmemeli!
             const editPrompt = `
