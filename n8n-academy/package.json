@@ -1,0 +1,20 @@
+{
+  "name": "n8n-academy",
+  "version": "1.0.0",
+  "description": "Interactive n8n learning platform - ADHD friendly, Codecademy-style micro-lessons",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx serve .",
+    "start": "npx serve ."
+  },
+  "keywords": [
+    "n8n",
+    "automation",
+    "learning",
+    "education",
+    "interactive",
+    "adhd-friendly"
+  ],
+  "author": "",
+  "license": "MIT"
+}
