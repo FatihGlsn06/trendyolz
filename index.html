@@ -1004,6 +1004,35 @@
                     </p>
                 </div>
 
+                <!-- Google Cloud - Imagen 3 -->
+                <div class="p-4 bg-slate-800/30 rounded-xl border border-cyan-500/30">
+                    <label class="text-sm font-medium text-white mb-2 block flex items-center gap-2">
+                        <i class="fa-brands fa-google text-cyan-400"></i> Google Imagen 3
+                        <span class="text-[10px] px-2 py-0.5 bg-cyan-500/20 text-cyan-400 rounded-full">ALTERNATİF</span>
+                    </label>
+                    <input type="text" id="gcpProjectInput"
+                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:border-cyan-500 outline-none mb-2"
+                           placeholder="Google Cloud Project ID">
+                    <input type="password" id="gcpKeyInput"
+                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:border-cyan-500 outline-none"
+                           placeholder="Google Cloud API Key / Access Token">
+                    <p class="text-xs text-slate-500 mt-1">
+                        <a href="https://console.cloud.google.com/vertex-ai" target="_blank" class="text-cyan-400 hover:underline">Vertex AI Console →</a>
+                    </p>
+                </div>
+
+                <!-- Görsel Model Seçimi -->
+                <div class="p-4 bg-slate-800/30 rounded-xl border border-amber-500/30">
+                    <label class="text-sm font-medium text-white mb-2 block flex items-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> Görsel Üretim Modeli
+                    </label>
+                    <select id="imageModelSelect" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:border-amber-500 outline-none">
+                        <option value="openai">OpenAI GPT-Image-1 (Önerilen)</option>
+                        <option value="imagen3">Google Imagen 3</option>
+                    </select>
+                    <p class="text-xs text-slate-500 mt-1">Halüsinasyon en düşük: GPT-Image-1 ve Imagen 3</p>
+                </div>
+
             </div>
 
             <button onclick="saveSettings()" class="w-full mt-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 rounded-xl font-bold">
@@ -1183,6 +1212,67 @@ Task: ${prompt}`);
                 return await fetchImageAsBase64(data.data[0].url);
             }
             throw new Error('Beklenmeyen response formatı');
+        }
+
+        // ========== GOOGLE IMAGEN 3 - Image Edit ==========
+        // Halüsinasyon: %10-15 (GPT-Image-1 ile eşit veya daha iyi)
+        async function editImageWithImagen3(prompt, imageBase64, projectId, accessToken) {
+            console.log('🎨 Google Imagen 3 çağrılıyor...');
+
+            const region = 'us-central1';
+            const modelId = 'imagen-3.0-capability-001';
+
+            // Base64 prefix'i kaldır
+            const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+
+            const requestBody = {
+                instances: [{
+                    prompt: `You are performing IMAGE EDITING, not image generation.
+The provided image is the single source of truth - the product must remain IDENTICAL.
+Do NOT modify the product - keep exact shape, size, color, material, texture, details.
+ONLY CHANGE: ${prompt}`,
+                    referenceImages: [{
+                        referenceType: 1,  // RAW reference
+                        referenceId: 1,
+                        referenceImage: {
+                            bytesBase64Encoded: base64Data
+                        }
+                    }]
+                }],
+                parameters: {
+                    sampleCount: 1,
+                    aspectRatio: '1:1',
+                    outputOptions: {
+                        mimeType: 'image/png'
+                    }
+                }
+            };
+
+            const url = `https://${region}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${region}/publishers/google/models/${modelId}:predict`;
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                console.error('Imagen 3 hatası:', err);
+                throw new Error(err.error?.message || 'Imagen 3 görsel düzenleme hatası');
+            }
+
+            const data = await response.json();
+            console.log('✅ Imagen 3 başarılı!');
+
+            if (data.predictions?.[0]?.bytesBase64Encoded) {
+                return `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
+            }
+
+            throw new Error('Imagen 3 beklenmeyen response formatı');
         }
 
         // Retry mekanizması ile API çağrısı
@@ -2290,15 +2380,17 @@ ${seo.hashtags || ''}
             const openaiKey = localStorage.getItem('openai_api_key');
             const geminiKey = localStorage.getItem('gemini_api_key');
             const falKey = localStorage.getItem('fal_api_key');
-            if (openaiKey) {
-                document.getElementById('openaiKeyInput').value = openaiKey;
-            }
-            if (geminiKey) {
-                document.getElementById('geminiKeyInput').value = geminiKey;
-            }
-            if (falKey) {
-                document.getElementById('falKeyInput').value = falKey;
-            }
+            const gcpProject = localStorage.getItem('gcp_project_id');
+            const gcpKey = localStorage.getItem('gcp_api_key');
+            const imageModel = localStorage.getItem('image_model') || 'openai';
+
+            if (openaiKey) document.getElementById('openaiKeyInput').value = openaiKey;
+            if (geminiKey) document.getElementById('geminiKeyInput').value = geminiKey;
+            if (falKey) document.getElementById('falKeyInput').value = falKey;
+            if (gcpProject) document.getElementById('gcpProjectInput').value = gcpProject;
+            if (gcpKey) document.getElementById('gcpKeyInput').value = gcpKey;
+            document.getElementById('imageModelSelect').value = imageModel;
+
             updateApiStatus();
         }
 
@@ -2338,18 +2430,34 @@ ${seo.hashtags || ''}
             const openaiKey = document.getElementById('openaiKeyInput').value.trim();
             const geminiKey = document.getElementById('geminiKeyInput').value.trim();
             const falKey = document.getElementById('falKeyInput').value.trim();
+            const gcpProject = document.getElementById('gcpProjectInput').value.trim();
+            const gcpKey = document.getElementById('gcpKeyInput').value.trim();
+            const imageModel = document.getElementById('imageModelSelect').value;
 
-            if (!openaiKey || !falKey) {
-                showToast('OpenAI ve Fal.ai API Key zorunlu', 'error');
+            // En az bir görsel API gerekli
+            const hasOpenAI = !!openaiKey;
+            const hasImagen = gcpProject && gcpKey;
+
+            if (!falKey) {
+                showToast('Fal.ai API Key zorunlu (BiRefNet için)', 'error');
+                return;
+            }
+
+            if (!hasOpenAI && !hasImagen) {
+                showToast('OpenAI veya Google Cloud API gerekli', 'error');
                 return;
             }
 
             localStorage.setItem('openai_api_key', openaiKey);
             localStorage.setItem('gemini_api_key', geminiKey);
             localStorage.setItem('fal_api_key', falKey);
+            localStorage.setItem('gcp_project_id', gcpProject);
+            localStorage.setItem('gcp_api_key', gcpKey);
+            localStorage.setItem('image_model', imageModel);
+
             updateApiStatus();
             closeSettings();
-            showToast('GPT-4o + BiRefNet hazır!', 'success');
+            showToast(imageModel === 'imagen3' ? 'Imagen 3 + BiRefNet hazır!' : 'GPT-Image-1 + BiRefNet hazır!', 'success');
         }
 
         // ========== FILE UPLOAD ==========
@@ -3588,14 +3696,26 @@ OUTPUT: The product must be PIXEL-PERFECT identical to Input Image 1, naturally 
             const openaiKey = localStorage.getItem('openai_api_key');
             const geminiKey = localStorage.getItem('gemini_api_key');
             const falKey = localStorage.getItem('fal_api_key');
+            const gcpProject = localStorage.getItem('gcp_project_id');
+            const gcpKey = localStorage.getItem('gcp_api_key');
+            const imageModel = localStorage.getItem('image_model') || 'openai';
+
             const profile = modelProfiles[state.settings.modelProfile];
             const style = stylePresets[state.settings.style];
             const pose = posePresets[state.settings.pose];
 
-            console.log('🎨 GPT-4o + BiRefNet Modu (Hallucination-Free) başlatılıyor...');
+            const useImagen = imageModel === 'imagen3' && gcpProject && gcpKey;
+            console.log(`🎨 ${useImagen ? 'Imagen 3' : 'GPT-Image-1'} + BiRefNet Modu başlatılıyor...`);
 
-            if (!openaiKey) {
-                throw new Error('OpenAI API key gerekli - Görsel üretim için GPT-4o lazım');
+            // API key kontrolü
+            if (useImagen) {
+                if (!gcpProject || !gcpKey) {
+                    throw new Error('Google Cloud Project ID ve API Key gerekli');
+                }
+            } else {
+                if (!openaiKey) {
+                    throw new Error('OpenAI API key gerekli');
+                }
             }
 
             // ===== ADIM 1: BiRefNet ile takıyı çıkar =====
@@ -3748,9 +3868,17 @@ POSE:
 CRITICAL: The jewelry in the output must be IDENTICAL to the input image - same design, same colors, same proportions.
 Professional e-commerce photography style with clean background.`;
 
-            // GPT-4o'ya takı görselini ver ve model üzerinde göstermesini iste
-            const finalImage = await generateImageWithGPT4o(imageGenPrompt, jewelryBase64, openaiKey);
-            console.log('✅ GPT-4o ile görsel oluşturuldu!');
+            // Seçilen modele göre görsel oluştur
+            let finalImage;
+            if (useImagen) {
+                showLoader('Imagen 3 Modu...', '3/3 Model + takı oluşturuluyor');
+                finalImage = await editImageWithImagen3(imageGenPrompt, jewelryBase64, gcpProject, gcpKey);
+                console.log('✅ Imagen 3 ile görsel oluşturuldu!');
+            } else {
+                showLoader('GPT-Image-1 Modu...', '3/3 Model + takı oluşturuluyor');
+                finalImage = await generateImageWithGPT4o(imageGenPrompt, jewelryBase64, openaiKey);
+                console.log('✅ GPT-Image-1 ile görsel oluşturuldu!');
+            }
 
             return finalImage;
         }
