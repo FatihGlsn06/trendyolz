@@ -68,6 +68,14 @@
             background: linear-gradient(135deg, #9333ea, #7c3aed);
             color: white;
         }
+        .product-type-btn.active {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+        }
+        .bag-type-card.selected, .bag-style-card.selected, .bag-model-card.selected, .bag-pose-card.selected {
+            border-color: #f59e0b !important;
+            background: rgba(245, 158, 11, 0.1);
+        }
         .style-card { transition: all 0.2s ease; cursor: pointer; }
         .style-card:hover { transform: scale(1.02); }
         .style-card.selected, .pose-card.selected {
@@ -254,6 +262,22 @@
                             </div>
                             <div class="accordion-content">
                                 <div class="p-4 pt-0 space-y-4">
+
+                                    <!-- ÜRÜN TİPİ SEÇİCİ -->
+                                    <div>
+                                        <label class="text-[10px] text-slate-400 mb-2 block">Ürün Tipi</label>
+                                        <div class="flex gap-1 bg-slate-800/50 p-1 rounded-lg">
+                                            <button onclick="selectProductType('jewelry')" class="product-type-btn active flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-2" data-type="jewelry">
+                                                <i class="fa-solid fa-gem"></i> Takı
+                                            </button>
+                                            <button onclick="selectProductType('bag')" class="product-type-btn flex-1 py-2 px-3 rounded-md text-xs font-medium text-slate-400 transition-all flex items-center justify-center gap-2" data-type="bag">
+                                                <i class="fa-solid fa-bag-shopping"></i> Çanta
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- TAKI AYARLARI -->
+                                    <div id="jewelrySettings">
                                     <!-- Takı Kategorisi -->
                                     <div>
                                         <label class="text-[10px] text-slate-400 mb-2 block">Takı Tipi</label>
@@ -366,6 +390,117 @@
                                             Kolye Odaklı: Gerçekçi cilt dokusu, doğal kusurlar.
                                         </p>
                                     </div>
+                                    </div><!-- /jewelrySettings -->
+
+                                    <!-- ÇANTA AYARLARI -->
+                                    <div id="bagSettings" class="hidden space-y-4">
+                                        <!-- Çanta Türü -->
+                                        <div>
+                                            <label class="text-[10px] text-slate-400 mb-2 block">Çanta Türü</label>
+                                            <div class="grid grid-cols-5 gap-1.5" id="bagTypeContainer">
+                                                <div onclick="selectBagType('tote')" class="bag-type-card selected p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-bag="tote">
+                                                    <i class="fa-solid fa-bag-shopping text-amber-400 text-sm mb-1"></i>
+                                                    <p class="text-[9px]">Tote</p>
+                                                </div>
+                                                <div onclick="selectBagType('crossbody')" class="bag-type-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-bag="crossbody">
+                                                    <i class="fa-solid fa-suitcase text-emerald-400 text-sm mb-1"></i>
+                                                    <p class="text-[9px]">Crossbody</p>
+                                                </div>
+                                                <div onclick="selectBagType('clutch')" class="bag-type-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-bag="clutch">
+                                                    <i class="fa-solid fa-wallet text-pink-400 text-sm mb-1"></i>
+                                                    <p class="text-[9px]">Clutch</p>
+                                                </div>
+                                                <div onclick="selectBagType('backpack')" class="bag-type-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-bag="backpack">
+                                                    <i class="fa-solid fa-briefcase text-blue-400 text-sm mb-1"></i>
+                                                    <p class="text-[9px]">Sırt</p>
+                                                </div>
+                                                <div onclick="selectBagType('beltbag')" class="bag-type-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-bag="beltbag">
+                                                    <i class="fa-solid fa-fanny-pack text-violet-400 text-sm mb-1"></i>
+                                                    <p class="text-[9px]">Bel</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Çanta Çekim Stili -->
+                                        <div>
+                                            <label class="text-[10px] text-slate-400 mb-2 block">Çekim Stili</label>
+                                            <div class="grid grid-cols-4 gap-1.5" id="bagStyleContainer">
+                                                <div onclick="selectBagStyle('studio')" class="bag-style-card selected p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-style="studio">
+                                                    <div class="w-full h-6 bg-gradient-to-b from-gray-100 to-gray-200 rounded mb-1"></div>
+                                                    <p class="text-[9px]">Studio</p>
+                                                </div>
+                                                <div onclick="selectBagStyle('lifestyle')" class="bag-style-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-style="lifestyle">
+                                                    <div class="w-full h-6 bg-gradient-to-br from-green-200 to-amber-200 rounded mb-1"></div>
+                                                    <p class="text-[9px]">Lifestyle</p>
+                                                </div>
+                                                <div onclick="selectBagStyle('luxury')" class="bag-style-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-style="luxury">
+                                                    <div class="w-full h-6 bg-gradient-to-br from-slate-900 to-slate-700 rounded mb-1"></div>
+                                                    <p class="text-[9px]">Luxury</p>
+                                                </div>
+                                                <div onclick="selectBagStyle('editorial')" class="bag-style-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-style="editorial">
+                                                    <div class="w-full h-6 bg-gradient-to-br from-rose-300 to-purple-400 rounded mb-1"></div>
+                                                    <p class="text-[9px]">Editorial</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Çanta Model Profili -->
+                                        <div>
+                                            <label class="text-[10px] text-slate-400 mb-2 block">Model Profili</label>
+                                            <div class="grid grid-cols-4 gap-1.5" id="bagModelContainer">
+                                                <div onclick="selectBagModel('business')" class="bag-model-card selected p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-model="business">
+                                                    <i class="fa-solid fa-user-tie text-slate-300 text-sm mb-1"></i>
+                                                    <p class="text-[9px]">İş</p>
+                                                </div>
+                                                <div onclick="selectBagModel('casual')" class="bag-model-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-model="casual">
+                                                    <i class="fa-solid fa-person-walking text-emerald-400 text-sm mb-1"></i>
+                                                    <p class="text-[9px]">Casual</p>
+                                                </div>
+                                                <div onclick="selectBagModel('evening')" class="bag-model-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-model="evening">
+                                                    <i class="fa-solid fa-champagne-glasses text-pink-400 text-sm mb-1"></i>
+                                                    <p class="text-[9px]">Gece</p>
+                                                </div>
+                                                <div onclick="selectBagModel('travel')" class="bag-model-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-model="travel">
+                                                    <i class="fa-solid fa-plane text-sky-400 text-sm mb-1"></i>
+                                                    <p class="text-[9px]">Seyahat</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Çanta Poz / Açı -->
+                                        <div>
+                                            <label class="text-[10px] text-slate-400 mb-2 block">Poz / Açı</label>
+                                            <div class="grid grid-cols-6 gap-1" id="bagPoseContainer">
+                                                <div onclick="selectBagPose('front')" class="bag-pose-card selected p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-pose="front" title="Ön">
+                                                    <i class="fa-solid fa-square text-xs text-slate-400"></i>
+                                                </div>
+                                                <div onclick="selectBagPose('side')" class="bag-pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-pose="side" title="Yan">
+                                                    <i class="fa-solid fa-caret-right text-xs text-slate-400"></i>
+                                                </div>
+                                                <div onclick="selectBagPose('threequarter')" class="bag-pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-pose="threequarter" title="3/4">
+                                                    <i class="fa-solid fa-cube text-xs text-slate-400"></i>
+                                                </div>
+                                                <div onclick="selectBagPose('shoulder')" class="bag-pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-pose="shoulder" title="Omuzda">
+                                                    <i class="fa-solid fa-user text-xs text-slate-400"></i>
+                                                </div>
+                                                <div onclick="selectBagPose('hand')" class="bag-pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-pose="hand" title="Elde">
+                                                    <i class="fa-solid fa-hand text-xs text-slate-400"></i>
+                                                </div>
+                                                <div onclick="selectBagPose('flatlay')" class="bag-pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-pose="flatlay" title="Flat Lay">
+                                                    <i class="fa-solid fa-layer-group text-xs text-slate-400"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Çanta Bilgi -->
+                                        <div id="bagModelInfo" class="p-2 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                                            <p class="text-[9px] text-amber-300" id="bagModelDesc">
+                                                <i class="fa-solid fa-info-circle mr-1"></i>
+                                                Tote: Geniş kapasite, günlük kullanım, alışveriş.
+                                            </p>
+                                        </div>
+                                    </div><!-- /bagSettings -->
+
                                 </div>
                             </div>
                         </div>
@@ -1341,16 +1476,23 @@ Task: ${prompt}`,
             processedImage: null,
             gallery: [],
             workMode: 'mannequin', // 'mannequin' veya 'flatlay'
+            productType: 'jewelry', // 'jewelry' veya 'bag'
             settings: {
+                // Takı ayarları
                 modelProfile: 'neck_model',
                 style: 'studio',
-                pose: 'front',  // Varsayılan: önden
-                jewelryCategory: 'general',  // Takı kategorisi
-                necklaceLength: 'short',  // Kolye uzunluğu: choker, short, medium, long
-                jewelrySize: 'medium',  // Takı/pendant boyutu: small, medium, large, xlarge
-                outfit: 'black_vneck',  // Kıyafet
-                scene: 'studio_clean',  // Sahne
-                autoOutfit: false  // AI otomatik öneri
+                pose: 'front',
+                jewelryCategory: 'general',
+                necklaceLength: 'short',
+                jewelrySize: 'medium',
+                outfit: 'black_vneck',
+                scene: 'studio_clean',
+                autoOutfit: false,
+                // Çanta ayarları
+                bagType: 'tote',
+                bagStyle: 'studio',
+                bagModel: 'business',
+                bagPose: 'front'
             },
             position: {
                 x: 50,      // Yatay pozisyon (%)
@@ -2324,6 +2466,136 @@ ${seo.hashtags || ''}
             }
         };
 
+        // ========== ÇANTA TÜRLERİ ==========
+        const bagTypes = {
+            'tote': {
+                name: "Tote Çanta",
+                desc: "Large open-top tote bag. Roomy interior visible. Two shoulder straps. Perfect for daily use, shopping, work. Show the capacity and structure.",
+                info: "Tote: Geniş kapasite, günlük kullanım, alışveriş.",
+                icon: "fa-bag-shopping",
+                color: "amber",
+                keywords: ["tote çanta", "büyük çanta", "alışveriş çantası", "günlük çanta"]
+            },
+            'crossbody': {
+                name: "Crossbody Çanta",
+                desc: "Crossbody bag with adjustable long strap worn across the body. Compact size, hands-free convenience. Show the strap length and bag positioning.",
+                info: "Crossbody: Omuz askılı, eller serbest, kompakt.",
+                icon: "fa-suitcase",
+                color: "emerald",
+                keywords: ["crossbody çanta", "omuz çantası", "askılı çanta", "çapraz çanta"]
+            },
+            'clutch': {
+                name: "Clutch / El Çantası",
+                desc: "Elegant clutch or evening bag held in hand. No straps or small wrist strap. Compact, sophisticated. Perfect for special occasions and evening events.",
+                info: "Clutch: Zarif el çantası, özel günler, gece.",
+                icon: "fa-wallet",
+                color: "pink",
+                keywords: ["clutch", "el çantası", "gece çantası", "abiye çanta", "portföy"]
+            },
+            'backpack': {
+                name: "Sırt Çantası",
+                desc: "Stylish backpack with two shoulder straps. Show the back panel, straps, and front pockets. Can be fashion-forward or practical.",
+                info: "Sırt Çantası: İki askı, pratik, şık tasarım.",
+                icon: "fa-briefcase",
+                color: "blue",
+                keywords: ["sırt çantası", "backpack", "okul çantası", "laptop çantası"]
+            },
+            'beltbag': {
+                name: "Bel Çantası",
+                desc: "Belt bag / fanny pack worn around waist or crossbody. Compact, trendy, hands-free. Show the belt strap and compact design.",
+                info: "Bel Çantası: Belde, kompakt, trend.",
+                icon: "fa-fanny-pack",
+                color: "violet",
+                keywords: ["bel çantası", "fanny pack", "belt bag", "böbrek çantası"]
+            }
+        };
+
+        // ========== ÇANTA STİLLERİ ==========
+        const bagStyles = {
+            'studio': {
+                name: "Studio",
+                prompt: "Style: Professional e-commerce studio photography. Pure white or light grey seamless background. Even, soft lighting with no harsh shadows. Clean, commercial look. Focus on product details.",
+                bg: "#f5f5f5"
+            },
+            'lifestyle': {
+                name: "Lifestyle",
+                prompt: "Style: Lifestyle photography with model. Natural setting - urban street, cafe, park, or home interior. Golden hour or natural daylight. Authentic, relatable, Instagram-worthy aesthetic.",
+                bg: "#e8f5e9"
+            },
+            'luxury': {
+                name: "Luxury",
+                prompt: "Style: High-end luxury aesthetic. Marble surface, velvet backdrop, or reflective glass. Dramatic lighting with elegant shadows. Premium brand feel - Gucci, Chanel, Louis Vuitton aesthetic.",
+                bg: "#1a1a1a"
+            },
+            'editorial': {
+                name: "Editorial",
+                prompt: "Style: High-fashion editorial photography. Dramatic, artistic lighting. Bold composition. Vogue, Harper's Bazaar magazine aesthetic. Creative angles and artistic expression.",
+                bg: "#f3e5f5"
+            }
+        };
+
+        // ========== ÇANTA MODEL PROFİLLERİ ==========
+        const bagModelProfiles = {
+            'business': {
+                name: "İş Kadını",
+                desc: "Professional businesswoman in elegant office attire. Blazer or smart dress. Confident posture. Corporate setting or minimalist background. The bag complements a professional look.",
+                info: "İş Kadını: Profesyonel, ofis, şık kıyafet.",
+                outfit: "elegant blazer, professional attire, smart office wear"
+            },
+            'casual': {
+                name: "Casual",
+                desc: "Relaxed, everyday style. Jeans and nice top, casual dress, or athleisure. Natural, approachable look. Street style or casual setting. The bag fits everyday life.",
+                info: "Casual: Günlük, rahat, sokak stili.",
+                outfit: "casual jeans and top, relaxed everyday wear, street style"
+            },
+            'evening': {
+                name: "Gece / Özel Gün",
+                desc: "Glamorous evening look. Elegant dress or chic evening outfit. Special occasion ready. Party or event atmosphere. Subtle bokeh lights. The bag is a statement accessory.",
+                info: "Gece: Şık, parti, özel gün.",
+                outfit: "elegant evening dress, glamorous outfit, party attire"
+            },
+            'travel': {
+                name: "Seyahat",
+                desc: "Travel-ready look. Comfortable yet stylish travel outfit. Airport, train station, or scenic destination background. The bag is practical and stylish for journeys.",
+                info: "Seyahat: Pratik, konforlu, yolculuk.",
+                outfit: "comfortable travel outfit, stylish yet practical clothing"
+            }
+        };
+
+        // ========== ÇANTA POZLARI ==========
+        const bagPoses = {
+            'front': {
+                name: "Ön Görünüm",
+                prompt: "Bag photographed from the front, facing camera directly. Clear view of the front panel, logo, hardware, and design details.",
+                forModel: false
+            },
+            'side': {
+                name: "Yan Görünüm",
+                prompt: "Bag photographed from the side profile. Shows depth, thickness, side pockets, and strap attachments.",
+                forModel: false
+            },
+            'threequarter': {
+                name: "3/4 Açı",
+                prompt: "Bag photographed at 3/4 angle (45 degrees). Shows both front and side, giving best sense of shape, size, and dimension.",
+                forModel: false
+            },
+            'shoulder': {
+                name: "Omuzda",
+                prompt: "Model wearing the bag on shoulder. Natural carrying position. Shows how the bag looks when worn and the strap length.",
+                forModel: true
+            },
+            'hand': {
+                name: "Elde",
+                prompt: "Model holding the bag by handles or clutching it. Shows scale relative to hand and elegant carrying style.",
+                forModel: true
+            },
+            'flatlay': {
+                name: "Flat Lay",
+                prompt: "Bag laid flat, photographed from directly above (bird's eye view). Top-down composition. Can include styled props around it.",
+                forModel: false
+            }
+        };
+
         // ========== CRITICAL: SKIN FIX PROMPT ==========
         const skinFix = " Render the neck/skin as hyper-realistic living human skin with pores and texture. REMOVE any plastic mannequin seams, stands, or artificial holders. The jewelry should rest naturally on human skin. NO mannequin, NO plastic, NO artificial appearance. ";
 
@@ -2890,6 +3162,78 @@ Return ONLY this JSON:
             }
         }
 
+        // ========== ÜRÜN TİPİ SEÇİMİ ==========
+        function selectProductType(type) {
+            state.productType = type;
+
+            // Toggle buttons
+            document.querySelectorAll('.product-type-btn').forEach(btn => {
+                btn.classList.remove('active');
+                btn.classList.add('text-slate-400');
+            });
+            document.querySelector(`[data-type="${type}"]`)?.classList.add('active');
+            document.querySelector(`[data-type="${type}"]`)?.classList.remove('text-slate-400');
+
+            // Show/hide settings panels
+            const jewelrySettings = document.getElementById('jewelrySettings');
+            const bagSettings = document.getElementById('bagSettings');
+
+            if (type === 'jewelry') {
+                jewelrySettings.classList.remove('hidden');
+                bagSettings.classList.add('hidden');
+                showToast('Takı modu seçildi', 'success');
+            } else {
+                jewelrySettings.classList.add('hidden');
+                bagSettings.classList.remove('hidden');
+                showToast('Çanta modu seçildi', 'success');
+            }
+        }
+
+        // ========== ÇANTA SEÇİM FONKSİYONLARI ==========
+        function selectBagType(bagType) {
+            state.settings.bagType = bagType;
+
+            document.querySelectorAll('.bag-type-card').forEach(c => c.classList.remove('selected'));
+            document.querySelector(`[data-bag="${bagType}"]`)?.classList.add('selected');
+
+            // Update info
+            const bagInfo = bagTypes[bagType];
+            document.getElementById('bagModelDesc').innerHTML =
+                '<i class="fa-solid fa-info-circle mr-1"></i>' + bagInfo.info;
+
+            showToast(`${bagInfo.name} seçildi`, 'success');
+        }
+
+        function selectBagStyle(style) {
+            state.settings.bagStyle = style;
+
+            document.querySelectorAll('.bag-style-card').forEach(c => c.classList.remove('selected'));
+            document.querySelector(`.bag-style-card[data-style="${style}"]`)?.classList.add('selected');
+
+            const styleName = bagStyles[style]?.name || style;
+            showToast(`${styleName} stili seçildi`, 'success');
+        }
+
+        function selectBagModel(model) {
+            state.settings.bagModel = model;
+
+            document.querySelectorAll('.bag-model-card').forEach(c => c.classList.remove('selected'));
+            document.querySelector(`[data-model="${model}"]`)?.classList.add('selected');
+
+            const modelInfo = bagModelProfiles[model];
+            showToast(`${modelInfo.name} profili seçildi`, 'success');
+        }
+
+        function selectBagPose(pose) {
+            state.settings.bagPose = pose;
+
+            document.querySelectorAll('.bag-pose-card').forEach(c => c.classList.remove('selected'));
+            document.querySelector(`.bag-pose-card[data-pose="${pose}"]`)?.classList.add('selected');
+
+            const poseName = bagPoses[pose]?.name || pose;
+            showToast(`${poseName} pozu seçildi`, 'success');
+        }
+
         // ========== AKILLI PROMPT SİSTEMİ ==========
 
         // Hızlı tag ekleme
@@ -3080,8 +3424,10 @@ The jewelry must remain EXACTLY as provided - do not modify the jewelry in any w
         async function generateImage() {
             const openaiKey = localStorage.getItem('openai_api_key');
             const falKey = localStorage.getItem('fal_api_key');
+            const imageModel = localStorage.getItem('image_model') || 'openai';
 
-            if (!openaiKey) {
+            // API key kontrolü - model tipine göre
+            if (imageModel === 'openai' && !openaiKey) {
                 openSettings();
                 showToast('Lütfen OpenAI API Key girin', 'error');
                 return;
@@ -3098,12 +3444,18 @@ The jewelry must remain EXACTLY as provided - do not modify the jewelry in any w
                 return;
             }
 
-            showLoader('GPT-4o + BiRefNet...', '1/4 Başlatılıyor');
+            const productTypeName = state.productType === 'bag' ? 'Çanta' : 'Takı';
+            showLoader(`${productTypeName} Modu...`, '1/4 Başlatılıyor');
 
             try {
-                // Tek mod: Halüsinasyonsuz Stüdyo Pro
-                console.log('🎯 Stüdyo Pro - Halüsinasyonsuz mod başlatılıyor...');
-                state.processedImage = await generateWithGemini25();
+                // Ürün tipine göre uygun fonksiyonu çağır
+                if (state.productType === 'bag') {
+                    console.log('👜 Çanta modu başlatılıyor...');
+                    state.processedImage = await generateBagImage();
+                } else {
+                    console.log('💎 Takı modu başlatılıyor...');
+                    state.processedImage = await generateWithGemini25();
+                }
 
                 // STUDIO ENHANCE - Fal.ai ile kalite artırma
                 console.log('🎬 Stüdyo kalitesi uygulanıyor...');
@@ -3691,6 +4043,216 @@ OUTPUT: The product must be PIXEL-PERFECT identical to Input Image 1, naturally 
                 templateImg.src = templateBase64;
                 jewelryImg.src = jewelryBase64;
             });
+        }
+
+        // ========== ÇANTA GÖRSEL ÜRETİM FONKSİYONU ==========
+        async function generateBagImage() {
+            const openaiKey = localStorage.getItem('openai_api_key');
+            const geminiKey = localStorage.getItem('gemini_api_key');
+            const falKey = localStorage.getItem('fal_api_key');
+            const imageModel = localStorage.getItem('image_model') || 'openai';
+
+            const bagType = bagTypes[state.settings.bagType];
+            const bagStyle = bagStyles[state.settings.bagStyle];
+            const bagModel = bagModelProfiles[state.settings.bagModel];
+            const bagPose = bagPoses[state.settings.bagPose];
+
+            const modelNames = {
+                'openai': 'GPT-Image-1',
+                'gemini3pro': 'Gemini 3 Pro Image',
+                'flux': 'FLUX.1 [dev]'
+            };
+            console.log(`👜 Çanta Modu: ${modelNames[imageModel] || imageModel} + BiRefNet başlatılıyor...`);
+
+            // API key kontrolü
+            if (imageModel === 'openai' && !openaiKey) {
+                throw new Error('OpenAI API key gerekli');
+            }
+            if ((imageModel === 'gemini3pro' || imageModel === 'flux') && !falKey) {
+                throw new Error('Fal.ai API key gerekli');
+            }
+            if (!falKey) {
+                throw new Error('Fal.ai API key gerekli - BiRefNet için');
+            }
+
+            // ===== ADIM 1: BiRefNet ile çantayı çıkar =====
+            showLoader('Çanta Modu...', '1/3 Çanta çıkarılıyor (BiRefNet)');
+
+            const birefnetResponse = await fetch('https://fal.run/fal-ai/birefnet', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Key ${falKey}`
+                },
+                body: JSON.stringify({
+                    image_url: state.originalBase64,
+                    model: "General Use (Light)",
+                    operating_resolution: state.isHighRes ? "2048x2048" : "1024x1024",
+                    output_format: "png"
+                })
+            });
+
+            if (!birefnetResponse.ok) {
+                const err = await birefnetResponse.json();
+                throw new Error('BiRefNet hatası: ' + (err.detail || 'Çanta çıkarılamadı'));
+            }
+
+            const birefnetData = await birefnetResponse.json();
+            const transparentBagUrl = birefnetData.image?.url;
+            if (!transparentBagUrl) {
+                throw new Error('Çanta çıkarılamadı');
+            }
+            console.log('✅ Çanta şeffaf arka planla çıkarıldı');
+
+            const bagBase64 = await fetchImageAsBase64(transparentBagUrl);
+
+            // ===== ADIM 2: Çantayı analiz et =====
+            showLoader('Çanta Modu...', '2/3 Çanta analiz ediliyor');
+            console.log('🔍 Çanta analiz ediliyor...');
+
+            const bagAnalysisPrompt = `Analyze this bag/handbag image and provide specifications.
+
+Return ONLY a JSON object:
+{
+  "type": "${state.settings.bagType}",
+  "material": "leather/canvas/fabric/synthetic/suede",
+  "color": "primary color",
+  "hardware": "gold/silver/brass/none",
+  "size": "small/medium/large",
+  "features": ["list of features like pockets, zippers, etc"],
+  "description": "brief description of the bag"
+}
+
+Return ONLY the JSON, no other text.`;
+
+            const bagBase64Data = bagBase64.split(',')[1];
+            let bagAnalysis = {
+                type: state.settings.bagType,
+                material: 'leather',
+                color: 'neutral',
+                hardware: 'gold',
+                size: 'medium',
+                features: [],
+                description: 'stylish bag'
+            };
+
+            if (geminiKey) {
+                try {
+                    const analysisResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [
+                                    { text: bagAnalysisPrompt },
+                                    {
+                                        inlineData: {
+                                            mimeType: 'image/png',
+                                            data: bagBase64Data
+                                        }
+                                    }
+                                ]
+                            }],
+                            generationConfig: { temperature: 0.1 }
+                        })
+                    });
+
+                    if (analysisResponse.ok) {
+                        const analysisData = await analysisResponse.json();
+                        const analysisText = analysisData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                        const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) {
+                            bagAnalysis = { ...bagAnalysis, ...JSON.parse(jsonMatch[0]) };
+                            console.log('✅ Çanta analizi:', bagAnalysis);
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Çanta analizi yapılamadı, varsayılan değerler kullanılıyor');
+                }
+            }
+
+            // ===== ADIM 3: Görsel üret =====
+            showLoader(`${modelNames[imageModel]} Modu...`, '3/3 Çanta görseli oluşturuluyor');
+
+            // Model ile mi yoksa ürün çekimi mi?
+            const needsModel = bagPose.forModel;
+
+            let imageGenPrompt;
+            if (needsModel) {
+                // Model ile çekim
+                imageGenPrompt = `Professional ${bagType.name} product photography with fashion model.
+
+MODEL: ${bagModel.desc}
+OUTFIT: ${bagModel.outfit}
+
+BAG DETAILS:
+- Type: ${bagType.name}
+- Material: ${bagAnalysis.material}
+- Color: ${bagAnalysis.color}
+- Hardware: ${bagAnalysis.hardware}
+- Size: ${bagAnalysis.size}
+
+POSE: ${bagPose.prompt}
+
+${bagStyle.prompt}
+
+CRITICAL REQUIREMENTS:
+1. The bag in the output must be IDENTICAL to the input image
+2. Same design, same color, same hardware, same proportions
+3. Do NOT modify the bag - preserve every detail
+4. This is IMAGE EDITING - the bag is the source of truth
+5. Only add the model and environment around the UNCHANGED bag
+
+High-end e-commerce photography, professional lighting, sharp focus on the bag.`;
+            } else {
+                // Ürün çekimi (model yok)
+                imageGenPrompt = `Professional ${bagType.name} product photography - NO MODEL.
+
+BAG DETAILS:
+- Type: ${bagType.name}
+- Material: ${bagAnalysis.material}
+- Color: ${bagAnalysis.color}
+- Hardware: ${bagAnalysis.hardware}
+- Size: ${bagAnalysis.size}
+- Features: ${bagAnalysis.features?.join(', ') || 'standard'}
+
+ANGLE/POSE: ${bagPose.prompt}
+
+${bagStyle.prompt}
+
+CRITICAL REQUIREMENTS:
+1. The bag in the output must be IDENTICAL to the input image
+2. Same design, same color, same hardware, same proportions
+3. Do NOT modify the bag - preserve every detail
+4. This is IMAGE EDITING - the bag is the source of truth
+5. Product photography - show the bag beautifully
+
+Professional e-commerce photography, clean composition, perfect lighting.`;
+            }
+
+            let finalImage;
+            if (imageModel === 'gemini3pro') {
+                finalImage = await editImageWithGemini3Pro(imageGenPrompt, bagBase64, falKey);
+                console.log('✅ Gemini 3 Pro Image ile çanta görseli oluşturuldu!');
+            } else if (imageModel === 'flux') {
+                finalImage = await editImageWithFlux(imageGenPrompt, bagBase64, falKey);
+                console.log('✅ FLUX.1 [dev] ile çanta görseli oluşturuldu!');
+            } else {
+                finalImage = await generateImageWithGPT4o(imageGenPrompt, bagBase64, openaiKey);
+                console.log('✅ GPT-Image-1 ile çanta görseli oluşturuldu!');
+            }
+
+            // SEO bilgilerini güncelle
+            state.seo.category = bagType.name;
+            state.seo.keywords = bagType.keywords || [];
+            state.seo.attributes = {
+                material: bagAnalysis.material,
+                color: bagAnalysis.color,
+                hardware: bagAnalysis.hardware,
+                size: bagAnalysis.size
+            };
+
+            return finalImage;
         }
 
         // ========== GPT-4o + BiRefNet MODE - HALÜSİNASYON-FREE ==========
