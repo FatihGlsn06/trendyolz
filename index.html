@@ -1004,23 +1004,6 @@
                     </p>
                 </div>
 
-                <!-- Google Cloud - Imagen 3 -->
-                <div class="p-4 bg-slate-800/30 rounded-xl border border-cyan-500/30">
-                    <label class="text-sm font-medium text-white mb-2 block flex items-center gap-2">
-                        <i class="fa-brands fa-google text-cyan-400"></i> Google Imagen 3
-                        <span class="text-[10px] px-2 py-0.5 bg-cyan-500/20 text-cyan-400 rounded-full">ALTERNATİF</span>
-                    </label>
-                    <input type="text" id="gcpProjectInput"
-                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:border-cyan-500 outline-none mb-2"
-                           placeholder="Google Cloud Project ID">
-                    <input type="password" id="gcpKeyInput"
-                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:border-cyan-500 outline-none"
-                           placeholder="Google Cloud API Key / Access Token">
-                    <p class="text-xs text-slate-500 mt-1">
-                        <a href="https://console.cloud.google.com/vertex-ai" target="_blank" class="text-cyan-400 hover:underline">Vertex AI Console →</a>
-                    </p>
-                </div>
-
                 <!-- Görsel Model Seçimi -->
                 <div class="p-4 bg-slate-800/30 rounded-xl border border-amber-500/30">
                     <label class="text-sm font-medium text-white mb-2 block flex items-center gap-2">
@@ -1028,9 +1011,10 @@
                     </label>
                     <select id="imageModelSelect" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:border-amber-500 outline-none">
                         <option value="openai">OpenAI GPT-Image-1 (Önerilen)</option>
-                        <option value="imagen3">Google Imagen 3</option>
+                        <option value="gemini3pro">Gemini 3 Pro Image (fal.ai)</option>
+                        <option value="flux">FLUX.1 [dev] (fal.ai)</option>
                     </select>
-                    <p class="text-xs text-slate-500 mt-1">Halüsinasyon en düşük: GPT-Image-1 ve Imagen 3</p>
+                    <p class="text-xs text-slate-500 mt-1">Gemini 3 Pro ve FLUX: fal.ai key ile çalışır (OAuth2 yok!)</p>
                 </div>
 
             </div>
@@ -1214,65 +1198,91 @@ Task: ${prompt}`);
             throw new Error('Beklenmeyen response formatı');
         }
 
-        // ========== GOOGLE IMAGEN 3 - Image Edit ==========
-        // Halüsinasyon: %10-15 (GPT-Image-1 ile eşit veya daha iyi)
-        async function editImageWithImagen3(prompt, imageBase64, projectId, accessToken) {
-            console.log('🎨 Google Imagen 3 çağrılıyor...');
+        // ========== GEMINI 3 PRO IMAGE - via fal.ai ==========
+        // Halüsinasyon: %10-15 (En iyi görsel kalitesi, 4K desteği)
+        async function editImageWithGemini3Pro(prompt, imageBase64, falKey) {
+            console.log('🎨 Gemini 3 Pro Image (fal.ai) çağrılıyor...');
 
-            const region = 'us-central1';
-            const modelId = 'imagen-3.0-capability-001';
+            // Base64'ü data URL formatına çevir
+            const imageUrl = imageBase64.startsWith('data:') ? imageBase64 : `data:image/png;base64,${imageBase64}`;
 
-            // Base64 prefix'i kaldır
-            const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-
-            const requestBody = {
-                instances: [{
+            const response = await fetch('https://fal.run/fal-ai/gemini-3-pro-image-preview/edit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Key ${falKey}`
+                },
+                body: JSON.stringify({
                     prompt: `You are performing IMAGE EDITING, not image generation.
 The provided image is the single source of truth - the product must remain IDENTICAL.
 Do NOT modify the product - keep exact shape, size, color, material, texture, details.
-ONLY CHANGE: ${prompt}`,
-                    referenceImages: [{
-                        referenceType: 1,  // RAW reference
-                        referenceId: 1,
-                        referenceImage: {
-                            bytesBase64Encoded: base64Data
-                        }
-                    }]
-                }],
-                parameters: {
-                    sampleCount: 1,
-                    aspectRatio: '1:1',
-                    outputOptions: {
-                        mimeType: 'image/png'
-                    }
-                }
-            };
-
-            const url = `https://${region}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${region}/publishers/google/models/${modelId}:predict`;
-
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(requestBody)
+Task: ${prompt}`,
+                    image_urls: [imageUrl]
+                })
             });
 
             if (!response.ok) {
                 const err = await response.json();
-                console.error('Imagen 3 hatası:', err);
-                throw new Error(err.error?.message || 'Imagen 3 görsel düzenleme hatası');
+                console.error('Gemini 3 Pro Image hatası:', err);
+                throw new Error(err.detail || err.error?.message || 'Gemini 3 Pro Image görsel düzenleme hatası');
             }
 
             const data = await response.json();
-            console.log('✅ Imagen 3 başarılı!');
+            console.log('✅ Gemini 3 Pro Image başarılı!');
 
-            if (data.predictions?.[0]?.bytesBase64Encoded) {
-                return `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
+            if (data.images?.[0]?.url) {
+                return await fetchImageAsBase64(data.images[0].url);
+            }
+            if (data.image?.url) {
+                return await fetchImageAsBase64(data.image.url);
             }
 
-            throw new Error('Imagen 3 beklenmeyen response formatı');
+            throw new Error('Gemini 3 Pro Image beklenmeyen response formatı');
+        }
+
+        // ========== FLUX.1 [dev] Image-to-Image - via fal.ai ==========
+        // Halüsinasyon: strength parametresi ile kontrol edilir (düşük = az halüsinasyon)
+        async function editImageWithFlux(prompt, imageBase64, falKey) {
+            console.log('🎨 FLUX.1 [dev] Image-to-Image (fal.ai) çağrılıyor...');
+
+            // Base64'ü data URL formatına çevir
+            const imageUrl = imageBase64.startsWith('data:') ? imageBase64 : `data:image/png;base64,${imageBase64}`;
+
+            const response = await fetch('https://fal.run/fal-ai/flux/dev/image-to-image', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Key ${falKey}`
+                },
+                body: JSON.stringify({
+                    image_url: imageUrl,
+                    prompt: `You are performing IMAGE EDITING, not image generation.
+The provided image is the single source of truth - the jewelry/product must remain IDENTICAL.
+Do NOT modify the product - keep exact shape, size, color, material, texture, details.
+Task: ${prompt}`,
+                    strength: 0.35,  // Düşük strength = orijinal görsel daha çok korunur
+                    num_inference_steps: 28,
+                    guidance_scale: 3.5
+                })
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                console.error('FLUX.1 hatası:', err);
+                throw new Error(err.detail || err.error?.message || 'FLUX.1 görsel düzenleme hatası');
+            }
+
+            const data = await response.json();
+            console.log('✅ FLUX.1 başarılı!');
+
+            if (data.images?.[0]?.url) {
+                return await fetchImageAsBase64(data.images[0].url);
+            }
+            if (data.image?.url) {
+                return await fetchImageAsBase64(data.image.url);
+            }
+
+            throw new Error('FLUX.1 beklenmeyen response formatı');
         }
 
         // Retry mekanizması ile API çağrısı
@@ -2380,15 +2390,11 @@ ${seo.hashtags || ''}
             const openaiKey = localStorage.getItem('openai_api_key');
             const geminiKey = localStorage.getItem('gemini_api_key');
             const falKey = localStorage.getItem('fal_api_key');
-            const gcpProject = localStorage.getItem('gcp_project_id');
-            const gcpKey = localStorage.getItem('gcp_api_key');
             const imageModel = localStorage.getItem('image_model') || 'openai';
 
             if (openaiKey) document.getElementById('openaiKeyInput').value = openaiKey;
             if (geminiKey) document.getElementById('geminiKeyInput').value = geminiKey;
             if (falKey) document.getElementById('falKeyInput').value = falKey;
-            if (gcpProject) document.getElementById('gcpProjectInput').value = gcpProject;
-            if (gcpKey) document.getElementById('gcpKeyInput').value = gcpKey;
             document.getElementById('imageModelSelect').value = imageModel;
 
             updateApiStatus();
@@ -2430,34 +2436,34 @@ ${seo.hashtags || ''}
             const openaiKey = document.getElementById('openaiKeyInput').value.trim();
             const geminiKey = document.getElementById('geminiKeyInput').value.trim();
             const falKey = document.getElementById('falKeyInput').value.trim();
-            const gcpProject = document.getElementById('gcpProjectInput').value.trim();
-            const gcpKey = document.getElementById('gcpKeyInput').value.trim();
             const imageModel = document.getElementById('imageModelSelect').value;
 
-            // En az bir görsel API gerekli
-            const hasOpenAI = !!openaiKey;
-            const hasImagen = gcpProject && gcpKey;
-
+            // fal.ai zorunlu (BiRefNet + alternatif modeller için)
             if (!falKey) {
                 showToast('Fal.ai API Key zorunlu (BiRefNet için)', 'error');
                 return;
             }
 
-            if (!hasOpenAI && !hasImagen) {
-                showToast('OpenAI veya Google Cloud API gerekli', 'error');
+            // OpenAI seçildiyse OpenAI key zorunlu
+            if (imageModel === 'openai' && !openaiKey) {
+                showToast('OpenAI seçildi ama API key yok', 'error');
                 return;
             }
 
             localStorage.setItem('openai_api_key', openaiKey);
             localStorage.setItem('gemini_api_key', geminiKey);
             localStorage.setItem('fal_api_key', falKey);
-            localStorage.setItem('gcp_project_id', gcpProject);
-            localStorage.setItem('gcp_api_key', gcpKey);
             localStorage.setItem('image_model', imageModel);
 
             updateApiStatus();
             closeSettings();
-            showToast(imageModel === 'imagen3' ? 'Imagen 3 + BiRefNet hazır!' : 'GPT-Image-1 + BiRefNet hazır!', 'success');
+
+            const modelNames = {
+                'openai': 'GPT-Image-1',
+                'gemini3pro': 'Gemini 3 Pro Image',
+                'flux': 'FLUX.1 [dev]'
+            };
+            showToast(`${modelNames[imageModel] || imageModel} + BiRefNet hazır!`, 'success');
         }
 
         // ========== FILE UPLOAD ==========
@@ -3696,26 +3702,25 @@ OUTPUT: The product must be PIXEL-PERFECT identical to Input Image 1, naturally 
             const openaiKey = localStorage.getItem('openai_api_key');
             const geminiKey = localStorage.getItem('gemini_api_key');
             const falKey = localStorage.getItem('fal_api_key');
-            const gcpProject = localStorage.getItem('gcp_project_id');
-            const gcpKey = localStorage.getItem('gcp_api_key');
             const imageModel = localStorage.getItem('image_model') || 'openai';
 
             const profile = modelProfiles[state.settings.modelProfile];
             const style = stylePresets[state.settings.style];
             const pose = posePresets[state.settings.pose];
 
-            const useImagen = imageModel === 'imagen3' && gcpProject && gcpKey;
-            console.log(`🎨 ${useImagen ? 'Imagen 3' : 'GPT-Image-1'} + BiRefNet Modu başlatılıyor...`);
+            const modelNames = {
+                'openai': 'GPT-Image-1',
+                'gemini3pro': 'Gemini 3 Pro Image',
+                'flux': 'FLUX.1 [dev]'
+            };
+            console.log(`🎨 ${modelNames[imageModel] || imageModel} + BiRefNet Modu başlatılıyor...`);
 
             // API key kontrolü
-            if (useImagen) {
-                if (!gcpProject || !gcpKey) {
-                    throw new Error('Google Cloud Project ID ve API Key gerekli');
-                }
-            } else {
-                if (!openaiKey) {
-                    throw new Error('OpenAI API key gerekli');
-                }
+            if (imageModel === 'openai' && !openaiKey) {
+                throw new Error('OpenAI API key gerekli');
+            }
+            if ((imageModel === 'gemini3pro' || imageModel === 'flux') && !falKey) {
+                throw new Error('Fal.ai API key gerekli');
             }
 
             // ===== ADIM 1: BiRefNet ile takıyı çıkar =====
@@ -3870,12 +3875,17 @@ Professional e-commerce photography style with clean background.`;
 
             // Seçilen modele göre görsel oluştur
             let finalImage;
-            if (useImagen) {
-                showLoader('Imagen 3 Modu...', '3/3 Model + takı oluşturuluyor');
-                finalImage = await editImageWithImagen3(imageGenPrompt, jewelryBase64, gcpProject, gcpKey);
-                console.log('✅ Imagen 3 ile görsel oluşturuldu!');
+            const loaderName = modelNames[imageModel] || imageModel;
+            showLoader(`${loaderName} Modu...`, '3/3 Model + takı oluşturuluyor');
+
+            if (imageModel === 'gemini3pro') {
+                finalImage = await editImageWithGemini3Pro(imageGenPrompt, jewelryBase64, falKey);
+                console.log('✅ Gemini 3 Pro Image ile görsel oluşturuldu!');
+            } else if (imageModel === 'flux') {
+                finalImage = await editImageWithFlux(imageGenPrompt, jewelryBase64, falKey);
+                console.log('✅ FLUX.1 [dev] ile görsel oluşturuldu!');
             } else {
-                showLoader('GPT-Image-1 Modu...', '3/3 Model + takı oluşturuluyor');
+                // Default: OpenAI GPT-Image-1
                 finalImage = await generateImageWithGPT4o(imageGenPrompt, jewelryBase64, openaiKey);
                 console.log('✅ GPT-Image-1 ile görsel oluşturuldu!');
             }
