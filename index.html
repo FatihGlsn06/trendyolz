@@ -72,9 +72,42 @@
             background: linear-gradient(135deg, #f59e0b, #d97706);
             color: white;
         }
+        .bag-platform-btn.active {
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            color: white;
+        }
         .bag-type-card.selected, .bag-style-card.selected, .bag-model-card.selected, .bag-pose-card.selected {
             border-color: #f59e0b !important;
             background: rgba(245, 158, 11, 0.1);
+        }
+        .etsy-style {
+            border-color: rgba(249, 115, 22, 0.3) !important;
+        }
+        .etsy-style.selected {
+            border-color: #f97316 !important;
+            background: rgba(249, 115, 22, 0.15);
+        }
+        .seo-platform-btn.active {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+        .seo-platform-btn[data-seo-platform="etsy"].active {
+            background: linear-gradient(135deg, #f97316, #ea580c);
+        }
+        .etsy-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            background: rgba(251, 146, 60, 0.15);
+            border: 1px solid rgba(251, 146, 60, 0.4);
+            border-radius: 9999px;
+            font-size: 10px;
+            color: #fb923c;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .etsy-tag:hover {
+            background: rgba(251, 146, 60, 0.25);
         }
         .style-card { transition: all 0.2s ease; cursor: pointer; }
         .style-card:hover { transform: scale(1.02); }
@@ -421,25 +454,62 @@
                                             </div>
                                         </div>
 
+                                        <!-- Platform Seçici (Genel / Etsy) -->
+                                        <div>
+                                            <label class="text-[10px] text-slate-400 mb-2 block">Platform</label>
+                                            <div class="flex gap-1 bg-slate-800/50 p-1 rounded-lg">
+                                                <button onclick="selectBagPlatform('general')" class="bag-platform-btn active flex-1 py-1.5 px-2 rounded-md text-[10px] font-medium transition-all" data-platform="general">
+                                                    <i class="fa-solid fa-globe mr-1"></i>Genel
+                                                </button>
+                                                <button onclick="selectBagPlatform('etsy')" class="bag-platform-btn flex-1 py-1.5 px-2 rounded-md text-[10px] font-medium text-slate-400 transition-all" data-platform="etsy">
+                                                    <i class="fa-brands fa-etsy mr-1"></i>Etsy
+                                                </button>
+                                            </div>
+                                        </div>
+
                                         <!-- Çanta Çekim Stili -->
                                         <div>
                                             <label class="text-[10px] text-slate-400 mb-2 block">Çekim Stili</label>
+                                            <!-- Genel Stiller -->
                                             <div class="grid grid-cols-4 gap-1.5" id="bagStyleContainer">
-                                                <div onclick="selectBagStyle('studio')" class="bag-style-card selected p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-style="studio">
+                                                <div onclick="selectBagStyle('studio')" class="bag-style-card general-style selected p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-style="studio">
                                                     <div class="w-full h-6 bg-gradient-to-b from-gray-100 to-gray-200 rounded mb-1"></div>
                                                     <p class="text-[9px]">Studio</p>
                                                 </div>
-                                                <div onclick="selectBagStyle('lifestyle')" class="bag-style-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-style="lifestyle">
+                                                <div onclick="selectBagStyle('lifestyle')" class="bag-style-card general-style p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-style="lifestyle">
                                                     <div class="w-full h-6 bg-gradient-to-br from-green-200 to-amber-200 rounded mb-1"></div>
                                                     <p class="text-[9px]">Lifestyle</p>
                                                 </div>
-                                                <div onclick="selectBagStyle('luxury')" class="bag-style-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-style="luxury">
+                                                <div onclick="selectBagStyle('luxury')" class="bag-style-card general-style p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-style="luxury">
                                                     <div class="w-full h-6 bg-gradient-to-br from-slate-900 to-slate-700 rounded mb-1"></div>
                                                     <p class="text-[9px]">Luxury</p>
                                                 </div>
-                                                <div onclick="selectBagStyle('editorial')" class="bag-style-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-style="editorial">
+                                                <div onclick="selectBagStyle('editorial')" class="bag-style-card general-style p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-style="editorial">
                                                     <div class="w-full h-6 bg-gradient-to-br from-rose-300 to-purple-400 rounded mb-1"></div>
                                                     <p class="text-[9px]">Editorial</p>
+                                                </div>
+                                            </div>
+                                            <!-- Etsy Stiller -->
+                                            <div class="grid grid-cols-5 gap-1.5 hidden" id="etsyStyleContainer">
+                                                <div onclick="selectBagStyle('etsy_handmade')" class="bag-style-card etsy-style p-2 rounded-lg border border-orange-500/30 text-center cursor-pointer" data-style="etsy_handmade">
+                                                    <div class="w-full h-6 bg-gradient-to-br from-amber-100 to-orange-200 rounded mb-1"></div>
+                                                    <p class="text-[9px]">Handmade</p>
+                                                </div>
+                                                <div onclick="selectBagStyle('etsy_rustic')" class="bag-style-card etsy-style p-2 rounded-lg border border-orange-500/30 text-center cursor-pointer" data-style="etsy_rustic">
+                                                    <div class="w-full h-6 bg-gradient-to-br from-yellow-100 to-amber-300 rounded mb-1"></div>
+                                                    <p class="text-[9px]">Rustic</p>
+                                                </div>
+                                                <div onclick="selectBagStyle('etsy_minimal')" class="bag-style-card etsy-style p-2 rounded-lg border border-orange-500/30 text-center cursor-pointer" data-style="etsy_minimal">
+                                                    <div class="w-full h-6 bg-gradient-to-b from-gray-50 to-gray-100 rounded mb-1"></div>
+                                                    <p class="text-[9px]">Minimal</p>
+                                                </div>
+                                                <div onclick="selectBagStyle('etsy_lifestyle')" class="bag-style-card etsy-style p-2 rounded-lg border border-orange-500/30 text-center cursor-pointer" data-style="etsy_lifestyle">
+                                                    <div class="w-full h-6 bg-gradient-to-br from-rose-100 to-amber-100 rounded mb-1"></div>
+                                                    <p class="text-[9px]">Lifestyle</p>
+                                                </div>
+                                                <div onclick="selectBagStyle('etsy_flatlay')" class="bag-style-card etsy-style p-2 rounded-lg border border-orange-500/30 text-center cursor-pointer" data-style="etsy_flatlay">
+                                                    <div class="w-full h-6 bg-gradient-to-br from-stone-100 to-stone-200 rounded mb-1"></div>
+                                                    <p class="text-[9px]">Flat Lay</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -864,6 +934,19 @@
                         <div>
                             <!-- SEO Generator Panel -->
                             <div class="glass rounded-2xl p-4 md:p-5 border border-emerald-500/30 2xl:h-full">
+
+                        <!-- Platform Toggle -->
+                        <div class="flex gap-1 bg-slate-800/50 p-1 rounded-lg mb-4">
+                            <button onclick="selectSeoPlatform('trendyol')" class="seo-platform-btn active flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-2" data-seo-platform="trendyol">
+                                <i class="fa-solid fa-store"></i> Trendyol
+                            </button>
+                            <button onclick="selectSeoPlatform('etsy')" class="seo-platform-btn flex-1 py-2 px-3 rounded-md text-xs font-medium text-slate-400 transition-all flex items-center justify-center gap-2" data-seo-platform="etsy">
+                                <i class="fa-brands fa-etsy"></i> Etsy
+                            </button>
+                        </div>
+
+                        <!-- TRENDYOL SEO -->
+                        <div id="trendyolSeoPanel">
                         <h3 class="font-semibold mb-4 flex items-center gap-2">
                             <i class="fa-solid fa-magnifying-glass-chart text-emerald-400"></i>
                             Trendyol SEO Pro
@@ -1033,6 +1116,129 @@
                                 </div>
                             </div>
                         </div>
+                        </div><!-- END trendyolSeoPanel -->
+
+                        <!-- ETSY SEO PANEL -->
+                        <div id="etsySeoPanel" class="hidden">
+                            <h3 class="font-semibold mb-4 flex items-center gap-2">
+                                <i class="fa-brands fa-etsy text-orange-400"></i>
+                                Etsy SEO 2025
+                                <span class="text-[10px] px-2 py-0.5 bg-orange-500/20 text-orange-400 rounded-full ml-auto">13 Tag + Title</span>
+                            </h3>
+
+                            <!-- Etsy Ürün Bilgileri -->
+                            <div class="mb-4 p-4 bg-slate-800/30 rounded-xl border border-orange-500/30">
+                                <h4 class="text-xs font-semibold text-orange-400 mb-3 flex items-center gap-2">
+                                    <i class="fa-solid fa-bag-shopping"></i>
+                                    Ürün Bilgileri
+                                </h4>
+                                <textarea id="etsyProductInfo" rows="3"
+                                          class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-xs resize-none placeholder-slate-500 focus:border-orange-500 outline-none"
+                                          placeholder="Ürün hakkında bilgi verin:&#10;Örnek: El yapımı deri tote çanta, vintage toka, iç cep, laptop sığar"></textarea>
+
+                                <p class="text-[10px] text-slate-500 mt-2 mb-3">
+                                    <i class="fa-solid fa-lightbulb text-orange-400 mr-1"></i>
+                                    2025 Etsy SEO: İlk 3-5 kelime kritik, 13 tag zorunlu, description indeksleniyor
+                                </p>
+
+                                <button onclick="generateEtsySEO()" class="w-full py-2.5 rounded-lg bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-xs font-bold transition-all">
+                                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>
+                                    Etsy SEO Oluştur
+                                </button>
+                            </div>
+
+                            <!-- Etsy SEO Results -->
+                            <div id="etsySeoResults" class="space-y-4">
+                                <div id="etsySeoPlaceholder" class="text-center py-4 text-slate-500">
+                                    <i class="fa-brands fa-etsy text-xl mb-2"></i>
+                                    <p class="text-xs">Görsel yükleyin, Etsy optimized SEO oluşturacak</p>
+                                    <p class="text-[10px] text-slate-600 mt-1">Title + 13 Tag + Description + Attributes</p>
+                                </div>
+
+                                <div id="etsySeoContent" class="hidden space-y-4">
+                                    <!-- Etsy Title -->
+                                    <div class="p-3 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+                                        <label class="text-xs text-orange-400 mb-2 block font-semibold flex justify-between">
+                                            <span><i class="fa-solid fa-heading mr-1"></i>Etsy Title (120-140 karakter önerilir)</span>
+                                            <span id="etsyTitleCount" class="text-orange-300">0/140</span>
+                                        </label>
+                                        <input type="text" id="etsyTitle"
+                                               class="w-full bg-slate-800 border border-orange-500/50 rounded-lg px-3 py-2 text-sm"
+                                               oninput="updateEtsyCharCount('title')" maxlength="155"
+                                               placeholder="Primary keyword + product type + key details">
+                                        <p class="text-[10px] text-slate-500 mt-1">
+                                            <i class="fa-solid fa-mobile-screen mr-1"></i>Mobilde ilk 70 karakter görünür
+                                        </p>
+                                        <button onclick="copyEtsySEO('title')" class="text-[10px] text-orange-400 hover:text-orange-300 mt-1">
+                                            <i class="fa-solid fa-copy mr-1"></i>Kopyala
+                                        </button>
+                                    </div>
+
+                                    <!-- Etsy 13 Tags -->
+                                    <div class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                                        <label class="text-xs text-amber-400 mb-2 block font-semibold">
+                                            <i class="fa-solid fa-tags mr-1"></i>13 Etsy Tags (her biri max 20 karakter)
+                                        </label>
+                                        <div id="etsyTagsContainer" class="flex flex-wrap gap-2 mb-2">
+                                            <!-- Tags will be rendered here -->
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <button onclick="copyEtsySEO('tags')" class="text-[10px] text-amber-400 hover:text-amber-300">
+                                                <i class="fa-solid fa-copy mr-1"></i>Tümünü Kopyala
+                                            </button>
+                                            <span id="etsyTagCount" class="text-[10px] text-slate-500 ml-auto">0/13 tag</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Etsy Attributes -->
+                                    <div class="p-3 bg-slate-800/50 border border-slate-600 rounded-lg">
+                                        <label class="text-xs text-slate-300 mb-2 block font-semibold">
+                                            <i class="fa-solid fa-list-check mr-1"></i>Önerilen Attributes
+                                        </label>
+                                        <div id="etsyAttributesContainer" class="grid grid-cols-2 gap-2 text-[10px]">
+                                            <!-- Attributes will be rendered here -->
+                                        </div>
+                                    </div>
+
+                                    <!-- Etsy Description -->
+                                    <div class="p-3 bg-slate-800/50 border border-slate-600 rounded-lg">
+                                        <label class="text-xs text-slate-300 mb-2 block font-semibold">
+                                            <i class="fa-solid fa-align-left mr-1"></i>SEO-Optimized Description
+                                        </label>
+                                        <textarea id="etsyDescription" rows="5"
+                                                  class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-xs resize-none"
+                                                  placeholder="Etsy description with embedded keywords..."></textarea>
+                                        <p class="text-[10px] text-slate-500 mt-1">
+                                            <i class="fa-solid fa-info-circle mr-1"></i>2022'den beri description kelimeleri de indeksleniyor
+                                        </p>
+                                        <button onclick="copyEtsySEO('description')" class="text-[10px] text-emerald-400 hover:text-emerald-300 mt-1">
+                                            <i class="fa-solid fa-copy mr-1"></i>Kopyala
+                                        </button>
+                                    </div>
+
+                                    <!-- Long-tail Keywords -->
+                                    <div class="p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                                        <label class="text-xs text-purple-400 mb-2 block font-semibold">
+                                            <i class="fa-solid fa-chart-line mr-1"></i>Long-tail Anahtar Kelimeler
+                                        </label>
+                                        <div id="etsyLongTailContainer" class="space-y-1 text-xs">
+                                            <!-- Long-tail keywords will be rendered here -->
+                                        </div>
+                                    </div>
+
+                                    <!-- Regenerate Button -->
+                                    <div class="flex gap-2 pt-2">
+                                        <button onclick="generateEtsySEO()" class="flex-1 py-2 rounded-lg bg-orange-600 hover:bg-orange-500 text-xs font-medium">
+                                            <i class="fa-solid fa-rotate mr-1"></i>Yeniden Oluştur
+                                        </button>
+                                        <button onclick="copyAllEtsySEO()" class="flex-1 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-xs font-medium">
+                                            <i class="fa-solid fa-clipboard mr-1"></i>Tümünü Kopyala
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div><!-- END etsySeoPanel -->
+
                             </div>
                         </div>
                         <!-- END SEO Column -->
@@ -1492,7 +1698,8 @@ Task: ${prompt}`,
                 bagType: 'tote',
                 bagStyle: 'studio',
                 bagModel: 'business',
-                bagPose: 'front'
+                bagPose: 'front',
+                bagPlatform: 'general'  // 'general' veya 'etsy'
             },
             position: {
                 x: 50,      // Yatay pozisyon (%)
@@ -1513,6 +1720,14 @@ Task: ${prompt}`,
                 keywords: [],
                 longTail: [],
                 hashtags: ''
+            },
+            seoPlatform: 'trendyol',  // 'trendyol' veya 'etsy'
+            etsySeo: {
+                title: '',
+                tags: [],
+                attributes: {},
+                description: '',
+                longTailKeywords: []
             }
         };
 
@@ -1614,6 +1829,264 @@ Task: ${prompt}`,
         }
 
         // ========== SEO GENERATOR - ADVANCED ==========
+        // ========== SEO PLATFORM SEÇİMİ ==========
+        function selectSeoPlatform(platform) {
+            state.seoPlatform = platform;
+
+            document.querySelectorAll('.seo-platform-btn').forEach(btn => {
+                btn.classList.remove('active');
+                btn.classList.add('text-slate-400');
+            });
+            document.querySelector(`[data-seo-platform="${platform}"]`)?.classList.add('active');
+            document.querySelector(`[data-seo-platform="${platform}"]`)?.classList.remove('text-slate-400');
+
+            const trendyolPanel = document.getElementById('trendyolSeoPanel');
+            const etsyPanel = document.getElementById('etsySeoPanel');
+
+            if (platform === 'etsy') {
+                trendyolPanel.classList.add('hidden');
+                etsyPanel.classList.remove('hidden');
+                showToast('Etsy SEO modu aktif', 'success');
+            } else {
+                trendyolPanel.classList.remove('hidden');
+                etsyPanel.classList.add('hidden');
+                showToast('Trendyol SEO modu aktif', 'success');
+            }
+        }
+
+        // ========== ETSY SEO GENERATOR ==========
+        async function generateEtsySEO() {
+            const geminiKey = localStorage.getItem('gemini_api_key');
+            if (!geminiKey) {
+                showToast('Gemini API key gerekli', 'error');
+                return;
+            }
+
+            showToast('Etsy SEO oluşturuluyor... AI analizi başlıyor', 'success');
+
+            const productInfo = document.getElementById('etsyProductInfo')?.value?.trim() || '';
+            const productType = state.productType === 'bag' ? 'bag/handbag' : 'jewelry';
+            const bagType = state.productType === 'bag' ? bagTypes[state.settings.bagType] : null;
+
+            // Görsel analizi için base64
+            let imageData = null;
+            if (state.originalBase64) {
+                imageData = state.originalBase64.split(',')[1];
+            }
+
+            const etsySeoPrompt = `You are an Etsy SEO expert for 2025-2026. Analyze this ${productType} product and create optimized listing content.
+
+USER PROVIDED INFO: ${productInfo || 'No additional info provided'}
+
+ETSY SEO 2025-2026 RULES:
+1. TITLE (120-140 chars optimal):
+   - Primary keyword MUST be in first 3-5 words (mobile truncation at 70 chars)
+   - Include: product type, key material, style descriptor
+   - NO keyword stuffing, must be readable
+   - Move "gift for" phrases to tags, NOT title
+
+2. 13 TAGS (each max 20 chars):
+   - Use ALL 13 tag slots
+   - Multi-word phrases only (natural language)
+   - Mix: broad terms + long-tail + synonyms + occasion
+   - Don't repeat category/attributes in tags
+   - Include: what it is, who it's for, style, occasion, material
+
+3. ATTRIBUTES to suggest:
+   - Primary color, secondary color
+   - Material
+   - Occasion
+   - Style
+
+4. DESCRIPTION (SEO optimized):
+   - Keywords in first paragraph
+   - Natural, human-written tone (not AI-generic)
+   - Include dimensions, materials, features
+   - Tell a story about the product
+
+5. LONG-TAIL KEYWORDS:
+   - 5-7 specific buyer search phrases
+   - Based on buyer intent
+
+Return ONLY valid JSON:
+{
+  "title": "Your optimized Etsy title here (120-140 chars)",
+  "tags": ["tag1", "tag2", "tag3", "tag4", "tag5", "tag6", "tag7", "tag8", "tag9", "tag10", "tag11", "tag12", "tag13"],
+  "attributes": {
+    "primaryColor": "color",
+    "secondaryColor": "color or none",
+    "material": "main material",
+    "style": "style descriptor",
+    "occasion": "when to use"
+  },
+  "description": "SEO optimized product description with embedded keywords...",
+  "longTailKeywords": ["specific search phrase 1", "specific search phrase 2", "..."]
+}`;
+
+            try {
+                const requestBody = {
+                    contents: [{
+                        parts: imageData ? [
+                            { text: etsySeoPrompt },
+                            { inlineData: { mimeType: 'image/jpeg', data: imageData } }
+                        ] : [
+                            { text: etsySeoPrompt }
+                        ]
+                    }],
+                    generationConfig: { temperature: 0.7 }
+                };
+
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Gemini API hatası');
+                }
+
+                const data = await response.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+                // JSON'u parse et
+                const jsonMatch = text.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) {
+                    throw new Error('JSON parse edilemedi');
+                }
+
+                const seoData = JSON.parse(jsonMatch[0]);
+
+                // State'e kaydet
+                state.etsySeo = seoData;
+
+                // UI'ı güncelle
+                renderEtsySEO(seoData);
+
+                showToast('Etsy SEO oluşturuldu!', 'success');
+
+            } catch (error) {
+                console.error('Etsy SEO hatası:', error);
+                showToast('Etsy SEO oluşturulamadı: ' + error.message, 'error');
+            }
+        }
+
+        function renderEtsySEO(seoData) {
+            // Hide placeholder, show content
+            document.getElementById('etsySeoPlaceholder').classList.add('hidden');
+            document.getElementById('etsySeoContent').classList.remove('hidden');
+
+            // Title
+            const titleInput = document.getElementById('etsyTitle');
+            titleInput.value = seoData.title || '';
+            updateEtsyCharCount('title');
+
+            // Tags
+            const tagsContainer = document.getElementById('etsyTagsContainer');
+            tagsContainer.innerHTML = '';
+            const tags = seoData.tags || [];
+            tags.forEach((tag, i) => {
+                const tagEl = document.createElement('span');
+                tagEl.className = 'etsy-tag';
+                tagEl.innerHTML = `<span class="mr-1 opacity-50">${i+1}.</span>${tag}`;
+                tagEl.onclick = () => {
+                    navigator.clipboard.writeText(tag);
+                    showToast(`"${tag}" kopyalandı`, 'success');
+                };
+                tagsContainer.appendChild(tagEl);
+            });
+            document.getElementById('etsyTagCount').textContent = `${tags.length}/13 tag`;
+
+            // Attributes
+            const attrsContainer = document.getElementById('etsyAttributesContainer');
+            attrsContainer.innerHTML = '';
+            const attrs = seoData.attributes || {};
+            Object.entries(attrs).forEach(([key, value]) => {
+                if (value && value !== 'none') {
+                    const attrEl = document.createElement('div');
+                    attrEl.className = 'flex justify-between p-2 bg-slate-700/50 rounded';
+                    attrEl.innerHTML = `<span class="text-slate-400">${key}:</span><span class="text-white">${value}</span>`;
+                    attrsContainer.appendChild(attrEl);
+                }
+            });
+
+            // Description
+            document.getElementById('etsyDescription').value = seoData.description || '';
+
+            // Long-tail keywords
+            const longTailContainer = document.getElementById('etsyLongTailContainer');
+            longTailContainer.innerHTML = '';
+            const longTail = seoData.longTailKeywords || [];
+            longTail.forEach(kw => {
+                const kwEl = document.createElement('div');
+                kwEl.className = 'flex items-center justify-between p-2 bg-purple-500/10 rounded cursor-pointer hover:bg-purple-500/20';
+                kwEl.innerHTML = `<span>${kw}</span><i class="fa-solid fa-copy text-purple-400 text-xs"></i>`;
+                kwEl.onclick = () => {
+                    navigator.clipboard.writeText(kw);
+                    showToast(`"${kw}" kopyalandı`, 'success');
+                };
+                longTailContainer.appendChild(kwEl);
+            });
+        }
+
+        function updateEtsyCharCount(field) {
+            if (field === 'title') {
+                const input = document.getElementById('etsyTitle');
+                const count = input.value.length;
+                const countEl = document.getElementById('etsyTitleCount');
+                countEl.textContent = `${count}/140`;
+                if (count > 140) {
+                    countEl.className = 'text-red-400';
+                } else if (count >= 120) {
+                    countEl.className = 'text-green-400';
+                } else {
+                    countEl.className = 'text-orange-300';
+                }
+            }
+        }
+
+        function copyEtsySEO(field) {
+            let text = '';
+            switch(field) {
+                case 'title':
+                    text = document.getElementById('etsyTitle').value;
+                    break;
+                case 'tags':
+                    text = (state.etsySeo?.tags || []).join(', ');
+                    break;
+                case 'description':
+                    text = document.getElementById('etsyDescription').value;
+                    break;
+            }
+            navigator.clipboard.writeText(text);
+            showToast(`${field} kopyalandı`, 'success');
+        }
+
+        function copyAllEtsySEO() {
+            const seo = state.etsySeo || {};
+            const text = `ETSY LISTING SEO
+================
+
+TITLE:
+${seo.title || ''}
+
+TAGS (13):
+${(seo.tags || []).map((t, i) => `${i+1}. ${t}`).join('\n')}
+
+ATTRIBUTES:
+${Object.entries(seo.attributes || {}).map(([k, v]) => `${k}: ${v}`).join('\n')}
+
+DESCRIPTION:
+${seo.description || ''}
+
+LONG-TAIL KEYWORDS:
+${(seo.longTailKeywords || []).join('\n')}
+`;
+            navigator.clipboard.writeText(text);
+            showToast('Tüm Etsy SEO kopyalandı', 'success');
+        }
+
+        // ========== TRENDYOL SEO GENERATOR ==========
         async function generateSEO() {
             const geminiKey = localStorage.getItem('gemini_api_key');
             if (!geminiKey) {
@@ -2512,25 +2985,61 @@ ${seo.hashtags || ''}
 
         // ========== ÇANTA STİLLERİ ==========
         const bagStyles = {
+            // ========== GENEL STİLLER ==========
             'studio': {
                 name: "Studio",
                 prompt: "Style: Professional e-commerce studio photography. Pure white or light grey seamless background. Even, soft lighting with no harsh shadows. Clean, commercial look. Focus on product details.",
-                bg: "#f5f5f5"
+                bg: "#f5f5f5",
+                platform: "general"
             },
             'lifestyle': {
                 name: "Lifestyle",
                 prompt: "Style: Lifestyle photography with model. Natural setting - urban street, cafe, park, or home interior. Golden hour or natural daylight. Authentic, relatable, Instagram-worthy aesthetic.",
-                bg: "#e8f5e9"
+                bg: "#e8f5e9",
+                platform: "general"
             },
             'luxury': {
                 name: "Luxury",
                 prompt: "Style: High-end luxury aesthetic. Marble surface, velvet backdrop, or reflective glass. Dramatic lighting with elegant shadows. Premium brand feel - Gucci, Chanel, Louis Vuitton aesthetic.",
-                bg: "#1a1a1a"
+                bg: "#1a1a1a",
+                platform: "general"
             },
             'editorial': {
                 name: "Editorial",
                 prompt: "Style: High-fashion editorial photography. Dramatic, artistic lighting. Bold composition. Vogue, Harper's Bazaar magazine aesthetic. Creative angles and artistic expression.",
-                bg: "#f3e5f5"
+                bg: "#f3e5f5",
+                platform: "general"
+            },
+            // ========== ETSY ÖZEL STİLLER ==========
+            'etsy_handmade': {
+                name: "Etsy Handmade",
+                prompt: "Style: Authentic handmade artisan aesthetic for Etsy marketplace. Warm natural lighting from window. Rustic wooden table or natural linen fabric background. Soft earth tones - beige, cream, warm brown. Natural props like dried flowers, kraft paper, twine. Cozy, authentic, handcrafted feel. NO harsh studio lighting. Warm color temperature. Visible craftsmanship details.",
+                bg: "#f5f0e6",
+                platform: "etsy"
+            },
+            'etsy_rustic': {
+                name: "Etsy Rustic",
+                prompt: "Style: Rustic farmhouse aesthetic for Etsy. Reclaimed wood background or weathered wooden surface. Natural daylight with soft shadows. Vintage feel with warm undertones. Props: burlap, dried lavender, antique items. Cottagecore / farmhouse aesthetic. Authentic, not overly polished. Handmade marketplace feel.",
+                bg: "#e8e0d5",
+                platform: "etsy"
+            },
+            'etsy_minimal': {
+                name: "Etsy Minimal",
+                prompt: "Style: Clean minimal Etsy aesthetic. Soft neutral background - off-white, light beige, or pale grey. Natural soft lighting, no harsh shadows. Simple composition with generous negative space. Single natural prop if any (one plant, one stone). Scandinavian simplicity. Modern handmade feel. Clean and calming.",
+                bg: "#fafafa",
+                platform: "etsy"
+            },
+            'etsy_lifestyle': {
+                name: "Etsy Lifestyle",
+                prompt: "Style: Authentic Etsy lifestyle shot. Real-world usage scenario. Natural home environment or outdoor setting. Warm, inviting atmosphere. Golden hour or soft window light. Model using the bag naturally - not posed artificially. Relatable, aspirational but achievable. Shows scale and practical use.",
+                bg: "#fff8f0",
+                platform: "etsy"
+            },
+            'etsy_flatlay': {
+                name: "Etsy Flat Lay",
+                prompt: "Style: Curated Etsy flat lay photography. Top-down view on textured surface (marble, wood, linen). Thoughtfully arranged complementary items around the bag - notebook, coffee cup, sunglasses, keys. Tells a story about the buyer lifestyle. Natural lighting. Cohesive color palette. Pinterest-worthy composition.",
+                bg: "#f8f5f2",
+                platform: "etsy"
             }
         };
 
@@ -3232,6 +3741,36 @@ Return ONLY this JSON:
 
             const poseName = bagPoses[pose]?.name || pose;
             showToast(`${poseName} pozu seçildi`, 'success');
+        }
+
+        function selectBagPlatform(platform) {
+            state.settings.bagPlatform = platform;
+
+            // Toggle platform buttons
+            document.querySelectorAll('.bag-platform-btn').forEach(btn => {
+                btn.classList.remove('active');
+                btn.classList.add('text-slate-400');
+            });
+            document.querySelector(`[data-platform="${platform}"]`)?.classList.add('active');
+            document.querySelector(`[data-platform="${platform}"]`)?.classList.remove('text-slate-400');
+
+            // Show/hide style containers
+            const generalStyles = document.getElementById('bagStyleContainer');
+            const etsyStyles = document.getElementById('etsyStyleContainer');
+
+            if (platform === 'etsy') {
+                generalStyles.classList.add('hidden');
+                etsyStyles.classList.remove('hidden');
+                // Auto-select first Etsy style
+                selectBagStyle('etsy_handmade');
+                showToast('Etsy modu aktif - El yapımı estetik', 'success');
+            } else {
+                generalStyles.classList.remove('hidden');
+                etsyStyles.classList.add('hidden');
+                // Auto-select first general style
+                selectBagStyle('studio');
+                showToast('Genel mod aktif', 'success');
+            }
         }
 
         // ========== AKILLI PROMPT SİSTEMİ ==========
@@ -4176,58 +4715,77 @@ Return ONLY the JSON, no other text.`;
 
             // Model ile mi yoksa ürün çekimi mi?
             const needsModel = bagPose.forModel;
+            const isEtsyStyle = bagStyle.platform === 'etsy';
+
+            // ANTI-HALLUCINATION: Güçlendirilmiş koruma talimatları
+            const antiHallucinationRules = `
+⚠️ ABSOLUTE RULES - ZERO TOLERANCE FOR CHANGES:
+1. DO NOT CHANGE THE BAG IN ANY WAY
+2. DO NOT add logos, text, patterns, or decorations that don't exist
+3. DO NOT change the color - keep EXACT original color
+4. DO NOT modify hardware (zippers, buckles, clasps) - keep original
+5. DO NOT alter stitching, seams, or texture patterns
+6. DO NOT add or remove pockets, straps, or handles
+7. DO NOT change proportions, shape, or size ratios
+8. The bag in the INPUT is SACRED - preserve it PIXEL-PERFECT
+
+This is IMAGE EDITING of an EXISTING product photo.
+The bag MUST remain 100% identical to the input.
+You are ONLY allowed to:
+- Change/add the background
+- Add a model holding/wearing the bag (if requested)
+- Adjust lighting on the scene (not the bag itself)`;
 
             let imageGenPrompt;
             if (needsModel) {
                 // Model ile çekim
-                imageGenPrompt = `Professional ${bagType.name} product photography with fashion model.
+                imageGenPrompt = `TASK: Place this EXACT bag on a fashion model.
 
-MODEL: ${bagModel.desc}
-OUTFIT: ${bagModel.outfit}
+${antiHallucinationRules}
 
-BAG DETAILS:
+MODEL REQUIREMENTS:
+${bagModel.desc}
+Outfit: ${bagModel.outfit}
+
+BAG INFO (for context only - DO NOT MODIFY):
 - Type: ${bagType.name}
 - Material: ${bagAnalysis.material}
 - Color: ${bagAnalysis.color}
 - Hardware: ${bagAnalysis.hardware}
-- Size: ${bagAnalysis.size}
 
 POSE: ${bagPose.prompt}
 
 ${bagStyle.prompt}
 
-CRITICAL REQUIREMENTS:
-1. The bag in the output must be IDENTICAL to the input image
-2. Same design, same color, same hardware, same proportions
-3. Do NOT modify the bag - preserve every detail
-4. This is IMAGE EDITING - the bag is the source of truth
-5. Only add the model and environment around the UNCHANGED bag
+${isEtsyStyle ? 'ETSY AESTHETIC: Authentic, handmade feel. Warm natural lighting. NOT overly polished or commercial. Real, relatable, artisan marketplace vibe.' : ''}
 
-High-end e-commerce photography, professional lighting, sharp focus on the bag.`;
+OUTPUT: Professional product photography where the bag is the UNCHANGED hero product.`;
             } else {
                 // Ürün çekimi (model yok)
-                imageGenPrompt = `Professional ${bagType.name} product photography - NO MODEL.
+                imageGenPrompt = `TASK: Create product photography of this EXACT bag - NO MODEL.
 
-BAG DETAILS:
+${antiHallucinationRules}
+
+BAG INFO (for context only - DO NOT MODIFY):
 - Type: ${bagType.name}
 - Material: ${bagAnalysis.material}
 - Color: ${bagAnalysis.color}
 - Hardware: ${bagAnalysis.hardware}
-- Size: ${bagAnalysis.size}
 - Features: ${bagAnalysis.features?.join(', ') || 'standard'}
 
-ANGLE/POSE: ${bagPose.prompt}
+ANGLE: ${bagPose.prompt}
 
 ${bagStyle.prompt}
 
-CRITICAL REQUIREMENTS:
-1. The bag in the output must be IDENTICAL to the input image
-2. Same design, same color, same hardware, same proportions
-3. Do NOT modify the bag - preserve every detail
-4. This is IMAGE EDITING - the bag is the source of truth
-5. Product photography - show the bag beautifully
+${isEtsyStyle ? `ETSY AESTHETIC REQUIREMENTS:
+- Warm, natural lighting (like from a window)
+- Authentic handmade marketplace feel
+- Natural textures in background (wood, linen, kraft paper)
+- NOT harsh studio lighting
+- Cozy, artisan, authentic vibe
+- Props should feel organic (dried flowers, twine, vintage items)` : ''}
 
-Professional e-commerce photography, clean composition, perfect lighting.`;
+OUTPUT: Beautiful product shot where the bag is UNCHANGED, only the environment is new.`;
             }
 
             let finalImage;
