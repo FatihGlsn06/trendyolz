@@ -109,6 +109,20 @@
         .etsy-tag:hover {
             background: rgba(251, 146, 60, 0.25);
         }
+        .jewelry-platform-btn.active {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+        }
+        .jewelry-platform-btn[data-jplatform="etsy"].active {
+            background: linear-gradient(135deg, #f97316, #ea580c);
+        }
+        .etsy-jstyle {
+            border-color: rgba(249, 115, 22, 0.3) !important;
+        }
+        .etsy-jstyle.selected {
+            border-color: #f97316 !important;
+            background: rgba(249, 115, 22, 0.15);
+        }
         .style-card { transition: all 0.2s ease; cursor: pointer; }
         .style-card:hover { transform: scale(1.02); }
         .style-card.selected, .pose-card.selected {
@@ -319,6 +333,7 @@
                                             <button onclick="selectJewelryCategory('minimal')" class="jewelry-cat-btn flex-1 py-1.5 px-2 rounded-md text-[10px] font-medium text-slate-400 transition-all" data-cat="minimal">Minimal</button>
                                             <button onclick="selectJewelryCategory('statement')" class="jewelry-cat-btn flex-1 py-1.5 px-2 rounded-md text-[10px] font-medium text-slate-400 transition-all" data-cat="statement">Statement</button>
                                             <button onclick="selectJewelryCategory('pearl')" class="jewelry-cat-btn flex-1 py-1.5 px-2 rounded-md text-[10px] font-medium text-slate-400 transition-all" data-cat="pearl">İnci</button>
+                                            <button onclick="selectJewelryCategory('natural')" class="jewelry-cat-btn flex-1 py-1.5 px-2 rounded-md text-[10px] font-medium text-slate-400 transition-all" data-cat="natural">Doğaltaş</button>
                                         </div>
                                     </div>
 
@@ -369,25 +384,79 @@
                                                 <i class="fa-solid fa-circle text-slate-300 text-sm mb-1"></i>
                                                 <p class="text-[9px]">İnci Küpe</p>
                                             </div>
+                                            <!-- Doğaltaş -->
+                                            <div onclick="selectModelProfile('natural_neck')" class="model-card hidden p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-model="natural_neck" data-category="natural">
+                                                <i class="fa-solid fa-leaf text-emerald-400 text-sm mb-1"></i>
+                                                <p class="text-[9px]">Kolye</p>
+                                            </div>
+                                            <div onclick="selectModelProfile('natural_bracelet')" class="model-card hidden p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-model="natural_bracelet" data-category="natural">
+                                                <i class="fa-solid fa-hand text-emerald-400 text-sm mb-1"></i>
+                                                <p class="text-[9px]">Bileklik</p>
+                                            </div>
+                                            <div onclick="selectModelProfile('natural_earring')" class="model-card hidden p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-model="natural_earring" data-category="natural">
+                                                <i class="fa-solid fa-ear-listen text-emerald-400 text-sm mb-1"></i>
+                                                <p class="text-[9px]">Küpe</p>
+                                            </div>
+                                            <div onclick="selectModelProfile('natural_set')" class="model-card hidden p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-model="natural_set" data-category="natural">
+                                                <i class="fa-solid fa-layer-group text-emerald-400 text-sm mb-1"></i>
+                                                <p class="text-[9px]">Set</p>
+                                            </div>
                                         </div>
                                         <p id="categoryDesc" class="text-[9px] text-slate-500 mt-1">Standart takı çekimleri için genel modeller</p>
+                                    </div>
+
+                                    <!-- Platform Seçici (Takı) -->
+                                    <div>
+                                        <label class="text-[10px] text-slate-400 mb-2 block">Platform</label>
+                                        <div class="flex gap-1 bg-slate-800/50 p-1 rounded-lg">
+                                            <button onclick="selectJewelryPlatform('general')" class="jewelry-platform-btn active flex-1 py-1.5 px-2 rounded-md text-[10px] font-medium transition-all" data-jplatform="general">
+                                                <i class="fa-solid fa-globe mr-1"></i>Genel
+                                            </button>
+                                            <button onclick="selectJewelryPlatform('etsy')" class="jewelry-platform-btn flex-1 py-1.5 px-2 rounded-md text-[10px] font-medium text-slate-400 transition-all" data-jplatform="etsy">
+                                                <i class="fa-brands fa-etsy mr-1"></i>Etsy
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <!-- Stil Presetleri -->
                                     <div>
                                         <label class="text-[10px] text-slate-400 mb-2 block">Çekim Stili</label>
-                                        <div class="grid grid-cols-3 gap-1.5" id="stylePresets">
-                                            <div onclick="selectStyle('studio')" class="style-card selected p-2 rounded-lg border border-slate-700 text-center" data-style="studio">
+                                        <!-- Genel Stiller -->
+                                        <div class="grid grid-cols-3 gap-1.5" id="jewelryStyleContainer">
+                                            <div onclick="selectStyle('studio')" class="style-card general-jstyle selected p-2 rounded-lg border border-slate-700 text-center" data-style="studio">
                                                 <div class="w-full h-6 bg-gradient-to-b from-gray-100 to-gray-200 rounded mb-1"></div>
                                                 <p class="text-[9px]">Studio</p>
                                             </div>
-                                            <div onclick="selectStyle('boho')" class="style-card p-2 rounded-lg border border-slate-700 text-center" data-style="boho">
+                                            <div onclick="selectStyle('boho')" class="style-card general-jstyle p-2 rounded-lg border border-slate-700 text-center" data-style="boho">
                                                 <div class="w-full h-6 bg-gradient-to-br from-amber-100 to-orange-200 rounded mb-1"></div>
                                                 <p class="text-[9px]">Boho</p>
                                             </div>
-                                            <div onclick="selectStyle('luxury')" class="style-card p-2 rounded-lg border border-slate-700 text-center" data-style="luxury">
+                                            <div onclick="selectStyle('luxury')" class="style-card general-jstyle p-2 rounded-lg border border-slate-700 text-center" data-style="luxury">
                                                 <div class="w-full h-6 bg-gradient-to-br from-slate-900 to-slate-700 rounded mb-1"></div>
                                                 <p class="text-[9px]">Luxury</p>
+                                            </div>
+                                        </div>
+                                        <!-- Etsy Stiller -->
+                                        <div class="grid grid-cols-5 gap-1.5 hidden" id="etsyJewelryStyleContainer">
+                                            <div onclick="selectStyle('etsy_natural')" class="style-card etsy-jstyle p-2 rounded-lg border border-orange-500/30 text-center cursor-pointer" data-style="etsy_natural">
+                                                <div class="w-full h-6 bg-gradient-to-br from-amber-50 to-orange-100 rounded mb-1"></div>
+                                                <p class="text-[9px]">Natural</p>
+                                            </div>
+                                            <div onclick="selectStyle('etsy_minimal')" class="style-card etsy-jstyle p-2 rounded-lg border border-orange-500/30 text-center cursor-pointer" data-style="etsy_minimal">
+                                                <div class="w-full h-6 bg-gradient-to-b from-gray-50 to-gray-100 rounded mb-1"></div>
+                                                <p class="text-[9px]">Minimal</p>
+                                            </div>
+                                            <div onclick="selectStyle('etsy_warm')" class="style-card etsy-jstyle p-2 rounded-lg border border-orange-500/30 text-center cursor-pointer" data-style="etsy_warm">
+                                                <div class="w-full h-6 bg-gradient-to-br from-orange-100 to-amber-200 rounded mb-1"></div>
+                                                <p class="text-[9px]">Warm</p>
+                                            </div>
+                                            <div onclick="selectStyle('etsy_stone')" class="style-card etsy-jstyle p-2 rounded-lg border border-orange-500/30 text-center cursor-pointer" data-style="etsy_stone">
+                                                <div class="w-full h-6 bg-gradient-to-br from-stone-100 to-stone-200 rounded mb-1"></div>
+                                                <p class="text-[9px]">Stone</p>
+                                            </div>
+                                            <div onclick="selectStyle('etsy_lifestyle')" class="style-card etsy-jstyle p-2 rounded-lg border border-orange-500/30 text-center cursor-pointer" data-style="etsy_lifestyle">
+                                                <div class="w-full h-6 bg-gradient-to-br from-rose-50 to-amber-50 rounded mb-1"></div>
+                                                <p class="text-[9px]">Lifestyle</p>
                                             </div>
                                         </div>
                                     </div>
@@ -1694,6 +1763,7 @@ Task: ${prompt}`,
                 outfit: 'black_vneck',
                 scene: 'studio_clean',
                 autoOutfit: false,
+                jewelryPlatform: 'general',  // 'general' veya 'etsy'
                 // Çanta ayarları
                 bagType: 'tote',
                 bagStyle: 'studio',
@@ -2812,22 +2882,89 @@ ${seo.hashtags || ''}
                 category: "pearl",
                 icon: "fa-circle",
                 color: "slate"
+            },
+            // ========== DOĞALTAŞ TAKİ MODELLERİ ==========
+            'natural_neck': {
+                desc: "NATURAL STONE NECKLACE: Soft diffused lighting from 45-degree angle to reveal stone textures, colors, and natural variations. Light should NOT create harsh reflections on polished stones. Show the authentic beauty of each bead - color gradients, inclusions, natural patterns. Warm skin tone that complements earth tones. Each stone must be individually visible and distinct. Real handmade artisan feel.",
+                info: "Doğaltaş Kolye: Taş dokularını ve renk geçişlerini gösterir.",
+                category: "natural",
+                icon: "fa-leaf",
+                color: "emerald"
+            },
+            'natural_bracelet': {
+                desc: "NATURAL STONE BRACELET: Hand/wrist photography optimized for beaded bracelets. Soft, even lighting to show each stone's unique character. Capture the texture differences between matte and polished stones. Wrist positioned to display full bracelet without distortion. Each bead clearly visible with its natural color and pattern. Authentic handcrafted aesthetic.",
+                info: "Doğaltaş Bileklik: Boncuk detayları ve taş dokuları.",
+                category: "natural",
+                icon: "fa-hand",
+                color: "emerald"
+            },
+            'natural_earring': {
+                desc: "NATURAL STONE EARRINGS: Soft diffused lighting to highlight stone colors and translucency. Position light to reveal any chatoyancy or special optical effects in stones. Show natural inclusions as features, not flaws. Hair completely away from ears. Neutral background that doesn't compete with stone colors. Capture the handmade, artisan quality.",
+                info: "Doğaltaş Küpe: Taş rengi ve ışık geçirgenliği odaklı.",
+                category: "natural",
+                icon: "fa-ear-listen",
+                color: "emerald"
+            },
+            'natural_set': {
+                desc: "NATURAL STONE JEWELRY SET: Display coordinated natural stone pieces together. Soft, even lighting that shows color consistency across pieces. Each stone in each piece must be clearly visible. Show how pieces complement each other. Natural, artisan aesthetic. Warm, authentic feel suitable for handmade marketplace.",
+                info: "Doğaltaş Set: Kolye + bileklik veya küpe birlikte.",
+                category: "natural",
+                icon: "fa-layer-group",
+                color: "emerald"
             }
         };
 
-        // ========== STYLE PRESETS ==========
+        // ========== STYLE PRESETS - TAKİ STİLLERİ ==========
         const stylePresets = {
+            // ========== GENEL E-TİCARET STİLLERİ ==========
             'studio': {
-                prompt: "Style: Commercial Studio Photography. Pure white or light grey background. Even lighting, no hard shadows. Clean, minimalist, high-end e-commerce look. Pandora/Tiffany aesthetic.",
-                bg: "#f5f5f5"
+                name: "Studio",
+                prompt: "Style: Professional e-commerce studio photography. Pure white or light grey seamless background. Soft diffused lighting from 45-degree angles. No harsh shadows. Clean, minimalist look. Even illumination across the jewelry. Commercial quality.",
+                bg: "#f5f5f5",
+                platform: "general"
             },
             'boho': {
-                prompt: "Style: Bohemian Aesthetic. Warm earth tones, beige/sand colors. Natural organic textures (stone, wood, linen) in background. Soft sun flare. Lifestyle photography feel.",
-                bg: "#f5e6d3"
+                name: "Boho",
+                prompt: "Style: Bohemian lifestyle aesthetic. Warm earth tones - beige, sand, terracotta. Natural textures in soft background blur (linen, raw wood, stone). Warm golden hour lighting feel. Organic, natural vibe.",
+                bg: "#f5e6d3",
+                platform: "general"
             },
             'luxury': {
-                prompt: "Style: Luxury Dark Mode. Black or deep navy background. Marble or velvet textures. Spot lighting to create dramatic highlights. Premium, expensive look. Cartier/Bulgari aesthetic.",
-                bg: "#1a1a1a"
+                name: "Luxury",
+                prompt: "Style: High-end luxury aesthetic. Deep black or navy velvet background. Dramatic spot lighting creating elegant highlights on metal and stones. Premium brand feel. Cartier/Bulgari aesthetic. Rich, expensive look.",
+                bg: "#1a1a1a",
+                platform: "general"
+            },
+            // ========== ETSY ÖZEL STİLLER - DOĞALTAŞ TAKİ ==========
+            'etsy_natural': {
+                name: "Etsy Natural",
+                prompt: "Style: Authentic handmade jewelry aesthetic for Etsy. Soft diffused natural light (like north-facing window). Warm cream or natural linen background. Subtle wood grain or raw stone texture visible. Cozy, artisan feel. NOT harsh studio lighting. Shows the natural beauty and texture of stones. Handcrafted marketplace vibe.",
+                bg: "#f8f5f0",
+                platform: "etsy"
+            },
+            'etsy_minimal': {
+                name: "Etsy Minimal",
+                prompt: "Style: Clean minimal Etsy aesthetic. Soft off-white or pale grey background. Very soft, diffused lighting with gentle shadows. Maximum negative space around jewelry. Simple, Scandinavian feel. Focus entirely on the jewelry piece. No distractions.",
+                bg: "#fafaf8",
+                platform: "etsy"
+            },
+            'etsy_warm': {
+                name: "Etsy Warm",
+                prompt: "Style: Warm artisan Etsy aesthetic. Golden hour warmth. Natural wood surface or kraft paper background. Warm color temperature. Soft shadows. Dried botanicals or natural elements in very soft background blur. Inviting, handmade feel. Authentic craftsmanship vibe.",
+                bg: "#fff8f0",
+                platform: "etsy"
+            },
+            'etsy_stone': {
+                name: "Etsy Stone",
+                prompt: "Style: Natural stone photography for gemstone jewelry. Neutral grey or cream marble/stone surface. Soft diffused lighting to show stone colors accurately. Light positioned to reveal stone texture and translucency. Natural, earthy aesthetic. Focus on the authentic beauty of natural stones.",
+                bg: "#f0eeec",
+                platform: "etsy"
+            },
+            'etsy_lifestyle': {
+                name: "Etsy Lifestyle",
+                prompt: "Style: Lifestyle jewelry shot for Etsy. Jewelry worn naturally on model (neck, hand, ear). Warm natural lighting. Soft, approachable setting. Shows scale and how jewelry looks when worn. Relatable, aspirational. Real person feel, not overly posed or commercial.",
+                bg: "#fff5ee",
+                platform: "etsy"
             }
         };
 
@@ -3319,7 +3456,8 @@ ${seo.hashtags || ''}
             general: "Standart takı çekimleri için genel modeller",
             minimal: "İnce zincir, küçük pendant, minimalist parçalar için optimize edilmiş",
             statement: "Büyük, gösterişli, dikkat çekici takılar için geniş kadraj",
-            pearl: "İnci parlaklığı ve yansıması için özel yumuşak aydınlatma"
+            pearl: "İnci parlaklığı ve yansıması için özel yumuşak aydınlatma",
+            natural: "Doğaltaş ve boncuklu takılar için taş dokusu ve renk odaklı"
         };
 
         function selectJewelryCategory(category) {
@@ -3609,7 +3747,38 @@ Return ONLY this JSON:
             document.querySelectorAll('.style-card').forEach(c => c.classList.remove('selected'));
             document.querySelector(`[data-style="${style}"]`)?.classList.add('selected');
 
-            showToast(`${style.charAt(0).toUpperCase() + style.slice(1)} stili seçildi`, 'success');
+            const styleName = stylePresets[style]?.name || style;
+            showToast(`${styleName} stili seçildi`, 'success');
+        }
+
+        function selectJewelryPlatform(platform) {
+            state.settings.jewelryPlatform = platform;
+
+            // Toggle platform buttons
+            document.querySelectorAll('.jewelry-platform-btn').forEach(btn => {
+                btn.classList.remove('active');
+                btn.classList.add('text-slate-400');
+            });
+            document.querySelector(`[data-jplatform="${platform}"]`)?.classList.add('active');
+            document.querySelector(`[data-jplatform="${platform}"]`)?.classList.remove('text-slate-400');
+
+            // Show/hide style containers
+            const generalStyles = document.getElementById('jewelryStyleContainer');
+            const etsyStyles = document.getElementById('etsyJewelryStyleContainer');
+
+            if (platform === 'etsy') {
+                generalStyles.classList.add('hidden');
+                etsyStyles.classList.remove('hidden');
+                // Auto-select first Etsy style
+                selectStyle('etsy_natural');
+                showToast('Etsy modu aktif - Doğaltaş estetik', 'success');
+            } else {
+                generalStyles.classList.remove('hidden');
+                etsyStyles.classList.add('hidden');
+                // Auto-select first general style
+                selectStyle('studio');
+                showToast('Genel mod aktif', 'success');
+            }
         }
 
         // ========== POSE SELECTION ==========
@@ -4967,31 +5136,64 @@ Return ONLY the JSON, no other text.`;
             };
             const frameSetting = frameSettings[jewelryAnalysis.length] || frameSettings.medium;
 
-            showLoader('GPT-4o Modu...', '3/3 Model + takı oluşturuluyor');
-            console.log('🎨 GPT-4o ile takı modele yerleştiriliyor...');
+            showLoader('Görsel Üretiliyor...', '3/3 Model + takı oluşturuluyor');
+            console.log('🎨 Takı modele yerleştiriliyor...');
 
-            // GPT-4o Native Image Generation - Takıyı girdi olarak al, model üzerinde göster
-            const imageGenPrompt = `Generate a professional e-commerce jewelry product photo.
+            // Etsy mi genel mi?
+            const isEtsyJewelryStyle = style.platform === 'etsy';
 
-IMPORTANT: Use the EXACT jewelry from the provided image. Do not modify, redesign, or reimagine it.
-Place this EXACT jewelry on a model.
+            // ANTI-HALLUCINATION: Doğaltaş takı için güçlendirilmiş koruma
+            const jewelryAntiHallucination = `
+⚠️ ABSOLUTE RULES - ZERO TOLERANCE FOR CHANGES TO THE JEWELRY:
 
-MODEL:
-- ${profile.desc}
-- ${style.prompt}
-- Professional studio lighting
+1. BEAD COUNT: Do NOT add or remove ANY beads/stones. Count them - keep EXACT same number.
+2. STONE COLORS: Each stone's color must remain EXACTLY as in the input. No color shifts.
+3. STONE ARRANGEMENT: The pattern/sequence of stones must be IDENTICAL.
+4. STONE SIZES: Each individual stone size must be preserved. No scaling.
+5. METAL/WIRE: Any metal components, clasps, or wire work must remain unchanged.
+6. SPACING: The spacing between beads/stones must be preserved.
+7. TEXTURE: Stone textures (matte, polished, raw) must be maintained.
+8. SHAPE: Overall shape and drape of the jewelry must be identical.
+
+This is IMAGE EDITING of an EXISTING product photo.
+The jewelry is SACRED - it MUST remain 100% identical to the input.
+You are ONLY allowed to:
+- Add a model wearing/displaying the jewelry
+- Change the background/environment
+- Adjust scene lighting (but preserve jewelry colors)`;
+
+            // Görsel üretim prompt'u
+            const imageGenPrompt = `TASK: Place this EXACT jewelry on a model for e-commerce photography.
+
+${jewelryAntiHallucination}
+
+MODEL REQUIREMENTS:
+${profile.desc}
+
+${style.prompt}
+
+${isEtsyJewelryStyle ? `ETSY NATURAL STONE AESTHETIC:
+- Soft, diffused natural lighting (like north-facing window)
+- Warm, authentic handmade feel
+- NOT harsh commercial studio lighting
+- Show the natural beauty of stones - their texture, color variations, inclusions
+- Artisan marketplace vibe - real, not overly polished` : 'Professional e-commerce studio lighting.'}
 
 OUTFIT:
 - ${frameSetting.neckline} neckline
-- Dark solid color (black or charcoal)
+- ${isEtsyJewelryStyle ? 'Natural, neutral tones (cream, beige, soft grey)' : 'Dark solid color (black or charcoal)'}
 ${outfitSceneInstructions}
 
 POSE:
 - ${pose?.prompt || 'Front facing, clear view of jewelry'}
 - ${frameSetting.frame}
 
-CRITICAL: The jewelry in the output must be IDENTICAL to the input image - same design, same colors, same proportions.
-Professional e-commerce photography style with clean background.`;
+JEWELRY INFO (for context - DO NOT MODIFY):
+- Type: ${jewelryAnalysis.type}
+- Length: ${jewelryAnalysis.length}
+- Has pendant: ${jewelryAnalysis.hasLargePendant}
+
+OUTPUT: Professional product photo where the jewelry is UNCHANGED, IDENTICAL to input.`;
 
             // Seçilen modele göre görsel oluştur
             let finalImage;
