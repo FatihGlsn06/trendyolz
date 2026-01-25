@@ -2811,8 +2811,8 @@ ${seo.hashtags || ''}
         const modelProfiles = {
             // ========== GENEL MODELLER ==========
             'neck_model': {
-                desc: "Jewelry Photography: Headless cropped shot of a female model focusing on the neck. Beautiful smooth skin with natural healthy glow. Even skin tone, well-moisturized appearance. NOT overly airbrushed but clean and attractive. Hands completely away from the necklace/neck area. Hair tied back. Clear view of the decolletage.",
-                info: "Kolye Odaklı: Güzel, pürüzsüz cilt görünümü.",
+                desc: "Jewelry Photography: Headless cropped shot focusing on neck area. Beautiful smooth skin with natural healthy glow. MODEST FRAMING: Show only neck and collarbone area - NO cleavage, NO excessive skin. Professional e-commerce appropriate. Hands completely away from the necklace/neck area. Hair tied back. Conservative, tasteful composition focused ONLY on the jewelry.",
+                info: "Kolye Odaklı: Profesyonel, mütevazı çerçeveleme.",
                 category: "general",
                 icon: "fa-circle-user",
                 color: "rose"
@@ -2825,15 +2825,15 @@ ${seo.hashtags || ''}
                 color: "amber"
             },
             'set_model': {
-                desc: "Jewelry set photography: Female model from shoulders up, showing both neck and ears. Beautiful smooth skin with healthy glow and even tone. Hair elegantly styled away from ears and neck. Coordinated necklace and earring display. Attractive, well-lit skin that complements the jewelry.",
-                info: "Set Modeli: Kolye + küpe birlikte görüntüleme.",
+                desc: "Jewelry set photography: Female model from shoulders up, showing both neck and ears. MODEST FRAMING: Collarbone level only - NO cleavage. Beautiful smooth skin with healthy glow. Hair elegantly styled away from ears and neck. Coordinated necklace and earring display. Professional e-commerce appropriate, tasteful composition.",
+                info: "Set Modeli: Profesyonel set çekimi.",
                 category: "general",
                 icon: "fa-users",
                 color: "violet"
             },
             'boho_model': {
-                desc: "Bohemian lifestyle jewelry photography: Healthy sun-kissed skin with warm golden glow. Outdoor lighting feel. Relaxed, natural pose. Beautiful bronzed complexion. Beach or nature vibes. Radiant, healthy appearance.",
-                info: "Bohem Modeli: Bronz, sağlıklı yaz görünümü.",
+                desc: "Bohemian lifestyle jewelry photography: Healthy sun-kissed skin with warm golden glow. Outdoor lighting feel. Relaxed, natural pose. MODEST FRAMING: Focus on jewelry area only - NO cleavage, NO excessive skin exposure. Beautiful bronzed complexion. Nature vibes but e-commerce appropriate.",
+                info: "Bohem Modeli: Doğal ama mütevazı.",
                 category: "general",
                 icon: "fa-sun",
                 color: "orange"
@@ -2855,8 +2855,8 @@ ${seo.hashtags || ''}
             },
             // ========== STATEMENT TAKI MODELLERİ ==========
             'statement_neck': {
-                desc: "STATEMENT/BOLD NECKLACE: Wider frame showing full shoulders and upper chest to capture the SCALE of large jewelry. More dramatic lighting with intentional highlights on metallic surfaces. Confident presentation. The bold jewelry commands attention and fills the frame. Can include subtle background texture. Editorial fashion feel. Beautiful glowing skin with warm undertones.",
-                info: "Statement Kolye: Büyük, gösterişli parçalar için geniş kadraj.",
+                desc: "STATEMENT/BOLD NECKLACE: Wider frame showing shoulders to capture the SCALE of large jewelry. MODEST FRAMING: Collarbone level maximum - absolutely NO cleavage. More dramatic lighting with intentional highlights on metallic surfaces. Confident but professional presentation. The bold jewelry commands attention. Editorial fashion feel but e-commerce appropriate. Beautiful skin with warm undertones.",
+                info: "Statement Kolye: Geniş ama mütevazı kadraj.",
                 category: "statement",
                 icon: "fa-gem",
                 color: "fuchsia"
@@ -3006,8 +3006,8 @@ ${seo.hashtags || ''}
                 color: "#228B22"
             },
             'none': {
-                name: "Yok (Sadece Cilt)",
-                prompt: "Model with bare shoulders and neck, no clothing visible in frame. Focus entirely on skin and jewelry. Tasteful, artistic nude shoulders.",
+                name: "Yok (Straplez görünüm)",
+                prompt: "Model with strapless look - shoulders visible but MODEST framing. Collarbone level only - absolutely NO cleavage. Focus entirely on jewelry. Professional e-commerce appropriate, not provocative.",
                 color: null
             }
         };
@@ -3244,6 +3244,9 @@ ${seo.hashtags || ''}
 
         // ========== CRITICAL: SKIN FIX PROMPT ==========
         const skinFix = " Render beautiful, healthy human skin - smooth, well-moisturized, with natural healthy glow. NOT overly textured or with exaggerated pores/imperfections. Clean, attractive skin like in professional beauty photography. REMOVE any plastic mannequin seams, stands, or artificial holders. The jewelry should rest naturally on human skin. NO mannequin, NO plastic, NO artificial appearance. ";
+
+        // ========== E-COMMERCE MODESTY RULES ==========
+        const modestyRules = " ⚠️ E-COMMERCE MODESTY RULES (MANDATORY): Frame ONLY the jewelry area - collarbone/neck level maximum. Absolutely NO cleavage, NO excessive skin exposure, NO provocative poses. This is professional product photography for e-commerce, NOT fashion/glamour photography. Keep framing conservative and tasteful. Focus 100% on the jewelry product. ";
 
         // ========== INIT ==========
         window.onload = () => {
@@ -4017,7 +4020,7 @@ Return ONLY this JSON:
 
             // ===== OUTFIT STYLE =====
             if (lowerPrompt.includes('straplez') || lowerPrompt.includes('strapless') || lowerPrompt.includes('askısız')) {
-                instructions.push('OUTFIT STYLE: Strapless top/dress, completely bare shoulders, perfect for showcasing necklaces');
+                instructions.push('OUTFIT STYLE: Strapless top/dress look - shoulders visible but MODEST framing at collarbone level. NO cleavage. E-commerce appropriate.');
             }
             if (lowerPrompt.includes('v yaka') || lowerPrompt.includes('v-neck')) {
                 instructions.push('OUTFIT STYLE: V-neck top, elegant neckline that frames the jewelry');
@@ -4912,6 +4915,8 @@ You are ONLY allowed to:
 
 ${antiHallucinationRules}
 
+${modestyRules}
+
 MODEL REQUIREMENTS:
 ${bagModel.desc}
 Outfit: ${bagModel.outfit}
@@ -5166,6 +5171,8 @@ You are ONLY allowed to:
             const imageGenPrompt = `TASK: Place this EXACT jewelry on a model for e-commerce photography.
 
 ${jewelryAntiHallucination}
+
+${modestyRules}
 
 MODEL REQUIREMENTS:
 ${profile.desc}
