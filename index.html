@@ -35,6 +35,7 @@
         .glow { box-shadow: 0 0 60px rgba(242,122,26,0.2); }
         .glow-success { box-shadow: 0 0 40px rgba(16,185,129,0.3); }
         .glow-purple { box-shadow: 0 0 40px rgba(168,85,247,0.3); }
+        .glow-green { box-shadow: 0 0 40px rgba(16,185,129,0.3); }
 
         .gradient-text {
             background: linear-gradient(135deg, #f27a1a, #fbbf24);
@@ -784,6 +785,21 @@
                                             <img id="templateImage" class="max-h-20 mx-auto rounded-lg">
                                             <p id="templateName" class="text-[10px] text-cyan-400 mt-1"></p>
                                         </div>
+                                    </div>
+
+                                    <!-- Edit Modu Toggle -->
+                                    <div class="flex items-center justify-between p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/30">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fa-solid fa-paste text-emerald-400"></i>
+                                            <div>
+                                                <span class="text-xs font-medium text-emerald-300">Edit Modu</span>
+                                                <p class="text-[9px] text-slate-400">AI üretme, sadece yapıştır</p>
+                                            </div>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" id="editOnlyModeToggle" class="sr-only peer" onchange="toggleEditOnlyMode()">
+                                            <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                                        </label>
                                     </div>
 
                                     <div class="grid grid-cols-2 gap-2">
@@ -1748,6 +1764,7 @@ Task: ${prompt}`,
             originalBase64: null,
             originalProcessedImage: null, // Rötuş öncesi orijinal
             templateBase64: null,  // Model şablonu
+            editOnlyMode: false,   // Edit modu - AI üretimi yapma, sadece yapıştır
             processedImage: null,
             gallery: [],
             workMode: 'mannequin', // 'mannequin' veya 'flatlay'
@@ -2523,6 +2540,23 @@ ${seo.hashtags || ''}
             navigator.clipboard.writeText(allText).then(() => {
                 showToast('Tüm SEO verileri kopyalandı!', 'success');
             });
+        }
+
+        // ========== EDIT ONLY MODE ==========
+        function toggleEditOnlyMode() {
+            state.editOnlyMode = document.getElementById('editOnlyModeToggle').checked;
+            const btn = document.getElementById('generateBtn');
+            if (state.editOnlyMode) {
+                btn.innerHTML = '<i class="fa-solid fa-paste mr-1"></i>Yapıştır';
+                btn.classList.remove('from-purple-600', 'to-pink-500', 'hover:from-purple-700', 'hover:to-pink-600', 'glow-purple');
+                btn.classList.add('from-emerald-600', 'to-teal-500', 'hover:from-emerald-700', 'hover:to-teal-600', 'glow-green');
+                showToast('Edit Modu aktif - AI üretimi devre dışı', 'success');
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles mr-1"></i>Oluştur';
+                btn.classList.remove('from-emerald-600', 'to-teal-500', 'hover:from-emerald-700', 'hover:to-teal-600', 'glow-green');
+                btn.classList.add('from-purple-600', 'to-pink-500', 'hover:from-purple-700', 'hover:to-pink-600', 'glow-purple');
+                showToast('Normal mod - AI üretimi aktif', 'info');
+            }
         }
 
         // ========== POSITION CONTROLS ==========
@@ -4159,18 +4193,67 @@ The jewelry must remain EXACTLY as provided - do not modify the jewelry in any w
             showLoader(`${productTypeName} Modu...`, '1/4 Başlatılıyor');
 
             try {
-                // Ürün tipine göre uygun fonksiyonu çağır
-                if (state.productType === 'bag') {
-                    console.log('👜 Çanta modu başlatılıyor...');
-                    state.processedImage = await generateBagImage();
-                } else {
-                    console.log('💎 Takı modu başlatılıyor...');
-                    state.processedImage = await generateWithGemini25();
-                }
+                // ========== EDIT ONLY MODE - AI'sız Canvas Yapıştırma ==========
+                if (state.editOnlyMode) {
+                    if (!state.templateBase64) {
+                        showToast('Edit modunda şablon gerekli! Önce model şablonu yükleyin.', 'error');
+                        hideLoader();
+                        return;
+                    }
 
-                // STUDIO ENHANCE - Fal.ai ile kalite artırma
-                console.log('🎬 Stüdyo kalitesi uygulanıyor...');
-                state.processedImage = await studioEnhance(state.processedImage);
+                    console.log('📋 Edit Modu: AI üretimi atlanıyor, sadece yapıştırma...');
+                    showLoader('Edit Modu...', '1/2 Takı çıkarılıyor');
+
+                    // BiRefNet ile takıyı çıkar
+                    const birefnetResponse = await fetch('https://fal.run/fal-ai/birefnet', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Key ${falKey}`
+                        },
+                        body: JSON.stringify({
+                            image_url: state.originalBase64,
+                            model: "General Use (Light)",
+                            operating_resolution: state.isHighRes ? "2048x2048" : "1024x1024",
+                            output_format: "png"
+                        })
+                    });
+
+                    if (!birefnetResponse.ok) {
+                        const err = await birefnetResponse.json();
+                        throw new Error('BiRefNet hatası: ' + (err.detail || 'Takı çıkarılamadı'));
+                    }
+
+                    const birefnetData = await birefnetResponse.json();
+                    const transparentJewelryUrl = birefnetData.image?.url;
+                    if (!transparentJewelryUrl) {
+                        throw new Error('Takı çıkarılamadı');
+                    }
+
+                    const jewelryBase64 = await fetchImageAsBase64(transparentJewelryUrl);
+                    state.extractedJewelry = jewelryBase64;
+                    console.log('✅ Takı şeffaf arka planla çıkarıldı');
+
+                    // Canvas ile yapıştır - AI yok!
+                    showLoader('Edit Modu...', '2/2 Yapıştırılıyor');
+                    state.processedImage = await compositeJewelryOnTemplate(jewelryBase64, state.templateBase64);
+                    console.log('✅ Edit Modu tamamlandı - AI kullanılmadı!');
+
+                } else {
+                    // ========== NORMAL MOD - AI Üretimi ==========
+                    // Ürün tipine göre uygun fonksiyonu çağır
+                    if (state.productType === 'bag') {
+                        console.log('👜 Çanta modu başlatılıyor...');
+                        state.processedImage = await generateBagImage();
+                    } else {
+                        console.log('💎 Takı modu başlatılıyor...');
+                        state.processedImage = await generateWithGemini25();
+                    }
+
+                    // STUDIO ENHANCE - Fal.ai ile kalite artırma
+                    console.log('🎬 Stüdyo kalitesi uygulanıyor...');
+                    state.processedImage = await studioEnhance(state.processedImage);
+                }
 
                 // Orijinal processed image'ı sakla (rötuş için)
                 state.originalProcessedImage = state.processedImage;
@@ -4185,7 +4268,11 @@ The jewelry must remain EXACTLY as provided - do not modify the jewelry in any w
                 document.getElementById('editPanel').classList.remove('hidden');
 
                 hideLoader();
-                showToast('Stüdyo kalitesinde görsel hazır!', 'success');
+                if (state.editOnlyMode) {
+                    showToast('Takı yapıştırıldı! (AI kullanılmadı)', 'success');
+                } else {
+                    showToast('Stüdyo kalitesinde görsel hazır!', 'success');
+                }
 
                 // Otomatik SEO oluştur
                 generateSEO();
