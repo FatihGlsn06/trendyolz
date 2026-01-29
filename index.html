@@ -202,6 +202,26 @@
         }
 
         .cropper-container { max-height: 400px; }
+
+        /* Video Modal Styles */
+        .video-model-card { transition: all 0.2s ease; }
+        .video-model-card:hover { transform: translateY(-1px); }
+        .video-model-card.selected {
+            border-color: #f43f5e !important;
+            background: rgba(244, 63, 94, 0.15) !important;
+        }
+        .motion-card { transition: all 0.2s ease; }
+        .motion-card.selected {
+            border-color: #f43f5e !important;
+            background: rgba(244, 63, 94, 0.15) !important;
+        }
+        .motion-card.selected i { color: #f43f5e; }
+        .video-duration-btn.selected, .video-aspect-btn.selected {
+            border-color: rgba(244, 63, 94, 0.5) !important;
+            background: rgba(244, 63, 94, 0.1) !important;
+            color: #f43f5e;
+        }
+        .glow-rose { box-shadow: 0 0 40px rgba(244, 63, 94, 0.3); }
     </style>
 </head>
 <body class="text-white">
@@ -971,6 +991,18 @@
                                     <i class="fa-solid fa-plus mr-1 md:mr-2"></i>Galeriye
                                 </button>
                             </div>
+
+                            <!-- Video Oluştur Butonu -->
+                            <div class="pt-2 border-t border-slate-700/50">
+                                <button onclick="openVideoModal()" class="w-full py-3 rounded-xl bg-gradient-to-r from-rose-600 to-pink-500 hover:from-rose-500 hover:to-pink-400 font-bold transition-all flex items-center justify-center gap-2 glow-purple">
+                                    <i class="fa-solid fa-video"></i>
+                                    <span>Video Oluştur</span>
+                                    <span class="text-[10px] px-2 py-0.5 bg-white/20 rounded-full">AI I2V</span>
+                                </button>
+                                <p class="text-[10px] text-slate-500 text-center mt-1">
+                                    <i class="fa-solid fa-info-circle mr-1"></i>Halüsinasyonsuz Image-to-Video (3-5 sn)
+                                </p>
+                            </div>
                         </div>
 
                         <!-- Manual Edit Panel -->
@@ -1451,6 +1483,151 @@
         </div>
     </div>
 
+    <!-- Video Generation Modal -->
+    <div id="videoModal" class="fixed inset-0 bg-black/90 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4" onclick="if(event.target === this) closeVideoModal()">
+        <div class="glass rounded-2xl w-full max-w-2xl p-6 relative z-10 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-video text-rose-400"></i>
+                    Video Oluştur
+                    <span class="text-[10px] px-2 py-0.5 bg-rose-500/20 text-rose-400 rounded-full">I2V</span>
+                </h3>
+                <button onclick="closeVideoModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Video Preview -->
+            <div class="mb-6">
+                <div id="videoSourcePreview" class="w-full aspect-video bg-slate-900 rounded-xl flex items-center justify-center overflow-hidden">
+                    <img id="videoSourceImage" class="max-w-full max-h-full object-contain hidden">
+                    <div id="videoSourcePlaceholder" class="text-center text-slate-500">
+                        <i class="fa-solid fa-image text-3xl mb-2"></i>
+                        <p class="text-xs">Kaynak görsel burada görünecek</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Model Selection -->
+            <div class="mb-4">
+                <label class="text-xs text-slate-400 mb-2 block">Video Modeli</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <div onclick="selectVideoModel('kling')" class="video-model-card selected p-3 rounded-xl border border-rose-500/50 bg-rose-500/10 cursor-pointer transition-all hover:border-rose-400" data-model="kling">
+                        <div class="flex items-center gap-2 mb-1">
+                            <i class="fa-solid fa-film text-rose-400"></i>
+                            <span class="font-medium text-sm">Kling 1.0</span>
+                            <span class="text-[9px] px-1.5 py-0.5 bg-green-500/20 text-green-400 rounded">Stabil</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400">5 sn, profesyonel kalite, minimal halüsinasyon</p>
+                    </div>
+                    <div onclick="selectVideoModel('minimax')" class="video-model-card p-3 rounded-xl border border-slate-700 cursor-pointer transition-all hover:border-amber-400" data-model="minimax">
+                        <div class="flex items-center gap-2 mb-1">
+                            <i class="fa-solid fa-clapperboard text-amber-400"></i>
+                            <span class="font-medium text-sm">MiniMax Hailuo</span>
+                            <span class="text-[9px] px-1.5 py-0.5 bg-amber-500/20 text-amber-400 rounded">Hızlı</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400">6 sn, uygun fiyat, iyi kalite</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Motion Type -->
+            <div class="mb-4">
+                <label class="text-xs text-slate-400 mb-2 block">Hareket Tipi (Halüsinasyonsuz)</label>
+                <div class="grid grid-cols-4 gap-2">
+                    <div onclick="selectMotionType('zoom_in')" class="motion-card selected p-2 rounded-lg border border-rose-500/50 bg-rose-500/10 text-center cursor-pointer transition-all" data-motion="zoom_in">
+                        <i class="fa-solid fa-magnifying-glass-plus text-rose-400 mb-1"></i>
+                        <p class="text-[9px]">Zoom In</p>
+                    </div>
+                    <div onclick="selectMotionType('zoom_out')" class="motion-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer transition-all hover:border-slate-500" data-motion="zoom_out">
+                        <i class="fa-solid fa-magnifying-glass-minus text-slate-400 mb-1"></i>
+                        <p class="text-[9px]">Zoom Out</p>
+                    </div>
+                    <div onclick="selectMotionType('pan_right')" class="motion-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer transition-all hover:border-slate-500" data-motion="pan_right">
+                        <i class="fa-solid fa-arrow-right text-slate-400 mb-1"></i>
+                        <p class="text-[9px]">Pan Sağ</p>
+                    </div>
+                    <div onclick="selectMotionType('subtle')" class="motion-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer transition-all hover:border-slate-500" data-motion="subtle">
+                        <i class="fa-solid fa-wind text-slate-400 mb-1"></i>
+                        <p class="text-[9px]">Minimal</p>
+                    </div>
+                </div>
+                <p class="text-[9px] text-slate-500 mt-1">
+                    <i class="fa-solid fa-lightbulb text-amber-400 mr-1"></i>
+                    Basit hareketler = sıfır halüsinasyon. Ürün bozulmaz.
+                </p>
+            </div>
+
+            <!-- Duration -->
+            <div class="mb-4">
+                <label class="text-xs text-slate-400 mb-2 block">Video Süresi</label>
+                <div class="flex gap-2">
+                    <button onclick="selectVideoDuration(3)" class="video-duration-btn flex-1 py-2 rounded-lg border border-slate-700 text-xs transition-all hover:border-slate-500" data-duration="3">3 sn</button>
+                    <button onclick="selectVideoDuration(5)" class="video-duration-btn selected flex-1 py-2 rounded-lg border border-rose-500/50 bg-rose-500/10 text-xs" data-duration="5">5 sn</button>
+                    <button onclick="selectVideoDuration(6)" class="video-duration-btn flex-1 py-2 rounded-lg border border-slate-700 text-xs transition-all hover:border-slate-500" data-duration="6">6 sn</button>
+                </div>
+            </div>
+
+            <!-- Aspect Ratio -->
+            <div class="mb-6">
+                <label class="text-xs text-slate-400 mb-2 block">En-Boy Oranı</label>
+                <div class="flex gap-2">
+                    <button onclick="selectVideoAspect('1:1')" class="video-aspect-btn selected flex-1 py-2 rounded-lg border border-rose-500/50 bg-rose-500/10 text-xs" data-aspect="1:1">
+                        <i class="fa-solid fa-square mr-1"></i>1:1
+                    </button>
+                    <button onclick="selectVideoAspect('16:9')" class="video-aspect-btn flex-1 py-2 rounded-lg border border-slate-700 text-xs transition-all hover:border-slate-500" data-aspect="16:9">
+                        <i class="fa-solid fa-rectangle-wide mr-1"></i>16:9
+                    </button>
+                    <button onclick="selectVideoAspect('9:16')" class="video-aspect-btn flex-1 py-2 rounded-lg border border-slate-700 text-xs transition-all hover:border-slate-500" data-aspect="9:16">
+                        <i class="fa-solid fa-mobile-screen mr-1"></i>9:16
+                    </button>
+                </div>
+            </div>
+
+            <!-- Video Output Preview -->
+            <div id="videoOutputContainer" class="hidden mb-6">
+                <label class="text-xs text-slate-400 mb-2 block">Oluşturulan Video</label>
+                <div class="bg-slate-900 rounded-xl p-4">
+                    <video id="videoOutput" class="w-full rounded-lg" controls autoplay loop></video>
+                </div>
+                <div class="flex gap-2 mt-3">
+                    <button onclick="downloadVideo()" class="flex-1 py-2.5 rounded-xl bg-green-600 hover:bg-green-500 font-semibold text-sm">
+                        <i class="fa-solid fa-download mr-2"></i>Video İndir (MP4)
+                    </button>
+                    <button onclick="regenerateVideo()" class="py-2.5 px-4 rounded-xl bg-slate-700 hover:bg-slate-600 text-sm">
+                        <i class="fa-solid fa-rotate"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Generate Button -->
+            <button onclick="generateVideo()" id="generateVideoBtn" class="w-full py-4 rounded-xl bg-gradient-to-r from-rose-600 to-pink-500 hover:from-rose-500 hover:to-pink-400 font-bold text-lg transition-all">
+                <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>
+                Video Oluştur
+            </button>
+
+            <!-- Video Generation Progress -->
+            <div id="videoProgress" class="hidden mt-4">
+                <div class="flex items-center gap-3 p-4 bg-slate-800/50 rounded-xl">
+                    <div class="loader w-8 h-8"></div>
+                    <div>
+                        <p class="text-sm font-medium" id="videoProgressText">Video oluşturuluyor...</p>
+                        <p class="text-[10px] text-slate-400" id="videoProgressDetail">Fal.ai API işleniyor (30-90 sn)</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info -->
+            <div class="mt-4 p-3 bg-slate-800/30 rounded-lg border border-slate-700">
+                <p class="text-[10px] text-slate-400">
+                    <i class="fa-solid fa-info-circle text-rose-400 mr-1"></i>
+                    <strong>Halüsinasyonsuz Yaklaşım:</strong> Sabit arka plan + minimal kamera hareketi = ürün bozulması sıfır.
+                    AI modeli sadece kamera hareketini simüle eder, ürün piksellerine dokunmaz.
+                </p>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div id="toast" class="fixed bottom-4 right-4 hidden z-50">
         <div class="glass rounded-xl px-6 py-4 flex items-center gap-3">
@@ -1815,6 +1992,14 @@ Task: ${prompt}`,
                 attributes: {},
                 description: '',
                 longTailKeywords: []
+            },
+            // Video ayarları
+            video: {
+                model: 'kling',           // 'kling' veya 'minimax'
+                motionType: 'zoom_in',    // 'zoom_in', 'zoom_out', 'pan_right', 'subtle'
+                duration: 5,              // 3, 5 veya 6 saniye
+                aspectRatio: '1:1',       // '1:1', '16:9', '9:16'
+                generatedVideoUrl: null   // Üretilen video URL'i
             }
         };
 
@@ -5985,6 +6170,261 @@ SADECE JSON döndür.`;
             }
 
             showToast(`${format.toUpperCase()} indirildi`, 'success');
+        }
+
+        // ========== VIDEO GENERATION ==========
+        // Halüsinasyonsuz I2V - Fal.ai Kling ve MiniMax
+
+        function openVideoModal() {
+            if (!state.processedImage) {
+                showToast('Önce bir görsel oluşturun', 'error');
+                return;
+            }
+
+            // Kaynak görseli göster
+            const sourceImg = document.getElementById('videoSourceImage');
+            sourceImg.src = state.processedImage;
+            sourceImg.classList.remove('hidden');
+            document.getElementById('videoSourcePlaceholder').classList.add('hidden');
+
+            // Modal'ı aç
+            document.getElementById('videoModal').classList.remove('hidden');
+
+            // Video output'u gizle (yeni oturum)
+            document.getElementById('videoOutputContainer').classList.add('hidden');
+        }
+
+        function closeVideoModal() {
+            document.getElementById('videoModal').classList.add('hidden');
+        }
+
+        function selectVideoModel(model) {
+            state.video.model = model;
+
+            // UI güncelle
+            document.querySelectorAll('.video-model-card').forEach(card => {
+                card.classList.remove('selected');
+                card.style.borderColor = '';
+                card.style.background = '';
+            });
+            const selected = document.querySelector(`.video-model-card[data-model="${model}"]`);
+            if (selected) {
+                selected.classList.add('selected');
+            }
+        }
+
+        function selectMotionType(motion) {
+            state.video.motionType = motion;
+
+            // UI güncelle
+            document.querySelectorAll('.motion-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            const selected = document.querySelector(`.motion-card[data-motion="${motion}"]`);
+            if (selected) {
+                selected.classList.add('selected');
+            }
+        }
+
+        function selectVideoDuration(duration) {
+            state.video.duration = duration;
+
+            // UI güncelle
+            document.querySelectorAll('.video-duration-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            const selected = document.querySelector(`.video-duration-btn[data-duration="${duration}"]`);
+            if (selected) {
+                selected.classList.add('selected');
+            }
+        }
+
+        function selectVideoAspect(aspect) {
+            state.video.aspectRatio = aspect;
+
+            // UI güncelle
+            document.querySelectorAll('.video-aspect-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            const selected = document.querySelector(`.video-aspect-btn[data-aspect="${aspect}"]`);
+            if (selected) {
+                selected.classList.add('selected');
+            }
+        }
+
+        // Hareket promptları - halüsinasyonsuz
+        const motionPrompts = {
+            zoom_in: 'Slow, smooth camera zoom in on the product. Camera moves closer gradually. Product stays completely still and unchanged. Professional product video.',
+            zoom_out: 'Slow, smooth camera zoom out from the product. Camera moves back gradually. Product stays completely still and unchanged. Professional product video.',
+            pan_right: 'Slow, smooth camera pan from left to right. Very subtle horizontal movement. Product stays completely still and unchanged. Professional product video.',
+            subtle: 'Very subtle, almost imperceptible camera movement. Gentle floating effect. Product stays completely still and unchanged. Professional product video, minimal motion.'
+        };
+
+        async function generateVideo() {
+            const falKey = localStorage.getItem('fal_api_key');
+            if (!falKey) {
+                showToast('Fal.ai API key gerekli! Ayarlardan ekleyin.', 'error');
+                return;
+            }
+
+            if (!state.processedImage) {
+                showToast('Önce bir görsel oluşturun', 'error');
+                return;
+            }
+
+            // Progress göster
+            document.getElementById('videoProgress').classList.remove('hidden');
+            document.getElementById('generateVideoBtn').disabled = true;
+            document.getElementById('generateVideoBtn').classList.add('opacity-50');
+
+            try {
+                const imageUrl = state.processedImage.startsWith('data:')
+                    ? state.processedImage
+                    : `data:image/png;base64,${state.processedImage}`;
+
+                const prompt = motionPrompts[state.video.motionType];
+                let videoUrl;
+
+                if (state.video.model === 'kling') {
+                    videoUrl = await generateWithKling(imageUrl, prompt, falKey);
+                } else {
+                    videoUrl = await generateWithMiniMax(imageUrl, prompt, falKey);
+                }
+
+                // Video URL'i kaydet
+                state.video.generatedVideoUrl = videoUrl;
+
+                // Video'yu göster
+                const videoOutput = document.getElementById('videoOutput');
+                videoOutput.src = videoUrl;
+                document.getElementById('videoOutputContainer').classList.remove('hidden');
+
+                showToast('Video başarıyla oluşturuldu!', 'success');
+
+            } catch (error) {
+                console.error('Video generation error:', error);
+                showToast('Video oluşturma hatası: ' + error.message, 'error');
+            } finally {
+                document.getElementById('videoProgress').classList.add('hidden');
+                document.getElementById('generateVideoBtn').disabled = false;
+                document.getElementById('generateVideoBtn').classList.remove('opacity-50');
+            }
+        }
+
+        // Kling 1.0 Image-to-Video via Fal.ai
+        async function generateWithKling(imageUrl, prompt, falKey) {
+            console.log('🎬 Kling 1.0 Image-to-Video başlatılıyor...');
+            document.getElementById('videoProgressText').textContent = 'Kling AI video oluşturuyor...';
+            document.getElementById('videoProgressDetail').textContent = 'Bu işlem 30-90 saniye sürebilir';
+
+            // Aspect ratio mapping
+            const aspectRatioMap = {
+                '1:1': '1:1',
+                '16:9': '16:9',
+                '9:16': '9:16'
+            };
+
+            const response = await fetch('https://fal.run/fal-ai/kling-video/v1/standard/image-to-video', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Key ${falKey}`
+                },
+                body: JSON.stringify({
+                    image_url: imageUrl,
+                    prompt: prompt,
+                    duration: state.video.duration.toString(),
+                    aspect_ratio: aspectRatioMap[state.video.aspectRatio] || '1:1'
+                })
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                console.error('Kling hatası:', err);
+                throw new Error(err.detail || err.error?.message || 'Kling video oluşturma hatası');
+            }
+
+            const data = await response.json();
+            console.log('✅ Kling video oluşturuldu!', data);
+
+            // Video URL'ini al
+            if (data.video?.url) {
+                return data.video.url;
+            }
+            if (data.video_url) {
+                return data.video_url;
+            }
+            if (data.output?.video?.url) {
+                return data.output.video.url;
+            }
+
+            throw new Error('Kling beklenmeyen response formatı');
+        }
+
+        // MiniMax Hailuo Image-to-Video via Fal.ai
+        async function generateWithMiniMax(imageUrl, prompt, falKey) {
+            console.log('🎬 MiniMax Hailuo Image-to-Video başlatılıyor...');
+            document.getElementById('videoProgressText').textContent = 'MiniMax video oluşturuyor...';
+            document.getElementById('videoProgressDetail').textContent = 'Bu işlem 20-60 saniye sürebilir';
+
+            const response = await fetch('https://fal.run/fal-ai/minimax-video/image-to-video', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Key ${falKey}`
+                },
+                body: JSON.stringify({
+                    image_url: imageUrl,
+                    prompt: prompt,
+                    prompt_optimizer: true
+                })
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                console.error('MiniMax hatası:', err);
+                throw new Error(err.detail || err.error?.message || 'MiniMax video oluşturma hatası');
+            }
+
+            const data = await response.json();
+            console.log('✅ MiniMax video oluşturuldu!', data);
+
+            // Video URL'ini al
+            if (data.video?.url) {
+                return data.video.url;
+            }
+            if (data.video_url) {
+                return data.video_url;
+            }
+            if (data.output?.video?.url) {
+                return data.output.video.url;
+            }
+
+            throw new Error('MiniMax beklenmeyen response formatı');
+        }
+
+        function downloadVideo() {
+            if (!state.video.generatedVideoUrl) {
+                showToast('İndirilecek video yok', 'error');
+                return;
+            }
+
+            // Video'yu indir
+            const link = document.createElement('a');
+            link.href = state.video.generatedVideoUrl;
+            link.download = `trendyol_video_${Date.now()}.mp4`;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast('Video indiriliyor...', 'success');
+        }
+
+        function regenerateVideo() {
+            // Mevcut video'yu gizle ve yeniden oluştur
+            document.getElementById('videoOutputContainer').classList.add('hidden');
+            generateVideo();
         }
 
         // ========== LOADER ==========
