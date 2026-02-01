@@ -35,7 +35,6 @@
         .glow { box-shadow: 0 0 60px rgba(242,122,26,0.2); }
         .glow-success { box-shadow: 0 0 40px rgba(16,185,129,0.3); }
         .glow-purple { box-shadow: 0 0 40px rgba(168,85,247,0.3); }
-        .glow-green { box-shadow: 0 0 40px rgba(16,185,129,0.3); }
 
         .gradient-text {
             background: linear-gradient(135deg, #f27a1a, #fbbf24);
@@ -68,61 +67,6 @@
         .jewelry-cat-btn.active {
             background: linear-gradient(135deg, #9333ea, #7c3aed);
             color: white;
-        }
-        .product-type-btn.active {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            color: white;
-        }
-        .bag-platform-btn.active {
-            background: linear-gradient(135deg, #f97316, #ea580c);
-            color: white;
-        }
-        .bag-type-card.selected, .bag-style-card.selected, .bag-model-card.selected, .bag-pose-card.selected {
-            border-color: #f59e0b !important;
-            background: rgba(245, 158, 11, 0.1);
-        }
-        .etsy-style {
-            border-color: rgba(249, 115, 22, 0.3) !important;
-        }
-        .etsy-style.selected {
-            border-color: #f97316 !important;
-            background: rgba(249, 115, 22, 0.15);
-        }
-        .seo-platform-btn.active {
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white;
-        }
-        .seo-platform-btn[data-seo-platform="etsy"].active {
-            background: linear-gradient(135deg, #f97316, #ea580c);
-        }
-        .etsy-tag {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px 10px;
-            background: rgba(251, 146, 60, 0.15);
-            border: 1px solid rgba(251, 146, 60, 0.4);
-            border-radius: 9999px;
-            font-size: 10px;
-            color: #fb923c;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .etsy-tag:hover {
-            background: rgba(251, 146, 60, 0.25);
-        }
-        .jewelry-platform-btn.active {
-            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-            color: white;
-        }
-        .jewelry-platform-btn[data-jplatform="etsy"].active {
-            background: linear-gradient(135deg, #f97316, #ea580c);
-        }
-        .etsy-jstyle {
-            border-color: rgba(249, 115, 22, 0.3) !important;
-        }
-        .etsy-jstyle.selected {
-            border-color: #f97316 !important;
-            background: rgba(249, 115, 22, 0.15);
         }
         .style-card { transition: all 0.2s ease; cursor: pointer; }
         .style-card:hover { transform: scale(1.02); }
@@ -202,26 +146,6 @@
         }
 
         .cropper-container { max-height: 400px; }
-
-        /* Video Modal Styles */
-        .video-model-card { transition: all 0.2s ease; }
-        .video-model-card:hover { transform: translateY(-1px); }
-        .video-model-card.selected {
-            border-color: #f43f5e !important;
-            background: rgba(244, 63, 94, 0.15) !important;
-        }
-        .motion-card { transition: all 0.2s ease; }
-        .motion-card.selected {
-            border-color: #f43f5e !important;
-            background: rgba(244, 63, 94, 0.15) !important;
-        }
-        .motion-card.selected i { color: #f43f5e; }
-        .video-duration-btn.selected, .video-aspect-btn.selected {
-            border-color: rgba(244, 63, 94, 0.5) !important;
-            background: rgba(244, 63, 94, 0.1) !important;
-            color: #f43f5e;
-        }
-        .glow-rose { box-shadow: 0 0 40px rgba(244, 63, 94, 0.3); }
     </style>
 </head>
 <body class="text-white">
@@ -330,22 +254,6 @@
                             </div>
                             <div class="accordion-content">
                                 <div class="p-4 pt-0 space-y-4">
-
-                                    <!-- ÜRÜN TİPİ SEÇİCİ -->
-                                    <div>
-                                        <label class="text-[10px] text-slate-400 mb-2 block">Ürün Tipi</label>
-                                        <div class="flex gap-1 bg-slate-800/50 p-1 rounded-lg">
-                                            <button onclick="selectProductType('jewelry')" class="product-type-btn active flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-2" data-type="jewelry">
-                                                <i class="fa-solid fa-gem"></i> Takı
-                                            </button>
-                                            <button onclick="selectProductType('bag')" class="product-type-btn flex-1 py-2 px-3 rounded-md text-xs font-medium text-slate-400 transition-all flex items-center justify-center gap-2" data-type="bag">
-                                                <i class="fa-solid fa-bag-shopping"></i> Çanta
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <!-- TAKI AYARLARI -->
-                                    <div id="jewelrySettings">
                                     <!-- Takı Kategorisi -->
                                     <div>
                                         <label class="text-[10px] text-slate-400 mb-2 block">Takı Tipi</label>
@@ -354,7 +262,6 @@
                                             <button onclick="selectJewelryCategory('minimal')" class="jewelry-cat-btn flex-1 py-1.5 px-2 rounded-md text-[10px] font-medium text-slate-400 transition-all" data-cat="minimal">Minimal</button>
                                             <button onclick="selectJewelryCategory('statement')" class="jewelry-cat-btn flex-1 py-1.5 px-2 rounded-md text-[10px] font-medium text-slate-400 transition-all" data-cat="statement">Statement</button>
                                             <button onclick="selectJewelryCategory('pearl')" class="jewelry-cat-btn flex-1 py-1.5 px-2 rounded-md text-[10px] font-medium text-slate-400 transition-all" data-cat="pearl">İnci</button>
-                                            <button onclick="selectJewelryCategory('natural')" class="jewelry-cat-btn flex-1 py-1.5 px-2 rounded-md text-[10px] font-medium text-slate-400 transition-all" data-cat="natural">Doğaltaş</button>
                                         </div>
                                     </div>
 
@@ -405,79 +312,25 @@
                                                 <i class="fa-solid fa-circle text-slate-300 text-sm mb-1"></i>
                                                 <p class="text-[9px]">İnci Küpe</p>
                                             </div>
-                                            <!-- Doğaltaş -->
-                                            <div onclick="selectModelProfile('natural_neck')" class="model-card hidden p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-model="natural_neck" data-category="natural">
-                                                <i class="fa-solid fa-leaf text-emerald-400 text-sm mb-1"></i>
-                                                <p class="text-[9px]">Kolye</p>
-                                            </div>
-                                            <div onclick="selectModelProfile('natural_bracelet')" class="model-card hidden p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-model="natural_bracelet" data-category="natural">
-                                                <i class="fa-solid fa-hand text-emerald-400 text-sm mb-1"></i>
-                                                <p class="text-[9px]">Bileklik</p>
-                                            </div>
-                                            <div onclick="selectModelProfile('natural_earring')" class="model-card hidden p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-model="natural_earring" data-category="natural">
-                                                <i class="fa-solid fa-ear-listen text-emerald-400 text-sm mb-1"></i>
-                                                <p class="text-[9px]">Küpe</p>
-                                            </div>
-                                            <div onclick="selectModelProfile('natural_set')" class="model-card hidden p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-model="natural_set" data-category="natural">
-                                                <i class="fa-solid fa-layer-group text-emerald-400 text-sm mb-1"></i>
-                                                <p class="text-[9px]">Set</p>
-                                            </div>
                                         </div>
                                         <p id="categoryDesc" class="text-[9px] text-slate-500 mt-1">Standart takı çekimleri için genel modeller</p>
-                                    </div>
-
-                                    <!-- Platform Seçici (Takı) -->
-                                    <div>
-                                        <label class="text-[10px] text-slate-400 mb-2 block">Platform</label>
-                                        <div class="flex gap-1 bg-slate-800/50 p-1 rounded-lg">
-                                            <button onclick="selectJewelryPlatform('general')" class="jewelry-platform-btn active flex-1 py-1.5 px-2 rounded-md text-[10px] font-medium transition-all" data-jplatform="general">
-                                                <i class="fa-solid fa-globe mr-1"></i>Genel
-                                            </button>
-                                            <button onclick="selectJewelryPlatform('etsy')" class="jewelry-platform-btn flex-1 py-1.5 px-2 rounded-md text-[10px] font-medium text-slate-400 transition-all" data-jplatform="etsy">
-                                                <i class="fa-brands fa-etsy mr-1"></i>Etsy
-                                            </button>
-                                        </div>
                                     </div>
 
                                     <!-- Stil Presetleri -->
                                     <div>
                                         <label class="text-[10px] text-slate-400 mb-2 block">Çekim Stili</label>
-                                        <!-- Genel Stiller -->
-                                        <div class="grid grid-cols-3 gap-1.5" id="jewelryStyleContainer">
-                                            <div onclick="selectStyle('studio')" class="style-card general-jstyle selected p-2 rounded-lg border border-slate-700 text-center" data-style="studio">
+                                        <div class="grid grid-cols-3 gap-1.5" id="stylePresets">
+                                            <div onclick="selectStyle('studio')" class="style-card selected p-2 rounded-lg border border-slate-700 text-center" data-style="studio">
                                                 <div class="w-full h-6 bg-gradient-to-b from-gray-100 to-gray-200 rounded mb-1"></div>
                                                 <p class="text-[9px]">Studio</p>
                                             </div>
-                                            <div onclick="selectStyle('boho')" class="style-card general-jstyle p-2 rounded-lg border border-slate-700 text-center" data-style="boho">
+                                            <div onclick="selectStyle('boho')" class="style-card p-2 rounded-lg border border-slate-700 text-center" data-style="boho">
                                                 <div class="w-full h-6 bg-gradient-to-br from-amber-100 to-orange-200 rounded mb-1"></div>
                                                 <p class="text-[9px]">Boho</p>
                                             </div>
-                                            <div onclick="selectStyle('luxury')" class="style-card general-jstyle p-2 rounded-lg border border-slate-700 text-center" data-style="luxury">
+                                            <div onclick="selectStyle('luxury')" class="style-card p-2 rounded-lg border border-slate-700 text-center" data-style="luxury">
                                                 <div class="w-full h-6 bg-gradient-to-br from-slate-900 to-slate-700 rounded mb-1"></div>
                                                 <p class="text-[9px]">Luxury</p>
-                                            </div>
-                                        </div>
-                                        <!-- Etsy Stiller -->
-                                        <div class="grid grid-cols-5 gap-1.5 hidden" id="etsyJewelryStyleContainer">
-                                            <div onclick="selectStyle('etsy_natural')" class="style-card etsy-jstyle p-2 rounded-lg border border-orange-500/30 text-center cursor-pointer" data-style="etsy_natural">
-                                                <div class="w-full h-6 bg-gradient-to-br from-amber-50 to-orange-100 rounded mb-1"></div>
-                                                <p class="text-[9px]">Natural</p>
-                                            </div>
-                                            <div onclick="selectStyle('etsy_minimal')" class="style-card etsy-jstyle p-2 rounded-lg border border-orange-500/30 text-center cursor-pointer" data-style="etsy_minimal">
-                                                <div class="w-full h-6 bg-gradient-to-b from-gray-50 to-gray-100 rounded mb-1"></div>
-                                                <p class="text-[9px]">Minimal</p>
-                                            </div>
-                                            <div onclick="selectStyle('etsy_warm')" class="style-card etsy-jstyle p-2 rounded-lg border border-orange-500/30 text-center cursor-pointer" data-style="etsy_warm">
-                                                <div class="w-full h-6 bg-gradient-to-br from-orange-100 to-amber-200 rounded mb-1"></div>
-                                                <p class="text-[9px]">Warm</p>
-                                            </div>
-                                            <div onclick="selectStyle('etsy_stone')" class="style-card etsy-jstyle p-2 rounded-lg border border-orange-500/30 text-center cursor-pointer" data-style="etsy_stone">
-                                                <div class="w-full h-6 bg-gradient-to-br from-stone-100 to-stone-200 rounded mb-1"></div>
-                                                <p class="text-[9px]">Stone</p>
-                                            </div>
-                                            <div onclick="selectStyle('etsy_lifestyle')" class="style-card etsy-jstyle p-2 rounded-lg border border-orange-500/30 text-center cursor-pointer" data-style="etsy_lifestyle">
-                                                <div class="w-full h-6 bg-gradient-to-br from-rose-50 to-amber-50 rounded mb-1"></div>
-                                                <p class="text-[9px]">Lifestyle</p>
                                             </div>
                                         </div>
                                     </div>
@@ -513,154 +366,6 @@
                                             Kolye Odaklı: Gerçekçi cilt dokusu, doğal kusurlar.
                                         </p>
                                     </div>
-                                    </div><!-- /jewelrySettings -->
-
-                                    <!-- ÇANTA AYARLARI -->
-                                    <div id="bagSettings" class="hidden space-y-4">
-                                        <!-- Çanta Türü -->
-                                        <div>
-                                            <label class="text-[10px] text-slate-400 mb-2 block">Çanta Türü</label>
-                                            <div class="grid grid-cols-5 gap-1.5" id="bagTypeContainer">
-                                                <div onclick="selectBagType('tote')" class="bag-type-card selected p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-bag="tote">
-                                                    <i class="fa-solid fa-bag-shopping text-amber-400 text-sm mb-1"></i>
-                                                    <p class="text-[9px]">Tote</p>
-                                                </div>
-                                                <div onclick="selectBagType('crossbody')" class="bag-type-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-bag="crossbody">
-                                                    <i class="fa-solid fa-suitcase text-emerald-400 text-sm mb-1"></i>
-                                                    <p class="text-[9px]">Crossbody</p>
-                                                </div>
-                                                <div onclick="selectBagType('clutch')" class="bag-type-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-bag="clutch">
-                                                    <i class="fa-solid fa-wallet text-pink-400 text-sm mb-1"></i>
-                                                    <p class="text-[9px]">Clutch</p>
-                                                </div>
-                                                <div onclick="selectBagType('backpack')" class="bag-type-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-bag="backpack">
-                                                    <i class="fa-solid fa-briefcase text-blue-400 text-sm mb-1"></i>
-                                                    <p class="text-[9px]">Sırt</p>
-                                                </div>
-                                                <div onclick="selectBagType('beltbag')" class="bag-type-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-bag="beltbag">
-                                                    <i class="fa-solid fa-fanny-pack text-violet-400 text-sm mb-1"></i>
-                                                    <p class="text-[9px]">Bel</p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Platform Seçici (Genel / Etsy) -->
-                                        <div>
-                                            <label class="text-[10px] text-slate-400 mb-2 block">Platform</label>
-                                            <div class="flex gap-1 bg-slate-800/50 p-1 rounded-lg">
-                                                <button onclick="selectBagPlatform('general')" class="bag-platform-btn active flex-1 py-1.5 px-2 rounded-md text-[10px] font-medium transition-all" data-platform="general">
-                                                    <i class="fa-solid fa-globe mr-1"></i>Genel
-                                                </button>
-                                                <button onclick="selectBagPlatform('etsy')" class="bag-platform-btn flex-1 py-1.5 px-2 rounded-md text-[10px] font-medium text-slate-400 transition-all" data-platform="etsy">
-                                                    <i class="fa-brands fa-etsy mr-1"></i>Etsy
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <!-- Çanta Çekim Stili -->
-                                        <div>
-                                            <label class="text-[10px] text-slate-400 mb-2 block">Çekim Stili</label>
-                                            <!-- Genel Stiller -->
-                                            <div class="grid grid-cols-4 gap-1.5" id="bagStyleContainer">
-                                                <div onclick="selectBagStyle('studio')" class="bag-style-card general-style selected p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-style="studio">
-                                                    <div class="w-full h-6 bg-gradient-to-b from-gray-100 to-gray-200 rounded mb-1"></div>
-                                                    <p class="text-[9px]">Studio</p>
-                                                </div>
-                                                <div onclick="selectBagStyle('lifestyle')" class="bag-style-card general-style p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-style="lifestyle">
-                                                    <div class="w-full h-6 bg-gradient-to-br from-green-200 to-amber-200 rounded mb-1"></div>
-                                                    <p class="text-[9px]">Lifestyle</p>
-                                                </div>
-                                                <div onclick="selectBagStyle('luxury')" class="bag-style-card general-style p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-style="luxury">
-                                                    <div class="w-full h-6 bg-gradient-to-br from-slate-900 to-slate-700 rounded mb-1"></div>
-                                                    <p class="text-[9px]">Luxury</p>
-                                                </div>
-                                                <div onclick="selectBagStyle('editorial')" class="bag-style-card general-style p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-style="editorial">
-                                                    <div class="w-full h-6 bg-gradient-to-br from-rose-300 to-purple-400 rounded mb-1"></div>
-                                                    <p class="text-[9px]">Editorial</p>
-                                                </div>
-                                            </div>
-                                            <!-- Etsy Stiller -->
-                                            <div class="grid grid-cols-5 gap-1.5 hidden" id="etsyStyleContainer">
-                                                <div onclick="selectBagStyle('etsy_handmade')" class="bag-style-card etsy-style p-2 rounded-lg border border-orange-500/30 text-center cursor-pointer" data-style="etsy_handmade">
-                                                    <div class="w-full h-6 bg-gradient-to-br from-amber-100 to-orange-200 rounded mb-1"></div>
-                                                    <p class="text-[9px]">Handmade</p>
-                                                </div>
-                                                <div onclick="selectBagStyle('etsy_rustic')" class="bag-style-card etsy-style p-2 rounded-lg border border-orange-500/30 text-center cursor-pointer" data-style="etsy_rustic">
-                                                    <div class="w-full h-6 bg-gradient-to-br from-yellow-100 to-amber-300 rounded mb-1"></div>
-                                                    <p class="text-[9px]">Rustic</p>
-                                                </div>
-                                                <div onclick="selectBagStyle('etsy_minimal')" class="bag-style-card etsy-style p-2 rounded-lg border border-orange-500/30 text-center cursor-pointer" data-style="etsy_minimal">
-                                                    <div class="w-full h-6 bg-gradient-to-b from-gray-50 to-gray-100 rounded mb-1"></div>
-                                                    <p class="text-[9px]">Minimal</p>
-                                                </div>
-                                                <div onclick="selectBagStyle('etsy_lifestyle')" class="bag-style-card etsy-style p-2 rounded-lg border border-orange-500/30 text-center cursor-pointer" data-style="etsy_lifestyle">
-                                                    <div class="w-full h-6 bg-gradient-to-br from-rose-100 to-amber-100 rounded mb-1"></div>
-                                                    <p class="text-[9px]">Lifestyle</p>
-                                                </div>
-                                                <div onclick="selectBagStyle('etsy_flatlay')" class="bag-style-card etsy-style p-2 rounded-lg border border-orange-500/30 text-center cursor-pointer" data-style="etsy_flatlay">
-                                                    <div class="w-full h-6 bg-gradient-to-br from-stone-100 to-stone-200 rounded mb-1"></div>
-                                                    <p class="text-[9px]">Flat Lay</p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Çanta Model Profili -->
-                                        <div>
-                                            <label class="text-[10px] text-slate-400 mb-2 block">Model Profili</label>
-                                            <div class="grid grid-cols-4 gap-1.5" id="bagModelContainer">
-                                                <div onclick="selectBagModel('business')" class="bag-model-card selected p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-model="business">
-                                                    <i class="fa-solid fa-user-tie text-slate-300 text-sm mb-1"></i>
-                                                    <p class="text-[9px]">İş</p>
-                                                </div>
-                                                <div onclick="selectBagModel('casual')" class="bag-model-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-model="casual">
-                                                    <i class="fa-solid fa-person-walking text-emerald-400 text-sm mb-1"></i>
-                                                    <p class="text-[9px]">Casual</p>
-                                                </div>
-                                                <div onclick="selectBagModel('evening')" class="bag-model-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-model="evening">
-                                                    <i class="fa-solid fa-champagne-glasses text-pink-400 text-sm mb-1"></i>
-                                                    <p class="text-[9px]">Gece</p>
-                                                </div>
-                                                <div onclick="selectBagModel('travel')" class="bag-model-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer" data-model="travel">
-                                                    <i class="fa-solid fa-plane text-sky-400 text-sm mb-1"></i>
-                                                    <p class="text-[9px]">Seyahat</p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Çanta Poz / Açı -->
-                                        <div>
-                                            <label class="text-[10px] text-slate-400 mb-2 block">Poz / Açı</label>
-                                            <div class="grid grid-cols-6 gap-1" id="bagPoseContainer">
-                                                <div onclick="selectBagPose('front')" class="bag-pose-card selected p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-pose="front" title="Ön">
-                                                    <i class="fa-solid fa-square text-xs text-slate-400"></i>
-                                                </div>
-                                                <div onclick="selectBagPose('side')" class="bag-pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-pose="side" title="Yan">
-                                                    <i class="fa-solid fa-caret-right text-xs text-slate-400"></i>
-                                                </div>
-                                                <div onclick="selectBagPose('threequarter')" class="bag-pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-pose="threequarter" title="3/4">
-                                                    <i class="fa-solid fa-cube text-xs text-slate-400"></i>
-                                                </div>
-                                                <div onclick="selectBagPose('shoulder')" class="bag-pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-pose="shoulder" title="Omuzda">
-                                                    <i class="fa-solid fa-user text-xs text-slate-400"></i>
-                                                </div>
-                                                <div onclick="selectBagPose('hand')" class="bag-pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-pose="hand" title="Elde">
-                                                    <i class="fa-solid fa-hand text-xs text-slate-400"></i>
-                                                </div>
-                                                <div onclick="selectBagPose('flatlay')" class="bag-pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-pose="flatlay" title="Flat Lay">
-                                                    <i class="fa-solid fa-layer-group text-xs text-slate-400"></i>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Çanta Bilgi -->
-                                        <div id="bagModelInfo" class="p-2 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                                            <p class="text-[9px] text-amber-300" id="bagModelDesc">
-                                                <i class="fa-solid fa-info-circle mr-1"></i>
-                                                Tote: Geniş kapasite, günlük kullanım, alışveriş.
-                                            </p>
-                                        </div>
-                                    </div><!-- /bagSettings -->
-
                                 </div>
                             </div>
                         </div>
@@ -805,21 +510,6 @@
                                             <img id="templateImage" class="max-h-20 mx-auto rounded-lg">
                                             <p id="templateName" class="text-[10px] text-cyan-400 mt-1"></p>
                                         </div>
-                                    </div>
-
-                                    <!-- Edit Modu Toggle -->
-                                    <div class="flex items-center justify-between p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/30">
-                                        <div class="flex items-center gap-2">
-                                            <i class="fa-solid fa-paste text-emerald-400"></i>
-                                            <div>
-                                                <span class="text-xs font-medium text-emerald-300">Edit Modu</span>
-                                                <p class="text-[9px] text-slate-400">AI üretme, sadece yapıştır</p>
-                                            </div>
-                                        </div>
-                                        <label class="relative inline-flex items-center cursor-pointer">
-                                            <input type="checkbox" id="editOnlyModeToggle" class="sr-only peer" onchange="toggleEditOnlyMode()">
-                                            <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-                                        </label>
                                     </div>
 
                                     <div class="grid grid-cols-2 gap-2">
@@ -991,18 +681,6 @@
                                     <i class="fa-solid fa-plus mr-1 md:mr-2"></i>Galeriye
                                 </button>
                             </div>
-
-                            <!-- Video Oluştur Butonu -->
-                            <div class="pt-2 border-t border-slate-700/50">
-                                <button onclick="openVideoModal()" class="w-full py-3 rounded-xl bg-gradient-to-r from-rose-600 to-pink-500 hover:from-rose-500 hover:to-pink-400 font-bold transition-all flex items-center justify-center gap-2 glow-purple">
-                                    <i class="fa-solid fa-video"></i>
-                                    <span>Video Oluştur</span>
-                                    <span class="text-[10px] px-2 py-0.5 bg-white/20 rounded-full">AI I2V</span>
-                                </button>
-                                <p class="text-[10px] text-slate-500 text-center mt-1">
-                                    <i class="fa-solid fa-info-circle mr-1"></i>Halüsinasyonsuz Image-to-Video (3-5 sn)
-                                </p>
-                            </div>
                         </div>
 
                         <!-- Manual Edit Panel -->
@@ -1051,19 +729,6 @@
                         <div>
                             <!-- SEO Generator Panel -->
                             <div class="glass rounded-2xl p-4 md:p-5 border border-emerald-500/30 2xl:h-full">
-
-                        <!-- Platform Toggle -->
-                        <div class="flex gap-1 bg-slate-800/50 p-1 rounded-lg mb-4">
-                            <button onclick="selectSeoPlatform('trendyol')" class="seo-platform-btn active flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-2" data-seo-platform="trendyol">
-                                <i class="fa-solid fa-store"></i> Trendyol
-                            </button>
-                            <button onclick="selectSeoPlatform('etsy')" class="seo-platform-btn flex-1 py-2 px-3 rounded-md text-xs font-medium text-slate-400 transition-all flex items-center justify-center gap-2" data-seo-platform="etsy">
-                                <i class="fa-brands fa-etsy"></i> Etsy
-                            </button>
-                        </div>
-
-                        <!-- TRENDYOL SEO -->
-                        <div id="trendyolSeoPanel">
                         <h3 class="font-semibold mb-4 flex items-center gap-2">
                             <i class="fa-solid fa-magnifying-glass-chart text-emerald-400"></i>
                             Trendyol SEO Pro
@@ -1233,129 +898,6 @@
                                 </div>
                             </div>
                         </div>
-                        </div><!-- END trendyolSeoPanel -->
-
-                        <!-- ETSY SEO PANEL -->
-                        <div id="etsySeoPanel" class="hidden">
-                            <h3 class="font-semibold mb-4 flex items-center gap-2">
-                                <i class="fa-brands fa-etsy text-orange-400"></i>
-                                Etsy SEO 2025
-                                <span class="text-[10px] px-2 py-0.5 bg-orange-500/20 text-orange-400 rounded-full ml-auto">13 Tag + Title</span>
-                            </h3>
-
-                            <!-- Etsy Ürün Bilgileri -->
-                            <div class="mb-4 p-4 bg-slate-800/30 rounded-xl border border-orange-500/30">
-                                <h4 class="text-xs font-semibold text-orange-400 mb-3 flex items-center gap-2">
-                                    <i class="fa-solid fa-bag-shopping"></i>
-                                    Ürün Bilgileri
-                                </h4>
-                                <textarea id="etsyProductInfo" rows="3"
-                                          class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-xs resize-none placeholder-slate-500 focus:border-orange-500 outline-none"
-                                          placeholder="Ürün hakkında bilgi verin:&#10;Örnek: El yapımı deri tote çanta, vintage toka, iç cep, laptop sığar"></textarea>
-
-                                <p class="text-[10px] text-slate-500 mt-2 mb-3">
-                                    <i class="fa-solid fa-lightbulb text-orange-400 mr-1"></i>
-                                    2025 Etsy SEO: İlk 3-5 kelime kritik, 13 tag zorunlu, description indeksleniyor
-                                </p>
-
-                                <button onclick="generateEtsySEO()" class="w-full py-2.5 rounded-lg bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-xs font-bold transition-all">
-                                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>
-                                    Etsy SEO Oluştur
-                                </button>
-                            </div>
-
-                            <!-- Etsy SEO Results -->
-                            <div id="etsySeoResults" class="space-y-4">
-                                <div id="etsySeoPlaceholder" class="text-center py-4 text-slate-500">
-                                    <i class="fa-brands fa-etsy text-xl mb-2"></i>
-                                    <p class="text-xs">Görsel yükleyin, Etsy optimized SEO oluşturacak</p>
-                                    <p class="text-[10px] text-slate-600 mt-1">Title + 13 Tag + Description + Attributes</p>
-                                </div>
-
-                                <div id="etsySeoContent" class="hidden space-y-4">
-                                    <!-- Etsy Title -->
-                                    <div class="p-3 bg-orange-500/10 border border-orange-500/30 rounded-lg">
-                                        <label class="text-xs text-orange-400 mb-2 block font-semibold flex justify-between">
-                                            <span><i class="fa-solid fa-heading mr-1"></i>Etsy Title (120-140 karakter önerilir)</span>
-                                            <span id="etsyTitleCount" class="text-orange-300">0/140</span>
-                                        </label>
-                                        <input type="text" id="etsyTitle"
-                                               class="w-full bg-slate-800 border border-orange-500/50 rounded-lg px-3 py-2 text-sm"
-                                               oninput="updateEtsyCharCount('title')" maxlength="155"
-                                               placeholder="Primary keyword + product type + key details">
-                                        <p class="text-[10px] text-slate-500 mt-1">
-                                            <i class="fa-solid fa-mobile-screen mr-1"></i>Mobilde ilk 70 karakter görünür
-                                        </p>
-                                        <button onclick="copyEtsySEO('title')" class="text-[10px] text-orange-400 hover:text-orange-300 mt-1">
-                                            <i class="fa-solid fa-copy mr-1"></i>Kopyala
-                                        </button>
-                                    </div>
-
-                                    <!-- Etsy 13 Tags -->
-                                    <div class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                                        <label class="text-xs text-amber-400 mb-2 block font-semibold">
-                                            <i class="fa-solid fa-tags mr-1"></i>13 Etsy Tags (her biri max 20 karakter)
-                                        </label>
-                                        <div id="etsyTagsContainer" class="flex flex-wrap gap-2 mb-2">
-                                            <!-- Tags will be rendered here -->
-                                        </div>
-                                        <div class="flex gap-2">
-                                            <button onclick="copyEtsySEO('tags')" class="text-[10px] text-amber-400 hover:text-amber-300">
-                                                <i class="fa-solid fa-copy mr-1"></i>Tümünü Kopyala
-                                            </button>
-                                            <span id="etsyTagCount" class="text-[10px] text-slate-500 ml-auto">0/13 tag</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Etsy Attributes -->
-                                    <div class="p-3 bg-slate-800/50 border border-slate-600 rounded-lg">
-                                        <label class="text-xs text-slate-300 mb-2 block font-semibold">
-                                            <i class="fa-solid fa-list-check mr-1"></i>Önerilen Attributes
-                                        </label>
-                                        <div id="etsyAttributesContainer" class="grid grid-cols-2 gap-2 text-[10px]">
-                                            <!-- Attributes will be rendered here -->
-                                        </div>
-                                    </div>
-
-                                    <!-- Etsy Description -->
-                                    <div class="p-3 bg-slate-800/50 border border-slate-600 rounded-lg">
-                                        <label class="text-xs text-slate-300 mb-2 block font-semibold">
-                                            <i class="fa-solid fa-align-left mr-1"></i>SEO-Optimized Description
-                                        </label>
-                                        <textarea id="etsyDescription" rows="5"
-                                                  class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-xs resize-none"
-                                                  placeholder="Etsy description with embedded keywords..."></textarea>
-                                        <p class="text-[10px] text-slate-500 mt-1">
-                                            <i class="fa-solid fa-info-circle mr-1"></i>2022'den beri description kelimeleri de indeksleniyor
-                                        </p>
-                                        <button onclick="copyEtsySEO('description')" class="text-[10px] text-emerald-400 hover:text-emerald-300 mt-1">
-                                            <i class="fa-solid fa-copy mr-1"></i>Kopyala
-                                        </button>
-                                    </div>
-
-                                    <!-- Long-tail Keywords -->
-                                    <div class="p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
-                                        <label class="text-xs text-purple-400 mb-2 block font-semibold">
-                                            <i class="fa-solid fa-chart-line mr-1"></i>Long-tail Anahtar Kelimeler
-                                        </label>
-                                        <div id="etsyLongTailContainer" class="space-y-1 text-xs">
-                                            <!-- Long-tail keywords will be rendered here -->
-                                        </div>
-                                    </div>
-
-                                    <!-- Regenerate Button -->
-                                    <div class="flex gap-2 pt-2">
-                                        <button onclick="generateEtsySEO()" class="flex-1 py-2 rounded-lg bg-orange-600 hover:bg-orange-500 text-xs font-medium">
-                                            <i class="fa-solid fa-rotate mr-1"></i>Yeniden Oluştur
-                                        </button>
-                                        <button onclick="copyAllEtsySEO()" class="flex-1 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-xs font-medium">
-                                            <i class="fa-solid fa-clipboard mr-1"></i>Tümünü Kopyala
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div><!-- END etsySeoPanel -->
-
                             </div>
                         </div>
                         <!-- END SEO Column -->
@@ -1419,31 +961,32 @@
             </div>
 
             <div class="space-y-4">
-                <!-- Fal.ai - Tek API Key -->
-                <div class="p-4 bg-slate-800/30 rounded-xl border border-orange-500/30">
+                <!-- Gemini 2.5 -->
+                <div class="p-4 bg-slate-800/30 rounded-xl border border-purple-500/30">
                     <label class="text-sm font-medium text-white mb-2 block flex items-center gap-2">
-                        <i class="fa-solid fa-key text-orange-400"></i> Fal.ai API Key
-                        <span class="text-[10px] px-2 py-0.5 bg-orange-500/20 text-orange-400 rounded-full">TEK KEY YETERLİ</span>
+                        <i class="fa-solid fa-brain text-purple-400"></i> Gemini 2.5 Flash
+                        <span class="text-[10px] px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded-full">CİLT ÜRETİM</span>
                     </label>
-                    <input type="password" id="falKeyInput"
-                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:border-orange-500 outline-none"
-                           placeholder="Fal.ai API Key">
+                    <input type="password" id="geminiKeyInput"
+                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:border-purple-500 outline-none"
+                           placeholder="Gemini API Key">
                     <p class="text-xs text-slate-500 mt-1">
-                        <a href="https://fal.ai/dashboard/keys" target="_blank" class="text-orange-400 hover:underline">Fal.ai API key al →</a>
-                        <span class="text-slate-600 ml-2">Tüm modeller bu key ile çalışır</span>
+                        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-purple-400 hover:underline">Gemini API key al →</a>
                     </p>
                 </div>
 
-                <!-- Görsel Model Seçimi -->
-                <div class="p-4 bg-slate-800/30 rounded-xl border border-amber-500/30">
+                <!-- Fal.ai BiRefNet -->
+                <div class="p-4 bg-slate-800/30 rounded-xl border border-green-500/30">
                     <label class="text-sm font-medium text-white mb-2 block flex items-center gap-2">
-                        <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> Görsel Üretim Modeli
+                        <i class="fa-solid fa-cut text-green-400"></i> Fal.ai BiRefNet
+                        <span class="text-[10px] px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full">ARKA PLAN KALDIRMA</span>
                     </label>
-                    <select id="imageModelSelect" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:border-amber-500 outline-none">
-                        <option value="flux">FLUX.1 [dev] (Önerilen)</option>
-                        <option value="gemini3pro">Gemini 3 Pro Image</option>
-                    </select>
-                    <p class="text-xs text-slate-500 mt-1">Tüm modeller Fal.ai üzerinden çalışır</p>
+                    <input type="password" id="falKeyInput"
+                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:border-green-500 outline-none"
+                           placeholder="Fal.ai API Key">
+                    <p class="text-xs text-slate-500 mt-1">
+                        <a href="https://fal.ai/dashboard/keys" target="_blank" class="text-green-400 hover:underline">Fal.ai API key al →</a>
+                    </p>
                 </div>
 
             </div>
@@ -1451,151 +994,6 @@
             <button onclick="saveSettings()" class="w-full mt-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 rounded-xl font-bold">
                 <i class="fa-solid fa-save mr-2"></i>Kaydet
             </button>
-        </div>
-    </div>
-
-    <!-- Video Generation Modal -->
-    <div id="videoModal" class="fixed inset-0 bg-black/90 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4" onclick="if(event.target === this) closeVideoModal()">
-        <div class="glass rounded-2xl w-full max-w-2xl p-6 relative z-10 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="font-bold text-lg flex items-center gap-2">
-                    <i class="fa-solid fa-video text-rose-400"></i>
-                    Video Oluştur
-                    <span class="text-[10px] px-2 py-0.5 bg-rose-500/20 text-rose-400 rounded-full">I2V</span>
-                </h3>
-                <button onclick="closeVideoModal()" class="text-slate-400 hover:text-white">
-                    <i class="fa-solid fa-xmark text-xl"></i>
-                </button>
-            </div>
-
-            <!-- Video Preview -->
-            <div class="mb-6">
-                <div id="videoSourcePreview" class="w-full aspect-video bg-slate-900 rounded-xl flex items-center justify-center overflow-hidden">
-                    <img id="videoSourceImage" class="max-w-full max-h-full object-contain hidden">
-                    <div id="videoSourcePlaceholder" class="text-center text-slate-500">
-                        <i class="fa-solid fa-image text-3xl mb-2"></i>
-                        <p class="text-xs">Kaynak görsel burada görünecek</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Video Model Selection -->
-            <div class="mb-4">
-                <label class="text-xs text-slate-400 mb-2 block">Video Modeli</label>
-                <div class="grid grid-cols-2 gap-2">
-                    <div onclick="selectVideoModel('kling')" class="video-model-card selected p-3 rounded-xl border border-rose-500/50 bg-rose-500/10 cursor-pointer transition-all hover:border-rose-400" data-model="kling">
-                        <div class="flex items-center gap-2 mb-1">
-                            <i class="fa-solid fa-film text-rose-400"></i>
-                            <span class="font-medium text-sm">Kling 1.0</span>
-                            <span class="text-[9px] px-1.5 py-0.5 bg-green-500/20 text-green-400 rounded">Stabil</span>
-                        </div>
-                        <p class="text-[10px] text-slate-400">5 sn, profesyonel kalite, minimal halüsinasyon</p>
-                    </div>
-                    <div onclick="selectVideoModel('minimax')" class="video-model-card p-3 rounded-xl border border-slate-700 cursor-pointer transition-all hover:border-amber-400" data-model="minimax">
-                        <div class="flex items-center gap-2 mb-1">
-                            <i class="fa-solid fa-clapperboard text-amber-400"></i>
-                            <span class="font-medium text-sm">MiniMax Hailuo</span>
-                            <span class="text-[9px] px-1.5 py-0.5 bg-amber-500/20 text-amber-400 rounded">Hızlı</span>
-                        </div>
-                        <p class="text-[10px] text-slate-400">6 sn, uygun fiyat, iyi kalite</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Motion Type -->
-            <div class="mb-4">
-                <label class="text-xs text-slate-400 mb-2 block">Hareket Tipi (Halüsinasyonsuz)</label>
-                <div class="grid grid-cols-4 gap-2">
-                    <div onclick="selectMotionType('zoom_in')" class="motion-card selected p-2 rounded-lg border border-rose-500/50 bg-rose-500/10 text-center cursor-pointer transition-all" data-motion="zoom_in">
-                        <i class="fa-solid fa-magnifying-glass-plus text-rose-400 mb-1"></i>
-                        <p class="text-[9px]">Zoom In</p>
-                    </div>
-                    <div onclick="selectMotionType('zoom_out')" class="motion-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer transition-all hover:border-slate-500" data-motion="zoom_out">
-                        <i class="fa-solid fa-magnifying-glass-minus text-slate-400 mb-1"></i>
-                        <p class="text-[9px]">Zoom Out</p>
-                    </div>
-                    <div onclick="selectMotionType('pan_right')" class="motion-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer transition-all hover:border-slate-500" data-motion="pan_right">
-                        <i class="fa-solid fa-arrow-right text-slate-400 mb-1"></i>
-                        <p class="text-[9px]">Pan Sağ</p>
-                    </div>
-                    <div onclick="selectMotionType('subtle')" class="motion-card p-2 rounded-lg border border-slate-700 text-center cursor-pointer transition-all hover:border-slate-500" data-motion="subtle">
-                        <i class="fa-solid fa-wind text-slate-400 mb-1"></i>
-                        <p class="text-[9px]">Minimal</p>
-                    </div>
-                </div>
-                <p class="text-[9px] text-slate-500 mt-1">
-                    <i class="fa-solid fa-lightbulb text-amber-400 mr-1"></i>
-                    Basit hareketler = sıfır halüsinasyon. Ürün bozulmaz.
-                </p>
-            </div>
-
-            <!-- Duration -->
-            <div class="mb-4">
-                <label class="text-xs text-slate-400 mb-2 block">Video Süresi</label>
-                <div class="flex gap-2">
-                    <button onclick="selectVideoDuration(3)" class="video-duration-btn flex-1 py-2 rounded-lg border border-slate-700 text-xs transition-all hover:border-slate-500" data-duration="3">3 sn</button>
-                    <button onclick="selectVideoDuration(5)" class="video-duration-btn selected flex-1 py-2 rounded-lg border border-rose-500/50 bg-rose-500/10 text-xs" data-duration="5">5 sn</button>
-                    <button onclick="selectVideoDuration(6)" class="video-duration-btn flex-1 py-2 rounded-lg border border-slate-700 text-xs transition-all hover:border-slate-500" data-duration="6">6 sn</button>
-                </div>
-            </div>
-
-            <!-- Aspect Ratio -->
-            <div class="mb-6">
-                <label class="text-xs text-slate-400 mb-2 block">En-Boy Oranı</label>
-                <div class="flex gap-2">
-                    <button onclick="selectVideoAspect('1:1')" class="video-aspect-btn selected flex-1 py-2 rounded-lg border border-rose-500/50 bg-rose-500/10 text-xs" data-aspect="1:1">
-                        <i class="fa-solid fa-square mr-1"></i>1:1
-                    </button>
-                    <button onclick="selectVideoAspect('16:9')" class="video-aspect-btn flex-1 py-2 rounded-lg border border-slate-700 text-xs transition-all hover:border-slate-500" data-aspect="16:9">
-                        <i class="fa-solid fa-rectangle-wide mr-1"></i>16:9
-                    </button>
-                    <button onclick="selectVideoAspect('9:16')" class="video-aspect-btn flex-1 py-2 rounded-lg border border-slate-700 text-xs transition-all hover:border-slate-500" data-aspect="9:16">
-                        <i class="fa-solid fa-mobile-screen mr-1"></i>9:16
-                    </button>
-                </div>
-            </div>
-
-            <!-- Video Output Preview -->
-            <div id="videoOutputContainer" class="hidden mb-6">
-                <label class="text-xs text-slate-400 mb-2 block">Oluşturulan Video</label>
-                <div class="bg-slate-900 rounded-xl p-4">
-                    <video id="videoOutput" class="w-full rounded-lg" controls autoplay loop></video>
-                </div>
-                <div class="flex gap-2 mt-3">
-                    <button onclick="downloadVideo()" class="flex-1 py-2.5 rounded-xl bg-green-600 hover:bg-green-500 font-semibold text-sm">
-                        <i class="fa-solid fa-download mr-2"></i>Video İndir (MP4)
-                    </button>
-                    <button onclick="regenerateVideo()" class="py-2.5 px-4 rounded-xl bg-slate-700 hover:bg-slate-600 text-sm">
-                        <i class="fa-solid fa-rotate"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Generate Button -->
-            <button onclick="generateVideo()" id="generateVideoBtn" class="w-full py-4 rounded-xl bg-gradient-to-r from-rose-600 to-pink-500 hover:from-rose-500 hover:to-pink-400 font-bold text-lg transition-all">
-                <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>
-                Video Oluştur
-            </button>
-
-            <!-- Video Generation Progress -->
-            <div id="videoProgress" class="hidden mt-4">
-                <div class="flex items-center gap-3 p-4 bg-slate-800/50 rounded-xl">
-                    <div class="loader w-8 h-8"></div>
-                    <div>
-                        <p class="text-sm font-medium" id="videoProgressText">Video oluşturuluyor...</p>
-                        <p class="text-[10px] text-slate-400" id="videoProgressDetail">Fal.ai API işleniyor (30-90 sn)</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Info -->
-            <div class="mt-4 p-3 bg-slate-800/30 rounded-lg border border-slate-700">
-                <p class="text-[10px] text-slate-400">
-                    <i class="fa-solid fa-info-circle text-rose-400 mr-1"></i>
-                    <strong>Halüsinasyonsuz Yaklaşım:</strong> Sabit arka plan + minimal kamera hareketi = ürün bozulması sıfır.
-                    AI modeli sadece kamera hareketini simüle eder, ürün piksellerine dokunmaz.
-                </p>
-            </div>
         </div>
     </div>
 
@@ -1613,251 +1011,19 @@
             // Gemini 3 - Text analiz için
             textModel: 'gemini-3-flash-preview',           // Analiz, SEO, JSON çıktı (hızlı)
 
-            // Gemini 2.5 Pro - Görsel üretim için (daha az halüsinasyon)
-            // NOT: Pro model daha pahalı ama talimatları daha iyi takip ediyor
-            imageModel: 'gemini-2.5-pro-preview-05-06',  // Pro model - az halüsinasyon
+            // Gemini 2.5 Flash Image - Edit için (daha sadık, az halüsinasyon)
+            // NOT: Gemini 3 Pro Image çok yaratıcı, renkleri değiştiriyor!
+            imageModel: 'gemini-2.5-flash-image',  // Eski çalışan model - renkleri koruyor
 
             // Fallback modeller
             fallbackTextModel: 'gemini-2.5-flash',
-            fallbackImageModel: 'gemini-2.5-flash-image',
+            fallbackImageModel: 'gemini-2.0-flash-exp',
 
             // API ayarları
             baseUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
             maxRetries: 3,
             retryDelayMs: 1000
         };
-
-        // ========== OPENAI GPT-4o CONFIG ==========
-        const OPENAI_CONFIG = {
-            model: 'gpt-4o',
-            baseUrl: 'https://api.openai.com/v1',
-            maxRetries: 3,
-            retryDelayMs: 1000
-        };
-
-        // GPT-4o ile görsel üretim (native image generation)
-        async function callGPT4oImageAPI(prompt, inputImageBase64, apiKey) {
-            const url = `${OPENAI_CONFIG.baseUrl}/chat/completions`;
-
-            const messages = [
-                {
-                    role: 'user',
-                    content: [
-                        { type: 'text', text: prompt },
-                        ...(inputImageBase64 ? [{
-                            type: 'image_url',
-                            image_url: {
-                                url: inputImageBase64.startsWith('data:') ? inputImageBase64 : `data:image/png;base64,${inputImageBase64}`
-                            }
-                        }] : [])
-                    ]
-                }
-            ];
-
-            for (let attempt = 1; attempt <= OPENAI_CONFIG.maxRetries; attempt++) {
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${apiKey}`
-                        },
-                        body: JSON.stringify({
-                            model: OPENAI_CONFIG.model,
-                            messages: messages,
-                            max_tokens: 4096,
-                            response_format: { type: 'json_object' }
-                        })
-                    });
-
-                    if (response.ok) {
-                        return await response.json();
-                    }
-
-                    if (response.status === 429 || response.status >= 500) {
-                        if (attempt < OPENAI_CONFIG.maxRetries) {
-                            const delay = OPENAI_CONFIG.retryDelayMs * Math.pow(2, attempt - 1);
-                            console.log(`⏳ OpenAI API hatası (${response.status}), ${delay}ms sonra tekrar deneniyor...`);
-                            await new Promise(r => setTimeout(r, delay));
-                            continue;
-                        }
-                    }
-
-                    const err = await response.json();
-                    throw new Error(err.error?.message || `OpenAI API Error: ${response.status}`);
-                } catch (error) {
-                    if (attempt === OPENAI_CONFIG.maxRetries) throw error;
-                    await new Promise(r => setTimeout(r, OPENAI_CONFIG.retryDelayMs));
-                }
-            }
-        }
-
-        // GPT Image Edit - /v1/images/edits endpoint
-        // ❌ chat/completions KULLANMA - image modality desteklenmiyor
-        // ✅ images/edits kullan - bu doğru endpoint
-        async function generateImageWithGPT4o(prompt, inputImageBase64, apiKey) {
-            console.log('🖼️ POST /v1/images/edits çağrılıyor...');
-            return await editImageWithGPT4o(prompt, inputImageBase64, apiKey);
-        }
-
-        // DALL-E 3 Fallback
-        async function generateImageWithDALLE3(prompt, apiKey) {
-            const response = await fetch('https://api.openai.com/v1/images/generations', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
-                body: JSON.stringify({
-                    model: 'dall-e-3',
-                    prompt: prompt,
-                    n: 1,
-                    size: '1024x1024',
-                    quality: 'hd',
-                    response_format: 'b64_json'
-                })
-            });
-
-            if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.error?.message || 'DALL-E 3 görsel üretim hatası');
-            }
-
-            const data = await response.json();
-            return `data:image/png;base64,${data.data[0].b64_json}`;
-        }
-
-        // GPT Image Edit - gpt-image-1 ile görsel düzenleme
-        async function editImageWithGPT4o(prompt, imageBase64, apiKey) {
-            // Base64'ü blob'a çevir
-            const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-            const byteCharacters = atob(base64Data);
-            const byteNumbers = new Array(byteCharacters.length);
-            for (let i = 0; i < byteCharacters.length; i++) {
-                byteNumbers[i] = byteCharacters.charCodeAt(i);
-            }
-            const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray], { type: 'image/png' });
-
-            // IMPORTANT: ALWAYS preserve the product. This is IMAGE EDITING, not generation.
-            const formData = new FormData();
-            formData.append('model', 'gpt-image-1');
-            formData.append('image', blob, 'product.png');  // TEK görsel = 'image'
-            formData.append('prompt', `You are performing IMAGE EDITING, not image generation.
-The provided image is the single source of truth.
-Do NOT modify the product - keep exact shape, size, color, material, details.
-Task: ${prompt}`);
-
-            const response = await fetch('https://api.openai.com/v1/images/edits', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${apiKey}`
-                },
-                body: formData
-            });
-
-            if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.error?.message || 'GPT görsel düzenleme hatası');
-            }
-
-            const data = await response.json();
-            // base64 veya URL olabilir
-            if (data.data[0].b64_json) {
-                return `data:image/png;base64,${data.data[0].b64_json}`;
-            }
-            if (data.data[0].url) {
-                return await fetchImageAsBase64(data.data[0].url);
-            }
-            throw new Error('Beklenmeyen response formatı');
-        }
-
-        // ========== GEMINI 3 PRO IMAGE - via fal.ai ==========
-        // Halüsinasyon: %10-15 (En iyi görsel kalitesi, 4K desteği)
-        async function editImageWithGemini3Pro(prompt, imageBase64, falKey) {
-            console.log('🎨 Gemini 3 Pro Image (fal.ai) çağrılıyor...');
-
-            // Base64'ü data URL formatına çevir
-            const imageUrl = imageBase64.startsWith('data:') ? imageBase64 : `data:image/png;base64,${imageBase64}`;
-
-            const response = await fetch('https://fal.run/fal-ai/gemini-3-pro-image-preview/edit', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Key ${falKey}`
-                },
-                body: JSON.stringify({
-                    prompt: `You are performing IMAGE EDITING, not image generation.
-The provided image is the single source of truth - the product must remain IDENTICAL.
-Do NOT modify the product - keep exact shape, size, color, material, texture, details.
-Task: ${prompt}`,
-                    image_urls: [imageUrl]
-                })
-            });
-
-            if (!response.ok) {
-                const err = await response.json();
-                console.error('Gemini 3 Pro Image hatası:', err);
-                throw new Error(err.detail || err.error?.message || 'Gemini 3 Pro Image görsel düzenleme hatası');
-            }
-
-            const data = await response.json();
-            console.log('✅ Gemini 3 Pro Image başarılı!');
-
-            if (data.images?.[0]?.url) {
-                return await fetchImageAsBase64(data.images[0].url);
-            }
-            if (data.image?.url) {
-                return await fetchImageAsBase64(data.image.url);
-            }
-
-            throw new Error('Gemini 3 Pro Image beklenmeyen response formatı');
-        }
-
-        // ========== FLUX.1 [dev] Image-to-Image - via fal.ai ==========
-        // Halüsinasyon: strength parametresi ile kontrol edilir (düşük = az halüsinasyon)
-        async function editImageWithFlux(prompt, imageBase64, falKey) {
-            console.log('🎨 FLUX.1 [dev] Image-to-Image (fal.ai) çağrılıyor...');
-
-            // Base64'ü data URL formatına çevir
-            const imageUrl = imageBase64.startsWith('data:') ? imageBase64 : `data:image/png;base64,${imageBase64}`;
-
-            const response = await fetch('https://fal.run/fal-ai/flux/dev/image-to-image', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Key ${falKey}`
-                },
-                body: JSON.stringify({
-                    image_url: imageUrl,
-                    prompt: `You are performing IMAGE EDITING, not image generation.
-The provided image is the single source of truth - the jewelry/product must remain IDENTICAL.
-Do NOT modify the product - keep exact shape, size, color, material, texture, details.
-Task: ${prompt}`,
-                    strength: 0.35,  // Düşük strength = orijinal görsel daha çok korunur
-                    num_inference_steps: 28,
-                    guidance_scale: 3.5
-                })
-            });
-
-            if (!response.ok) {
-                const err = await response.json();
-                console.error('FLUX.1 hatası:', err);
-                throw new Error(err.detail || err.error?.message || 'FLUX.1 görsel düzenleme hatası');
-            }
-
-            const data = await response.json();
-            console.log('✅ FLUX.1 başarılı!');
-
-            if (data.images?.[0]?.url) {
-                return await fetchImageAsBase64(data.images[0].url);
-            }
-            if (data.image?.url) {
-                return await fetchImageAsBase64(data.image.url);
-            }
-
-            throw new Error('FLUX.1 beklenmeyen response formatı');
-        }
 
         // Retry mekanizması ile API çağrısı
         async function callGeminiAPI(model, body, apiKey, retries = GEMINI_CONFIG.maxRetries) {
@@ -1906,57 +1072,25 @@ Task: ${prompt}`,
             }
         }
 
-        // ========== MOBİL UYUMLULUK HELPER'LARI ==========
-        // Mobil cihazlarda canvas boyut sınırlaması (iOS Safari max 4096, eski Android daha düşük)
-        const MAX_CANVAS_SIZE = 2048; // Güvenli maksimum boyut
-
-        function isMobileDevice() {
-            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        }
-
-        function limitCanvasSize(width, height) {
-            const maxSize = isMobileDevice() ? MAX_CANVAS_SIZE : 4096;
-
-            if (width <= maxSize && height <= maxSize) {
-                return { width, height };
-            }
-
-            const ratio = Math.min(maxSize / width, maxSize / height);
-            return {
-                width: Math.floor(width * ratio),
-                height: Math.floor(height * ratio)
-            };
-        }
-
         // ========== STATE ==========
         let state = {
             originalImage: null,
             originalBase64: null,
             originalProcessedImage: null, // Rötuş öncesi orijinal
             templateBase64: null,  // Model şablonu
-            editOnlyMode: false,   // Edit modu - AI üretimi yapma, sadece yapıştır
             processedImage: null,
             gallery: [],
             workMode: 'mannequin', // 'mannequin' veya 'flatlay'
-            productType: 'jewelry', // 'jewelry' veya 'bag'
             settings: {
-                // Takı ayarları
                 modelProfile: 'neck_model',
                 style: 'studio',
-                pose: 'front',
-                jewelryCategory: 'general',
-                necklaceLength: 'short',
-                jewelrySize: 'medium',
-                outfit: 'black_vneck',
-                scene: 'studio_clean',
-                autoOutfit: false,
-                jewelryPlatform: 'general',  // 'general' veya 'etsy'
-                // Çanta ayarları
-                bagType: 'tote',
-                bagStyle: 'studio',
-                bagModel: 'business',
-                bagPose: 'front',
-                bagPlatform: 'general'  // 'general' veya 'etsy'
+                pose: 'front',  // Varsayılan: önden
+                jewelryCategory: 'general',  // Takı kategorisi
+                necklaceLength: 'short',  // Kolye uzunluğu: choker, short, medium, long
+                jewelrySize: 'medium',  // Takı/pendant boyutu: small, medium, large, xlarge
+                outfit: 'black_vneck',  // Kıyafet
+                scene: 'studio_clean',  // Sahne
+                autoOutfit: false  // AI otomatik öneri
             },
             position: {
                 x: 50,      // Yatay pozisyon (%)
@@ -1977,22 +1111,6 @@ Task: ${prompt}`,
                 keywords: [],
                 longTail: [],
                 hashtags: ''
-            },
-            seoPlatform: 'trendyol',  // 'trendyol' veya 'etsy'
-            etsySeo: {
-                title: '',
-                tags: [],
-                attributes: {},
-                description: '',
-                longTailKeywords: []
-            },
-            // Video ayarları
-            video: {
-                model: 'kling',           // 'kling' veya 'minimax'
-                motionType: 'zoom_in',    // 'zoom_in', 'zoom_out', 'pan_right', 'subtle'
-                duration: 5,              // 3, 5 veya 6 saniye
-                aspectRatio: '1:1',       // '1:1', '16:9', '9:16'
-                generatedVideoUrl: null   // Üretilen video URL'i
             }
         };
 
@@ -2064,15 +1182,13 @@ Task: ${prompt}`,
             const img = new Image();
             img.onload = function() {
                 const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d', { alpha: true });
-                // Mobil uyumluluk için boyut sınırla
-                const size = limitCanvasSize(img.width, img.height);
-                canvas.width = size.width;
-                canvas.height = size.height;
+                const ctx = canvas.getContext('2d');
+                canvas.width = img.width;
+                canvas.height = img.height;
 
                 // Filter uygula
                 ctx.filter = `brightness(${100 + brightness}%) contrast(${100 + contrast}%) saturate(${100 + saturation}%)`;
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
 
                 // Yeni base64 oluştur
                 state.processedImage = canvas.toDataURL('image/png');
@@ -2096,264 +1212,6 @@ Task: ${prompt}`,
         }
 
         // ========== SEO GENERATOR - ADVANCED ==========
-        // ========== SEO PLATFORM SEÇİMİ ==========
-        function selectSeoPlatform(platform) {
-            state.seoPlatform = platform;
-
-            document.querySelectorAll('.seo-platform-btn').forEach(btn => {
-                btn.classList.remove('active');
-                btn.classList.add('text-slate-400');
-            });
-            document.querySelector(`[data-seo-platform="${platform}"]`)?.classList.add('active');
-            document.querySelector(`[data-seo-platform="${platform}"]`)?.classList.remove('text-slate-400');
-
-            const trendyolPanel = document.getElementById('trendyolSeoPanel');
-            const etsyPanel = document.getElementById('etsySeoPanel');
-
-            if (platform === 'etsy') {
-                trendyolPanel.classList.add('hidden');
-                etsyPanel.classList.remove('hidden');
-                showToast('Etsy SEO modu aktif', 'success');
-            } else {
-                trendyolPanel.classList.remove('hidden');
-                etsyPanel.classList.add('hidden');
-                showToast('Trendyol SEO modu aktif', 'success');
-            }
-        }
-
-        // ========== ETSY SEO GENERATOR ==========
-        async function generateEtsySEO() {
-            const geminiKey = localStorage.getItem('gemini_api_key');
-            if (!geminiKey) {
-                showToast('Gemini API key gerekli', 'error');
-                return;
-            }
-
-            showToast('Etsy SEO oluşturuluyor... AI analizi başlıyor', 'success');
-
-            const productInfo = document.getElementById('etsyProductInfo')?.value?.trim() || '';
-            const productType = state.productType === 'bag' ? 'bag/handbag' : 'jewelry';
-            const bagType = state.productType === 'bag' ? bagTypes[state.settings.bagType] : null;
-
-            // Görsel analizi için base64
-            let imageData = null;
-            if (state.originalBase64) {
-                imageData = state.originalBase64.split(',')[1];
-            }
-
-            const etsySeoPrompt = `You are an Etsy SEO expert for 2025-2026. Analyze this ${productType} product and create optimized listing content.
-
-USER PROVIDED INFO: ${productInfo || 'No additional info provided'}
-
-ETSY SEO 2025-2026 RULES:
-1. TITLE (120-140 chars optimal):
-   - Primary keyword MUST be in first 3-5 words (mobile truncation at 70 chars)
-   - Include: product type, key material, style descriptor
-   - NO keyword stuffing, must be readable
-   - Move "gift for" phrases to tags, NOT title
-
-2. 13 TAGS (each max 20 chars):
-   - Use ALL 13 tag slots
-   - Multi-word phrases only (natural language)
-   - Mix: broad terms + long-tail + synonyms + occasion
-   - Don't repeat category/attributes in tags
-   - Include: what it is, who it's for, style, occasion, material
-
-3. ATTRIBUTES to suggest:
-   - Primary color, secondary color
-   - Material
-   - Occasion
-   - Style
-
-4. DESCRIPTION (SEO optimized):
-   - Keywords in first paragraph
-   - Natural, human-written tone (not AI-generic)
-   - Include dimensions, materials, features
-   - Tell a story about the product
-
-5. LONG-TAIL KEYWORDS:
-   - 5-7 specific buyer search phrases
-   - Based on buyer intent
-
-Return ONLY valid JSON:
-{
-  "title": "Your optimized Etsy title here (120-140 chars)",
-  "tags": ["tag1", "tag2", "tag3", "tag4", "tag5", "tag6", "tag7", "tag8", "tag9", "tag10", "tag11", "tag12", "tag13"],
-  "attributes": {
-    "primaryColor": "color",
-    "secondaryColor": "color or none",
-    "material": "main material",
-    "style": "style descriptor",
-    "occasion": "when to use"
-  },
-  "description": "SEO optimized product description with embedded keywords...",
-  "longTailKeywords": ["specific search phrase 1", "specific search phrase 2", "..."]
-}`;
-
-            try {
-                const requestBody = {
-                    contents: [{
-                        parts: imageData ? [
-                            { text: etsySeoPrompt },
-                            { inlineData: { mimeType: 'image/jpeg', data: imageData } }
-                        ] : [
-                            { text: etsySeoPrompt }
-                        ]
-                    }],
-                    generationConfig: { temperature: 0.7 }
-                };
-
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(requestBody)
-                });
-
-                if (!response.ok) {
-                    throw new Error('Gemini API hatası');
-                }
-
-                const data = await response.json();
-                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-                // JSON'u parse et
-                const jsonMatch = text.match(/\{[\s\S]*\}/);
-                if (!jsonMatch) {
-                    throw new Error('JSON parse edilemedi');
-                }
-
-                const seoData = JSON.parse(jsonMatch[0]);
-
-                // State'e kaydet
-                state.etsySeo = seoData;
-
-                // UI'ı güncelle
-                renderEtsySEO(seoData);
-
-                showToast('Etsy SEO oluşturuldu!', 'success');
-
-            } catch (error) {
-                console.error('Etsy SEO hatası:', error);
-                showToast('Etsy SEO oluşturulamadı: ' + error.message, 'error');
-            }
-        }
-
-        function renderEtsySEO(seoData) {
-            // Hide placeholder, show content
-            document.getElementById('etsySeoPlaceholder').classList.add('hidden');
-            document.getElementById('etsySeoContent').classList.remove('hidden');
-
-            // Title
-            const titleInput = document.getElementById('etsyTitle');
-            titleInput.value = seoData.title || '';
-            updateEtsyCharCount('title');
-
-            // Tags
-            const tagsContainer = document.getElementById('etsyTagsContainer');
-            tagsContainer.innerHTML = '';
-            const tags = seoData.tags || [];
-            tags.forEach((tag, i) => {
-                const tagEl = document.createElement('span');
-                tagEl.className = 'etsy-tag';
-                tagEl.innerHTML = `<span class="mr-1 opacity-50">${i+1}.</span>${tag}`;
-                tagEl.onclick = () => {
-                    navigator.clipboard.writeText(tag);
-                    showToast(`"${tag}" kopyalandı`, 'success');
-                };
-                tagsContainer.appendChild(tagEl);
-            });
-            document.getElementById('etsyTagCount').textContent = `${tags.length}/13 tag`;
-
-            // Attributes
-            const attrsContainer = document.getElementById('etsyAttributesContainer');
-            attrsContainer.innerHTML = '';
-            const attrs = seoData.attributes || {};
-            Object.entries(attrs).forEach(([key, value]) => {
-                if (value && value !== 'none') {
-                    const attrEl = document.createElement('div');
-                    attrEl.className = 'flex justify-between p-2 bg-slate-700/50 rounded';
-                    attrEl.innerHTML = `<span class="text-slate-400">${key}:</span><span class="text-white">${value}</span>`;
-                    attrsContainer.appendChild(attrEl);
-                }
-            });
-
-            // Description
-            document.getElementById('etsyDescription').value = seoData.description || '';
-
-            // Long-tail keywords
-            const longTailContainer = document.getElementById('etsyLongTailContainer');
-            longTailContainer.innerHTML = '';
-            const longTail = seoData.longTailKeywords || [];
-            longTail.forEach(kw => {
-                const kwEl = document.createElement('div');
-                kwEl.className = 'flex items-center justify-between p-2 bg-purple-500/10 rounded cursor-pointer hover:bg-purple-500/20';
-                kwEl.innerHTML = `<span>${kw}</span><i class="fa-solid fa-copy text-purple-400 text-xs"></i>`;
-                kwEl.onclick = () => {
-                    navigator.clipboard.writeText(kw);
-                    showToast(`"${kw}" kopyalandı`, 'success');
-                };
-                longTailContainer.appendChild(kwEl);
-            });
-        }
-
-        function updateEtsyCharCount(field) {
-            if (field === 'title') {
-                const input = document.getElementById('etsyTitle');
-                const count = input.value.length;
-                const countEl = document.getElementById('etsyTitleCount');
-                countEl.textContent = `${count}/140`;
-                if (count > 140) {
-                    countEl.className = 'text-red-400';
-                } else if (count >= 120) {
-                    countEl.className = 'text-green-400';
-                } else {
-                    countEl.className = 'text-orange-300';
-                }
-            }
-        }
-
-        function copyEtsySEO(field) {
-            let text = '';
-            switch(field) {
-                case 'title':
-                    text = document.getElementById('etsyTitle').value;
-                    break;
-                case 'tags':
-                    text = (state.etsySeo?.tags || []).join(', ');
-                    break;
-                case 'description':
-                    text = document.getElementById('etsyDescription').value;
-                    break;
-            }
-            navigator.clipboard.writeText(text);
-            showToast(`${field} kopyalandı`, 'success');
-        }
-
-        function copyAllEtsySEO() {
-            const seo = state.etsySeo || {};
-            const text = `ETSY LISTING SEO
-================
-
-TITLE:
-${seo.title || ''}
-
-TAGS (13):
-${(seo.tags || []).map((t, i) => `${i+1}. ${t}`).join('\n')}
-
-ATTRIBUTES:
-${Object.entries(seo.attributes || {}).map(([k, v]) => `${k}: ${v}`).join('\n')}
-
-DESCRIPTION:
-${seo.description || ''}
-
-LONG-TAIL KEYWORDS:
-${(seo.longTailKeywords || []).join('\n')}
-`;
-            navigator.clipboard.writeText(text);
-            showToast('Tüm Etsy SEO kopyalandı', 'success');
-        }
-
-        // ========== TRENDYOL SEO GENERATOR ==========
         async function generateSEO() {
             const geminiKey = localStorage.getItem('gemini_api_key');
             if (!geminiKey) {
@@ -2559,9 +1417,7 @@ SADECE JSON döndür, başka bir şey yazma!`
                     }
 
                     // 0.5 Barkod ve Model Kodu
-                    // Barkod: Her zaman yeni benzersiz barkod üret (8680 + 9 rastgele rakam)
-                    const uniqueBarcode = '8680' + Math.floor(Math.random() * 900000000 + 100000000).toString();
-                    document.getElementById('seoBarcode').value = uniqueBarcode;
+                    document.getElementById('seoBarcode').value = seoData.barcode || '';
                     document.getElementById('seoModelCode').value = seoData.modelCode || '';
 
                     // 1. Ana Başlık
@@ -2722,23 +1578,6 @@ ${seo.hashtags || ''}
             });
         }
 
-        // ========== EDIT ONLY MODE ==========
-        function toggleEditOnlyMode() {
-            state.editOnlyMode = document.getElementById('editOnlyModeToggle').checked;
-            const btn = document.getElementById('generateBtn');
-            if (state.editOnlyMode) {
-                btn.innerHTML = '<i class="fa-solid fa-paste mr-1"></i>Yapıştır';
-                btn.classList.remove('from-purple-600', 'to-pink-500', 'hover:from-purple-700', 'hover:to-pink-600', 'glow-purple');
-                btn.classList.add('from-emerald-600', 'to-teal-500', 'hover:from-emerald-700', 'hover:to-teal-600', 'glow-green');
-                showToast('Edit Modu aktif - AI üretimi devre dışı', 'success');
-            } else {
-                btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles mr-1"></i>Oluştur';
-                btn.classList.remove('from-emerald-600', 'to-teal-500', 'hover:from-emerald-700', 'hover:to-teal-600', 'glow-green');
-                btn.classList.add('from-purple-600', 'to-pink-500', 'hover:from-purple-700', 'hover:to-pink-600', 'glow-purple');
-                showToast('Normal mod - AI üretimi aktif', 'info');
-            }
-        }
-
         // ========== POSITION CONTROLS ==========
         function updatePositionValue(type) {
             if (type === 'y') {
@@ -2808,7 +1647,7 @@ ${seo.hashtags || ''}
             if (!state.templateBase64 || !state.extractedJewelry) return;
 
             const canvas = document.getElementById('interactiveCanvas');
-            const ctx = canvas.getContext('2d', { alpha: true });
+            const ctx = canvas.getContext('2d');
 
             // Eğer resimler yüklenmediyse yükle
             if (!interactiveImages.template || !interactiveImages.jewelry) {
@@ -2822,9 +1661,6 @@ ${seo.hashtags || ''}
             // Canvas boyutunu ayarla
             canvas.width = templateImg.width;
             canvas.height = templateImg.height;
-
-            // Şeffaf arka plan ile başla (siyah piksel önleme)
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             // 1. Şablonu çiz
             ctx.drawImage(templateImg, 0, 0);
@@ -3029,43 +1865,43 @@ ${seo.hashtags || ''}
         const modelProfiles = {
             // ========== GENEL MODELLER ==========
             'neck_model': {
-                desc: "Jewelry Photography: Headless cropped shot focusing on neck area. Beautiful smooth skin with natural healthy glow. MODEST FRAMING: Show only neck and collarbone area - NO cleavage, NO excessive skin. Professional e-commerce appropriate. Hands completely away from the necklace/neck area. Hair tied back. Conservative, tasteful composition focused ONLY on the jewelry.",
-                info: "Kolye Odaklı: Profesyonel, mütevazı çerçeveleme.",
+                desc: "Jewelry Photography: Headless cropped shot of a female model focusing on the neck. Real human skin texture with pores and natural imperfections. Clean skin but NOT airbrushed. Hands completely away from the necklace/neck area. Hair tied back. Clear view of the decolletage.",
+                info: "Kolye Odaklı: Gerçekçi cilt dokusu, doğal kusurlar.",
                 category: "general",
                 icon: "fa-circle-user",
                 color: "rose"
             },
             'hand_model': {
-                desc: "Hand jewelry photography: Elegant female hands with smooth, well-groomed appearance. Beautiful healthy skin tone, manicured natural nails. Fingers slightly spread to showcase rings. Wrist visible for bracelets. Real human hands with graceful, feminine quality.",
-                info: "El Modeli: Bakımlı, zarif el görünümü.",
+                desc: "Hand jewelry photography: Elegant female hands with natural skin texture. Visible pores, subtle veins, and realistic nail beds. Fingers slightly spread to showcase rings. Wrist visible for bracelets. Real human hands, not mannequin.",
+                info: "El Modeli: Yüzük & bileklik için doğal el görünümü.",
                 category: "general",
                 icon: "fa-hand",
                 color: "amber"
             },
             'set_model': {
-                desc: "Jewelry set photography: Female model from shoulders up, showing both neck and ears. MODEST FRAMING: Collarbone level only - NO cleavage. Beautiful smooth skin with healthy glow. Hair elegantly styled away from ears and neck. Coordinated necklace and earring display. Professional e-commerce appropriate, tasteful composition.",
-                info: "Set Modeli: Profesyonel set çekimi.",
+                desc: "Jewelry set photography: Female model from shoulders up, showing both neck and ears. Real skin texture with natural undertones. Hair elegantly styled away from ears and neck. Coordinated necklace and earring display on living human skin.",
+                info: "Set Modeli: Kolye + küpe birlikte görüntüleme.",
                 category: "general",
                 icon: "fa-users",
                 color: "violet"
             },
             'boho_model': {
-                desc: "Bohemian lifestyle jewelry photography: Healthy sun-kissed skin with warm golden glow. Outdoor lighting feel. Relaxed, natural pose. MODEST FRAMING: Focus on jewelry area only - NO cleavage, NO excessive skin exposure. Beautiful bronzed complexion. Nature vibes but e-commerce appropriate.",
-                info: "Bohem Modeli: Doğal ama mütevazı.",
+                desc: "Bohemian lifestyle jewelry photography: Sun-kissed skin with natural warmth. Outdoor lighting feel. Relaxed, natural pose. Visible freckles and tan lines welcome. Beach or nature vibes. Authentic human appearance.",
+                info: "Bohem Modeli: Doğal & yazlık görünüm.",
                 category: "general",
                 icon: "fa-sun",
                 color: "orange"
             },
             // ========== MİNİMAL TAKI MODELLERİ ==========
             'minimal_neck': {
-                desc: "MINIMAL/DELICATE JEWELRY NECK: Ultra-close crop focusing ONLY on collarbone and lower neck area. Very soft, even diffused lighting with NO harsh shadows. Maximum negative space around the jewelry. Smooth flawless skin with natural healthy glow. Perfect for thin chains, small pendants, delicate chokers. Soft gradient background. The delicate jewelry is the ONLY focal point.",
+                desc: "MINIMAL/DELICATE JEWELRY NECK: Ultra-close crop focusing ONLY on collarbone and lower neck area. Very soft, even diffused lighting with NO harsh shadows. Maximum negative space around the jewelry. Smooth realistic skin with subtle pores. Perfect for thin chains, small pendants, delicate chokers. Soft gradient background. The delicate jewelry is the ONLY focal point.",
                 info: "Minimal Kolye: İnce zincir, küçük pendant için optimize.",
                 category: "minimal",
                 icon: "fa-minus",
                 color: "sky"
             },
             'minimal_hand': {
-                desc: "MINIMAL/DELICATE HAND JEWELRY: Elegant hand pose with fingers gently together or slightly curved. Soft, even lighting to capture thin bands and small stones without overpowering them. Clean, uncluttered composition with lots of negative space. Manicured natural nails. Smooth beautiful skin. Focus entirely on the delicate minimalist ring details.",
+                desc: "MINIMAL/DELICATE HAND JEWELRY: Elegant hand pose with fingers gently together or slightly curved. Soft, even lighting to capture thin bands and small stones without overpowering them. Clean, uncluttered composition with lots of negative space. Natural or bare nails. Real skin texture. Focus entirely on the delicate minimalist ring details.",
                 info: "Minimal Yüzük: İnce band, küçük taş detayları.",
                 category: "minimal",
                 icon: "fa-ring",
@@ -3073,14 +1909,14 @@ ${seo.hashtags || ''}
             },
             // ========== STATEMENT TAKI MODELLERİ ==========
             'statement_neck': {
-                desc: "STATEMENT/BOLD NECKLACE: Wider frame showing shoulders to capture the SCALE of large jewelry. MODEST FRAMING: Collarbone level maximum - absolutely NO cleavage. More dramatic lighting with intentional highlights on metallic surfaces. Confident but professional presentation. The bold jewelry commands attention. Editorial fashion feel but e-commerce appropriate. Beautiful skin with warm undertones.",
-                info: "Statement Kolye: Geniş ama mütevazı kadraj.",
+                desc: "STATEMENT/BOLD NECKLACE: Wider frame showing full shoulders and upper chest to capture the SCALE of large jewelry. More dramatic lighting with intentional highlights on metallic surfaces. Confident presentation. The bold jewelry commands attention and fills the frame. Can include subtle background texture. Editorial fashion feel. Real skin with natural warmth.",
+                info: "Statement Kolye: Büyük, gösterişli parçalar için geniş kadraj.",
                 category: "statement",
                 icon: "fa-gem",
                 color: "fuchsia"
             },
             'statement_ear': {
-                desc: "STATEMENT EARRINGS: Side profile or 3/4 angle showing the FULL DROP LENGTH of large earrings. Hair pulled completely back and away. Dramatic lighting to catch sparkle, movement and dimension. Neck and jawline visible to emphasize scale. Editorial fashion photography style. Beautiful smooth skin with healthy glow.",
+                desc: "STATEMENT EARRINGS: Side profile or 3/4 angle showing the FULL DROP LENGTH of large earrings. Hair pulled completely back and away. Dramatic lighting to catch sparkle, movement and dimension. Neck and jawline visible to emphasize scale. Editorial fashion photography style. Real human ear with natural skin texture.",
                 info: "Statement Küpe: Sarkık, büyük küpeler için profil çekim.",
                 category: "statement",
                 icon: "fa-star",
@@ -3100,89 +1936,22 @@ ${seo.hashtags || ''}
                 category: "pearl",
                 icon: "fa-circle",
                 color: "slate"
-            },
-            // ========== DOĞALTAŞ TAKİ MODELLERİ ==========
-            'natural_neck': {
-                desc: "NATURAL STONE NECKLACE: Soft diffused lighting from 45-degree angle to reveal stone textures, colors, and natural variations. Light should NOT create harsh reflections on polished stones. Show the authentic beauty of each bead - color gradients, inclusions, natural patterns. Warm skin tone that complements earth tones. Each stone must be individually visible and distinct. Real handmade artisan feel.",
-                info: "Doğaltaş Kolye: Taş dokularını ve renk geçişlerini gösterir.",
-                category: "natural",
-                icon: "fa-leaf",
-                color: "emerald"
-            },
-            'natural_bracelet': {
-                desc: "NATURAL STONE BRACELET: Hand/wrist photography optimized for beaded bracelets. Soft, even lighting to show each stone's unique character. Capture the texture differences between matte and polished stones. Wrist positioned to display full bracelet without distortion. Each bead clearly visible with its natural color and pattern. Authentic handcrafted aesthetic.",
-                info: "Doğaltaş Bileklik: Boncuk detayları ve taş dokuları.",
-                category: "natural",
-                icon: "fa-hand",
-                color: "emerald"
-            },
-            'natural_earring': {
-                desc: "NATURAL STONE EARRINGS: Soft diffused lighting to highlight stone colors and translucency. Position light to reveal any chatoyancy or special optical effects in stones. Show natural inclusions as features, not flaws. Hair completely away from ears. Neutral background that doesn't compete with stone colors. Capture the handmade, artisan quality.",
-                info: "Doğaltaş Küpe: Taş rengi ve ışık geçirgenliği odaklı.",
-                category: "natural",
-                icon: "fa-ear-listen",
-                color: "emerald"
-            },
-            'natural_set': {
-                desc: "NATURAL STONE JEWELRY SET: Display coordinated natural stone pieces together. Soft, even lighting that shows color consistency across pieces. Each stone in each piece must be clearly visible. Show how pieces complement each other. Natural, artisan aesthetic. Warm, authentic feel suitable for handmade marketplace.",
-                info: "Doğaltaş Set: Kolye + bileklik veya küpe birlikte.",
-                category: "natural",
-                icon: "fa-layer-group",
-                color: "emerald"
             }
         };
 
-        // ========== STYLE PRESETS - TAKİ STİLLERİ ==========
+        // ========== STYLE PRESETS ==========
         const stylePresets = {
-            // ========== GENEL E-TİCARET STİLLERİ ==========
             'studio': {
-                name: "Studio",
-                prompt: "Style: Professional e-commerce studio photography. Pure white or light grey seamless background. Soft diffused lighting from 45-degree angles. No harsh shadows. Clean, minimalist look. Even illumination across the jewelry. Commercial quality.",
-                bg: "#f5f5f5",
-                platform: "general"
+                prompt: "Style: Commercial Studio Photography. Pure white or light grey background. Even lighting, no hard shadows. Clean, minimalist, high-end e-commerce look. Pandora/Tiffany aesthetic.",
+                bg: "#f5f5f5"
             },
             'boho': {
-                name: "Boho",
-                prompt: "Style: Bohemian lifestyle aesthetic. Warm earth tones - beige, sand, terracotta. Natural textures in soft background blur (linen, raw wood, stone). Warm golden hour lighting feel. Organic, natural vibe.",
-                bg: "#f5e6d3",
-                platform: "general"
+                prompt: "Style: Bohemian Aesthetic. Warm earth tones, beige/sand colors. Natural organic textures (stone, wood, linen) in background. Soft sun flare. Lifestyle photography feel.",
+                bg: "#f5e6d3"
             },
             'luxury': {
-                name: "Luxury",
-                prompt: "Style: High-end luxury aesthetic. Deep black or navy velvet background. Dramatic spot lighting creating elegant highlights on metal and stones. Premium brand feel. Cartier/Bulgari aesthetic. Rich, expensive look.",
-                bg: "#1a1a1a",
-                platform: "general"
-            },
-            // ========== ETSY ÖZEL STİLLER - DOĞALTAŞ TAKİ ==========
-            'etsy_natural': {
-                name: "Etsy Natural",
-                prompt: "Style: Authentic handmade jewelry aesthetic for Etsy. Soft diffused natural light (like north-facing window). Warm cream or natural linen background. Subtle wood grain or raw stone texture visible. Cozy, artisan feel. NOT harsh studio lighting. Shows the natural beauty and texture of stones. Handcrafted marketplace vibe.",
-                bg: "#f8f5f0",
-                platform: "etsy"
-            },
-            'etsy_minimal': {
-                name: "Etsy Minimal",
-                prompt: "Style: Clean minimal Etsy aesthetic. Soft off-white or pale grey background. Very soft, diffused lighting with gentle shadows. Maximum negative space around jewelry. Simple, Scandinavian feel. Focus entirely on the jewelry piece. No distractions.",
-                bg: "#fafaf8",
-                platform: "etsy"
-            },
-            'etsy_warm': {
-                name: "Etsy Warm",
-                prompt: "Style: Warm artisan Etsy aesthetic. Golden hour warmth. Natural wood surface or kraft paper background. Warm color temperature. Soft shadows. Dried botanicals or natural elements in very soft background blur. Inviting, handmade feel. Authentic craftsmanship vibe.",
-                bg: "#fff8f0",
-                platform: "etsy"
-            },
-            'etsy_stone': {
-                name: "Etsy Stone",
-                prompt: "Style: Natural stone photography for gemstone jewelry. Neutral grey or cream marble/stone surface. Soft diffused lighting to show stone colors accurately. Light positioned to reveal stone texture and translucency. Natural, earthy aesthetic. Focus on the authentic beauty of natural stones.",
-                bg: "#f0eeec",
-                platform: "etsy"
-            },
-            'etsy_lifestyle': {
-                name: "Etsy Lifestyle",
-                prompt: "Style: Lifestyle jewelry shot for Etsy. Jewelry worn naturally on model (neck, hand, ear). Warm natural lighting. Soft, approachable setting. Shows scale and how jewelry looks when worn. Relatable, aspirational. Real person feel, not overly posed or commercial.",
-                bg: "#fff5ee",
-                platform: "etsy"
+                prompt: "Style: Luxury Dark Mode. Black or deep navy background. Marble or velvet textures. Spot lighting to create dramatic highlights. Premium, expensive look. Cartier/Bulgari aesthetic.",
+                bg: "#1a1a1a"
             }
         };
 
@@ -3224,8 +1993,8 @@ ${seo.hashtags || ''}
                 color: "#228B22"
             },
             'none': {
-                name: "Yok (Straplez görünüm)",
-                prompt: "Model with strapless look - shoulders visible but MODEST framing. Collarbone level only - absolutely NO cleavage. Focus entirely on jewelry. Professional e-commerce appropriate, not provocative.",
+                name: "Yok (Sadece Cilt)",
+                prompt: "Model with bare shoulders and neck, no clothing visible in frame. Focus entirely on skin and jewelry. Tasteful, artistic nude shoulders.",
                 color: null
             }
         };
@@ -3294,177 +2063,8 @@ ${seo.hashtags || ''}
             }
         };
 
-        // ========== ÇANTA TÜRLERİ ==========
-        const bagTypes = {
-            'tote': {
-                name: "Tote Çanta",
-                desc: "Large open-top tote bag. Roomy interior visible. Two shoulder straps. Perfect for daily use, shopping, work. Show the capacity and structure.",
-                info: "Tote: Geniş kapasite, günlük kullanım, alışveriş.",
-                icon: "fa-bag-shopping",
-                color: "amber",
-                keywords: ["tote çanta", "büyük çanta", "alışveriş çantası", "günlük çanta"]
-            },
-            'crossbody': {
-                name: "Crossbody Çanta",
-                desc: "Crossbody bag with adjustable long strap worn across the body. Compact size, hands-free convenience. Show the strap length and bag positioning.",
-                info: "Crossbody: Omuz askılı, eller serbest, kompakt.",
-                icon: "fa-suitcase",
-                color: "emerald",
-                keywords: ["crossbody çanta", "omuz çantası", "askılı çanta", "çapraz çanta"]
-            },
-            'clutch': {
-                name: "Clutch / El Çantası",
-                desc: "Elegant clutch or evening bag held in hand. No straps or small wrist strap. Compact, sophisticated. Perfect for special occasions and evening events.",
-                info: "Clutch: Zarif el çantası, özel günler, gece.",
-                icon: "fa-wallet",
-                color: "pink",
-                keywords: ["clutch", "el çantası", "gece çantası", "abiye çanta", "portföy"]
-            },
-            'backpack': {
-                name: "Sırt Çantası",
-                desc: "Stylish backpack with two shoulder straps. Show the back panel, straps, and front pockets. Can be fashion-forward or practical.",
-                info: "Sırt Çantası: İki askı, pratik, şık tasarım.",
-                icon: "fa-briefcase",
-                color: "blue",
-                keywords: ["sırt çantası", "backpack", "okul çantası", "laptop çantası"]
-            },
-            'beltbag': {
-                name: "Bel Çantası",
-                desc: "Belt bag / fanny pack worn around waist or crossbody. Compact, trendy, hands-free. Show the belt strap and compact design.",
-                info: "Bel Çantası: Belde, kompakt, trend.",
-                icon: "fa-fanny-pack",
-                color: "violet",
-                keywords: ["bel çantası", "fanny pack", "belt bag", "böbrek çantası"]
-            }
-        };
-
-        // ========== ÇANTA STİLLERİ ==========
-        const bagStyles = {
-            // ========== GENEL STİLLER ==========
-            'studio': {
-                name: "Studio",
-                prompt: "Style: Professional e-commerce studio photography. Pure white or light grey seamless background. Even, soft lighting with no harsh shadows. Clean, commercial look. Focus on product details.",
-                bg: "#f5f5f5",
-                platform: "general"
-            },
-            'lifestyle': {
-                name: "Lifestyle",
-                prompt: "Style: Lifestyle photography with model. Natural setting - urban street, cafe, park, or home interior. Golden hour or natural daylight. Authentic, relatable, Instagram-worthy aesthetic.",
-                bg: "#e8f5e9",
-                platform: "general"
-            },
-            'luxury': {
-                name: "Luxury",
-                prompt: "Style: High-end luxury aesthetic. Marble surface, velvet backdrop, or reflective glass. Dramatic lighting with elegant shadows. Premium brand feel - Gucci, Chanel, Louis Vuitton aesthetic.",
-                bg: "#1a1a1a",
-                platform: "general"
-            },
-            'editorial': {
-                name: "Editorial",
-                prompt: "Style: High-fashion editorial photography. Dramatic, artistic lighting. Bold composition. Vogue, Harper's Bazaar magazine aesthetic. Creative angles and artistic expression.",
-                bg: "#f3e5f5",
-                platform: "general"
-            },
-            // ========== ETSY ÖZEL STİLLER ==========
-            'etsy_handmade': {
-                name: "Etsy Handmade",
-                prompt: "Style: Authentic handmade artisan aesthetic for Etsy marketplace. Warm natural lighting from window. Rustic wooden table or natural linen fabric background. Soft earth tones - beige, cream, warm brown. Natural props like dried flowers, kraft paper, twine. Cozy, authentic, handcrafted feel. NO harsh studio lighting. Warm color temperature. Visible craftsmanship details.",
-                bg: "#f5f0e6",
-                platform: "etsy"
-            },
-            'etsy_rustic': {
-                name: "Etsy Rustic",
-                prompt: "Style: Rustic farmhouse aesthetic for Etsy. Reclaimed wood background or weathered wooden surface. Natural daylight with soft shadows. Vintage feel with warm undertones. Props: burlap, dried lavender, antique items. Cottagecore / farmhouse aesthetic. Authentic, not overly polished. Handmade marketplace feel.",
-                bg: "#e8e0d5",
-                platform: "etsy"
-            },
-            'etsy_minimal': {
-                name: "Etsy Minimal",
-                prompt: "Style: Clean minimal Etsy aesthetic. Soft neutral background - off-white, light beige, or pale grey. Natural soft lighting, no harsh shadows. Simple composition with generous negative space. Single natural prop if any (one plant, one stone). Scandinavian simplicity. Modern handmade feel. Clean and calming.",
-                bg: "#fafafa",
-                platform: "etsy"
-            },
-            'etsy_lifestyle': {
-                name: "Etsy Lifestyle",
-                prompt: "Style: Authentic Etsy lifestyle shot. Real-world usage scenario. Natural home environment or outdoor setting. Warm, inviting atmosphere. Golden hour or soft window light. Model using the bag naturally - not posed artificially. Relatable, aspirational but achievable. Shows scale and practical use.",
-                bg: "#fff8f0",
-                platform: "etsy"
-            },
-            'etsy_flatlay': {
-                name: "Etsy Flat Lay",
-                prompt: "Style: Curated Etsy flat lay photography. Top-down view on textured surface (marble, wood, linen). Thoughtfully arranged complementary items around the bag - notebook, coffee cup, sunglasses, keys. Tells a story about the buyer lifestyle. Natural lighting. Cohesive color palette. Pinterest-worthy composition.",
-                bg: "#f8f5f2",
-                platform: "etsy"
-            }
-        };
-
-        // ========== ÇANTA MODEL PROFİLLERİ ==========
-        const bagModelProfiles = {
-            'business': {
-                name: "İş Kadını",
-                desc: "Professional businesswoman in elegant office attire. Blazer or smart dress. Confident posture. Corporate setting or minimalist background. The bag complements a professional look.",
-                info: "İş Kadını: Profesyonel, ofis, şık kıyafet.",
-                outfit: "elegant blazer, professional attire, smart office wear"
-            },
-            'casual': {
-                name: "Casual",
-                desc: "Relaxed, everyday style. Jeans and nice top, casual dress, or athleisure. Natural, approachable look. Street style or casual setting. The bag fits everyday life.",
-                info: "Casual: Günlük, rahat, sokak stili.",
-                outfit: "casual jeans and top, relaxed everyday wear, street style"
-            },
-            'evening': {
-                name: "Gece / Özel Gün",
-                desc: "Glamorous evening look. Elegant dress or chic evening outfit. Special occasion ready. Party or event atmosphere. Subtle bokeh lights. The bag is a statement accessory.",
-                info: "Gece: Şık, parti, özel gün.",
-                outfit: "elegant evening dress, glamorous outfit, party attire"
-            },
-            'travel': {
-                name: "Seyahat",
-                desc: "Travel-ready look. Comfortable yet stylish travel outfit. Airport, train station, or scenic destination background. The bag is practical and stylish for journeys.",
-                info: "Seyahat: Pratik, konforlu, yolculuk.",
-                outfit: "comfortable travel outfit, stylish yet practical clothing"
-            }
-        };
-
-        // ========== ÇANTA POZLARI ==========
-        const bagPoses = {
-            'front': {
-                name: "Ön Görünüm",
-                prompt: "Bag photographed from the front, facing camera directly. Clear view of the front panel, logo, hardware, and design details.",
-                forModel: false
-            },
-            'side': {
-                name: "Yan Görünüm",
-                prompt: "Bag photographed from the side profile. Shows depth, thickness, side pockets, and strap attachments.",
-                forModel: false
-            },
-            'threequarter': {
-                name: "3/4 Açı",
-                prompt: "Bag photographed at 3/4 angle (45 degrees). Shows both front and side, giving best sense of shape, size, and dimension.",
-                forModel: false
-            },
-            'shoulder': {
-                name: "Omuzda",
-                prompt: "Model wearing the bag on shoulder. Natural carrying position. Shows how the bag looks when worn and the strap length.",
-                forModel: true
-            },
-            'hand': {
-                name: "Elde",
-                prompt: "Model holding the bag by handles or clutching it. Shows scale relative to hand and elegant carrying style.",
-                forModel: true
-            },
-            'flatlay': {
-                name: "Flat Lay",
-                prompt: "Bag laid flat, photographed from directly above (bird's eye view). Top-down composition. Can include styled props around it.",
-                forModel: false
-            }
-        };
-
         // ========== CRITICAL: SKIN FIX PROMPT ==========
-        const skinFix = " Render beautiful, healthy human skin - smooth, well-moisturized, with natural healthy glow. NOT overly textured or with exaggerated pores/imperfections. Clean, attractive skin like in professional beauty photography. REMOVE any plastic mannequin seams, stands, or artificial holders. The jewelry should rest naturally on human skin. NO mannequin, NO plastic, NO artificial appearance. ";
-
-        // ========== E-COMMERCE MODESTY RULES ==========
-        const modestyRules = " ⚠️ E-COMMERCE MODESTY RULES (MANDATORY): Frame ONLY the jewelry area - collarbone/neck level maximum. Absolutely NO cleavage, NO excessive skin exposure, NO provocative poses. This is professional product photography for e-commerce, NOT fashion/glamour photography. Keep framing conservative and tasteful. Focus 100% on the jewelry product. ";
+        const skinFix = " Render the neck/skin as hyper-realistic living human skin with pores and texture. REMOVE any plastic mannequin seams, stands, or artificial holders. The jewelry should rest naturally on human skin. NO mannequin, NO plastic, NO artificial appearance. ";
 
         // ========== INIT ==========
         window.onload = () => {
@@ -3526,22 +2126,29 @@ ${seo.hashtags || ''}
 
         // ========== SETTINGS ==========
         function loadSettings() {
+            const geminiKey = localStorage.getItem('gemini_api_key');
             const falKey = localStorage.getItem('fal_api_key');
-            const imageModel = localStorage.getItem('image_model') || 'flux';
-
-            if (falKey) document.getElementById('falKeyInput').value = falKey;
-            document.getElementById('imageModelSelect').value = imageModel;
-
+            if (geminiKey) {
+                document.getElementById('geminiKeyInput').value = geminiKey;
+            }
+            if (falKey) {
+                document.getElementById('falKeyInput').value = falKey;
+            }
             updateApiStatus();
         }
 
         function updateApiStatus() {
+            const hasGemini = localStorage.getItem('gemini_api_key');
             const hasFal = localStorage.getItem('fal_api_key');
 
-            if (hasFal) {
+            if (hasGemini && hasFal) {
                 document.getElementById('apiDot').className = 'w-2 h-2 rounded-full bg-green-500';
-                document.getElementById('apiStatus').textContent = 'Fal.ai Hazır';
+                document.getElementById('apiStatus').textContent = 'Hibrit Mod Hazır';
                 document.getElementById('apiStatus').className = 'text-xs text-green-400';
+            } else if (hasGemini || hasFal) {
+                document.getElementById('apiDot').className = 'w-2 h-2 rounded-full bg-yellow-500';
+                document.getElementById('apiStatus').textContent = 'API Eksik';
+                document.getElementById('apiStatus').className = 'text-xs text-yellow-400';
             } else {
                 document.getElementById('apiDot').className = 'w-2 h-2 rounded-full bg-red-500';
                 document.getElementById('apiStatus').textContent = 'API Key Gerekli';
@@ -3558,25 +2165,19 @@ ${seo.hashtags || ''}
         }
 
         function saveSettings() {
+            const geminiKey = document.getElementById('geminiKeyInput').value.trim();
             const falKey = document.getElementById('falKeyInput').value.trim();
-            const imageModel = document.getElementById('imageModelSelect').value;
 
-            if (!falKey) {
-                showToast('Fal.ai API Key gerekli', 'error');
+            if (!geminiKey || !falKey) {
+                showToast('Lütfen her iki API Key girin', 'error');
                 return;
             }
 
+            localStorage.setItem('gemini_api_key', geminiKey);
             localStorage.setItem('fal_api_key', falKey);
-            localStorage.setItem('image_model', imageModel);
-
             updateApiStatus();
             closeSettings();
-
-            const modelNames = {
-                'gemini3pro': 'Gemini 3 Pro Image',
-                'flux': 'FLUX.1 [dev]'
-            };
-            showToast(`${modelNames[imageModel] || imageModel} hazır!`, 'success');
+            showToast('Hibrit mod hazır!', 'success');
         }
 
         // ========== FILE UPLOAD ==========
@@ -3651,8 +2252,7 @@ ${seo.hashtags || ''}
             general: "Standart takı çekimleri için genel modeller",
             minimal: "İnce zincir, küçük pendant, minimalist parçalar için optimize edilmiş",
             statement: "Büyük, gösterişli, dikkat çekici takılar için geniş kadraj",
-            pearl: "İnci parlaklığı ve yansıması için özel yumuşak aydınlatma",
-            natural: "Doğaltaş ve boncuklu takılar için taş dokusu ve renk odaklı"
+            pearl: "İnci parlaklığı ve yansıması için özel yumuşak aydınlatma"
         };
 
         function selectJewelryCategory(category) {
@@ -3942,38 +2542,7 @@ Return ONLY this JSON:
             document.querySelectorAll('.style-card').forEach(c => c.classList.remove('selected'));
             document.querySelector(`[data-style="${style}"]`)?.classList.add('selected');
 
-            const styleName = stylePresets[style]?.name || style;
-            showToast(`${styleName} stili seçildi`, 'success');
-        }
-
-        function selectJewelryPlatform(platform) {
-            state.settings.jewelryPlatform = platform;
-
-            // Toggle platform buttons
-            document.querySelectorAll('.jewelry-platform-btn').forEach(btn => {
-                btn.classList.remove('active');
-                btn.classList.add('text-slate-400');
-            });
-            document.querySelector(`[data-jplatform="${platform}"]`)?.classList.add('active');
-            document.querySelector(`[data-jplatform="${platform}"]`)?.classList.remove('text-slate-400');
-
-            // Show/hide style containers
-            const generalStyles = document.getElementById('jewelryStyleContainer');
-            const etsyStyles = document.getElementById('etsyJewelryStyleContainer');
-
-            if (platform === 'etsy') {
-                generalStyles.classList.add('hidden');
-                etsyStyles.classList.remove('hidden');
-                // Auto-select first Etsy style
-                selectStyle('etsy_natural');
-                showToast('Etsy modu aktif - Doğaltaş estetik', 'success');
-            } else {
-                generalStyles.classList.remove('hidden');
-                etsyStyles.classList.add('hidden');
-                // Auto-select first general style
-                selectStyle('studio');
-                showToast('Genel mod aktif', 'success');
-            }
+            showToast(`${style.charAt(0).toUpperCase() + style.slice(1)} stili seçildi`, 'success');
         }
 
         // ========== POSE SELECTION ==========
@@ -4032,108 +2601,6 @@ Return ONLY this JSON:
                 manualSection.classList.remove('hidden');
                 autoResult.classList.add('hidden');
                 showToast('Manuel seçim aktif', 'success');
-            }
-        }
-
-        // ========== ÜRÜN TİPİ SEÇİMİ ==========
-        function selectProductType(type) {
-            state.productType = type;
-
-            // Toggle buttons
-            document.querySelectorAll('.product-type-btn').forEach(btn => {
-                btn.classList.remove('active');
-                btn.classList.add('text-slate-400');
-            });
-            document.querySelector(`[data-type="${type}"]`)?.classList.add('active');
-            document.querySelector(`[data-type="${type}"]`)?.classList.remove('text-slate-400');
-
-            // Show/hide settings panels
-            const jewelrySettings = document.getElementById('jewelrySettings');
-            const bagSettings = document.getElementById('bagSettings');
-
-            if (type === 'jewelry') {
-                jewelrySettings.classList.remove('hidden');
-                bagSettings.classList.add('hidden');
-                showToast('Takı modu seçildi', 'success');
-            } else {
-                jewelrySettings.classList.add('hidden');
-                bagSettings.classList.remove('hidden');
-                showToast('Çanta modu seçildi', 'success');
-            }
-        }
-
-        // ========== ÇANTA SEÇİM FONKSİYONLARI ==========
-        function selectBagType(bagType) {
-            state.settings.bagType = bagType;
-
-            document.querySelectorAll('.bag-type-card').forEach(c => c.classList.remove('selected'));
-            document.querySelector(`[data-bag="${bagType}"]`)?.classList.add('selected');
-
-            // Update info
-            const bagInfo = bagTypes[bagType];
-            document.getElementById('bagModelDesc').innerHTML =
-                '<i class="fa-solid fa-info-circle mr-1"></i>' + bagInfo.info;
-
-            showToast(`${bagInfo.name} seçildi`, 'success');
-        }
-
-        function selectBagStyle(style) {
-            state.settings.bagStyle = style;
-
-            document.querySelectorAll('.bag-style-card').forEach(c => c.classList.remove('selected'));
-            document.querySelector(`.bag-style-card[data-style="${style}"]`)?.classList.add('selected');
-
-            const styleName = bagStyles[style]?.name || style;
-            showToast(`${styleName} stili seçildi`, 'success');
-        }
-
-        function selectBagModel(model) {
-            state.settings.bagModel = model;
-
-            document.querySelectorAll('.bag-model-card').forEach(c => c.classList.remove('selected'));
-            document.querySelector(`[data-model="${model}"]`)?.classList.add('selected');
-
-            const modelInfo = bagModelProfiles[model];
-            showToast(`${modelInfo.name} profili seçildi`, 'success');
-        }
-
-        function selectBagPose(pose) {
-            state.settings.bagPose = pose;
-
-            document.querySelectorAll('.bag-pose-card').forEach(c => c.classList.remove('selected'));
-            document.querySelector(`.bag-pose-card[data-pose="${pose}"]`)?.classList.add('selected');
-
-            const poseName = bagPoses[pose]?.name || pose;
-            showToast(`${poseName} pozu seçildi`, 'success');
-        }
-
-        function selectBagPlatform(platform) {
-            state.settings.bagPlatform = platform;
-
-            // Toggle platform buttons
-            document.querySelectorAll('.bag-platform-btn').forEach(btn => {
-                btn.classList.remove('active');
-                btn.classList.add('text-slate-400');
-            });
-            document.querySelector(`[data-platform="${platform}"]`)?.classList.add('active');
-            document.querySelector(`[data-platform="${platform}"]`)?.classList.remove('text-slate-400');
-
-            // Show/hide style containers
-            const generalStyles = document.getElementById('bagStyleContainer');
-            const etsyStyles = document.getElementById('etsyStyleContainer');
-
-            if (platform === 'etsy') {
-                generalStyles.classList.add('hidden');
-                etsyStyles.classList.remove('hidden');
-                // Auto-select first Etsy style
-                selectBagStyle('etsy_handmade');
-                showToast('Etsy modu aktif - El yapımı estetik', 'success');
-            } else {
-                generalStyles.classList.remove('hidden');
-                etsyStyles.classList.add('hidden');
-                // Auto-select first general style
-                selectBagStyle('studio');
-                showToast('Genel mod aktif', 'success');
             }
         }
 
@@ -4212,7 +2679,7 @@ Return ONLY this JSON:
 
             // ===== OUTFIT STYLE =====
             if (lowerPrompt.includes('straplez') || lowerPrompt.includes('strapless') || lowerPrompt.includes('askısız')) {
-                instructions.push('OUTFIT STYLE: Strapless top/dress look - shoulders visible but MODEST framing at collarbone level. NO cleavage. E-commerce appropriate.');
+                instructions.push('OUTFIT STYLE: Strapless top/dress, completely bare shoulders, perfect for showcasing necklaces');
             }
             if (lowerPrompt.includes('v yaka') || lowerPrompt.includes('v-neck')) {
                 instructions.push('OUTFIT STYLE: V-neck top, elegant neckline that frames the jewelry');
@@ -4323,15 +2790,12 @@ The jewelry must remain EXACTLY as provided - do not modify the jewelry in any w
             }
         }
 
-        // ========== MAIN IMAGE GENERATION - Fal.ai + BiRefNet ==========
+        // ========== MAIN IMAGE GENERATION - GEMINI 2.5 ONLY ==========
         async function generateImage() {
-            const falKey = localStorage.getItem('fal_api_key');
-            const imageModel = localStorage.getItem('image_model') || 'flux';
-
-            // API key kontrolü
-            if (!falKey) {
+            const geminiKey = localStorage.getItem('gemini_api_key');
+            if (!geminiKey) {
                 openSettings();
-                showToast('Lütfen Fal.ai API Key girin', 'error');
+                showToast('Lütfen Gemini API Key girin', 'error');
                 return;
             }
 
@@ -4340,72 +2804,20 @@ The jewelry must remain EXACTLY as provided - do not modify the jewelry in any w
                 return;
             }
 
-            const productTypeName = state.productType === 'bag' ? 'Çanta' : 'Takı';
-            showLoader(`${productTypeName} Modu...`, '1/4 Başlatılıyor');
+            showLoader('Stüdyo Pro...', '1/3 Ürün çıkarılıyor');
 
             try {
-                // ========== EDIT ONLY MODE - AI'sız Canvas Yapıştırma ==========
-                if (state.editOnlyMode) {
-                    if (!state.templateBase64) {
-                        showToast('Edit modunda şablon gerekli! Önce model şablonu yükleyin.', 'error');
-                        hideLoader();
-                        return;
-                    }
+                // Tek mod: Halüsinasyonsuz Stüdyo Pro
+                console.log('🎯 Stüdyo Pro - Halüsinasyonsuz mod başlatılıyor...');
+                state.processedImage = await generateWithGemini25();
 
-                    console.log('📋 Edit Modu: AI üretimi atlanıyor, sadece yapıştırma...');
-                    showLoader('Edit Modu...', '1/2 Takı çıkarılıyor');
+                // STUDIO ENHANCE - Fal.ai ile kalite artırma
+                console.log('🎬 Stüdyo kalitesi uygulanıyor...');
+                state.processedImage = await studioEnhance(state.processedImage);
 
-                    // BiRefNet ile takıyı çıkar
-                    const birefnetResponse = await fetch('https://fal.run/fal-ai/birefnet', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Key ${falKey}`
-                        },
-                        body: JSON.stringify({
-                            image_url: state.originalBase64,
-                            model: "General Use (Light)",
-                            operating_resolution: state.isHighRes ? "2048x2048" : "1024x1024",
-                            output_format: "png",
-                            refine_foreground: true
-                        })
-                    });
-
-                    if (!birefnetResponse.ok) {
-                        const err = await birefnetResponse.json();
-                        throw new Error('BiRefNet hatası: ' + (err.detail || 'Takı çıkarılamadı'));
-                    }
-
-                    const birefnetData = await birefnetResponse.json();
-                    const transparentJewelryUrl = birefnetData.image?.url;
-                    if (!transparentJewelryUrl) {
-                        throw new Error('Takı çıkarılamadı');
-                    }
-
-                    const jewelryBase64 = await fetchImageAsBase64(transparentJewelryUrl);
-                    state.extractedJewelry = jewelryBase64;
-                    console.log('✅ Takı şeffaf arka planla çıkarıldı');
-
-                    // Canvas ile yapıştır - AI yok!
-                    showLoader('Edit Modu...', '2/2 Yapıştırılıyor');
-                    state.processedImage = await compositeJewelryOnTemplate(jewelryBase64, state.templateBase64);
-                    console.log('✅ Edit Modu tamamlandı - AI kullanılmadı!');
-
-                } else {
-                    // ========== NORMAL MOD - AI Üretimi ==========
-                    // Ürün tipine göre uygun fonksiyonu çağır
-                    if (state.productType === 'bag') {
-                        console.log('👜 Çanta modu başlatılıyor...');
-                        state.processedImage = await generateBagImage();
-                    } else {
-                        console.log('💎 Takı modu başlatılıyor...');
-                        state.processedImage = await generateWithGemini25();
-                    }
-
-                    // STUDIO ENHANCE - Fal.ai ile kalite artırma
-                    console.log('🎬 Stüdyo kalitesi uygulanıyor...');
-                    state.processedImage = await studioEnhance(state.processedImage);
-                }
+                // SIYAH ARKA PLAN FIX - Şeffaf PNG'yi beyaz arka plana composite et
+                console.log('🎨 Arka plan garantisi uygulanıyor...');
+                state.processedImage = await ensureWhiteBackground(state.processedImage);
 
                 // Orijinal processed image'ı sakla (rötuş için)
                 state.originalProcessedImage = state.processedImage;
@@ -4420,11 +2832,7 @@ The jewelry must remain EXACTLY as provided - do not modify the jewelry in any w
                 document.getElementById('editPanel').classList.remove('hidden');
 
                 hideLoader();
-                if (state.editOnlyMode) {
-                    showToast('Takı yapıştırıldı! (AI kullanılmadı)', 'success');
-                } else {
-                    showToast('Stüdyo kalitesinde görsel hazır!', 'success');
-                }
+                showToast('Stüdyo kalitesinde görsel hazır!', 'success');
 
                 // Otomatik SEO oluştur
                 generateSEO();
@@ -4503,7 +2911,7 @@ YOUR ONLY TASKS:
 1. Blend the jewelry edges naturally with the skin (soft, seamless transition)
 2. Add realistic soft shadows under the jewelry
 3. Make the lighting consistent across the entire image
-4. Keep skin smooth and beautiful - do NOT add pores, wrinkles or imperfections
+4. Enhance skin texture slightly for realism
 
 ABSOLUTELY DO NOT:
 - Change the jewelry design, shape, color, or details
@@ -4855,12 +3263,11 @@ OUTPUT: Clean, professional background only.`;
                 // Fallback: Basit beyaz arka plan
                 console.log('⚠️ Arka plan oluşturulamadı, beyaz kullanılıyor');
                 const canvas = document.createElement('canvas');
-                const fallbackSize = isMobileDevice() ? 768 : 1024;
-                canvas.width = fallbackSize;
-                canvas.height = fallbackSize;
-                const ctx = canvas.getContext('2d', { alpha: true });
+                canvas.width = 1024;
+                canvas.height = 1024;
+                const ctx = canvas.getContext('2d');
                 ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, fallbackSize, fallbackSize);
+                ctx.fillRect(0, 0, 1024, 1024);
                 backgroundBase64 = canvas.toDataURL('image/png');
             }
             console.log('✅ Arka plan oluşturuldu');
@@ -4929,8 +3336,8 @@ OUTPUT: The product must be PIXEL-PERFECT identical to Input Image 1, naturally 
             }
 
             // Fallback: Şeffaf ürünü döndür
-            console.log('⚠️ Yerleştirme başarısız, şeffaf ürün döndürülüyor');
-            return productBase64;
+            console.log('⚠️ Yerleştirme başarısız, beyaz arka plana composite ediliyor');
+            return await addWhiteBackgroundToTransparent(productBase64);
         }
 
         // Helper: URL'den base64'e çevir
@@ -4944,12 +3351,79 @@ OUTPUT: The product must be PIXEL-PERFECT identical to Input Image 1, naturally 
             });
         }
 
+        // Helper: Şeffaf PNG'yi beyaz arka plana composite et
+        // Bu fonksiyon siyah arka plan sorununu çözer
+        async function addWhiteBackgroundToTransparent(transparentBase64) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+
+                    // Önce beyaz arka plan çiz
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    // Sonra şeffaf görüntüyü üzerine çiz
+                    ctx.drawImage(img, 0, 0);
+
+                    // PNG olarak döndür
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = () => reject(new Error('Görüntü yüklenemedi'));
+                img.src = transparentBase64;
+            });
+        }
+
+        // Helper: Görüntünün şeffaf piksel içerip içermediğini kontrol et ve beyaz arka plan ekle
+        // Bu fonksiyon tüm çıktılarda siyah arka plan sorununu önler
+        async function ensureWhiteBackground(imageBase64) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+
+                    // Görüntüyü çiz ve alpha kanalını kontrol et
+                    ctx.drawImage(img, 0, 0);
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const data = imageData.data;
+
+                    // Şeffaf piksel var mı kontrol et (alpha < 255)
+                    let hasTransparency = false;
+                    for (let i = 3; i < data.length; i += 4) {
+                        if (data[i] < 250) { // Alpha değeri 250'den küçükse şeffaf kabul et
+                            hasTransparency = true;
+                            break;
+                        }
+                    }
+
+                    if (hasTransparency) {
+                        console.log('⚠️ Şeffaf piksel tespit edildi, beyaz arka plan ekleniyor...');
+                        // Canvas'ı temizle ve beyaz arka plan ile yeniden çiz
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0);
+                    }
+
+                    // JPEG olarak döndür (şeffaflık olmadan, daha küçük dosya boyutu)
+                    resolve(canvas.toDataURL('image/jpeg', 0.95));
+                };
+                img.onerror = () => reject(new Error('Görüntü yüklenemedi'));
+                img.src = imageBase64;
+            });
+        }
+
         // ========== CANVAS COMPOSITE - TAKILAYI ŞABLONA YERLEŞTİR ==========
         // Client-side işlem, AI yok, hallucination yok
         async function compositeJewelryOnTemplate(jewelryBase64, templateBase64) {
             return new Promise((resolve, reject) => {
                 const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d', { alpha: true });
+                const ctx = canvas.getContext('2d');
 
                 const templateImg = new Image();
                 const jewelryImg = new Image();
@@ -4960,25 +3434,20 @@ OUTPUT: The product must be PIXEL-PERFECT identical to Input Image 1, naturally 
                     loadedCount++;
                     if (loadedCount < 2) return;
 
-                    // Canvas boyutunu şablona göre ayarla (mobil uyumluluk için sınırla)
-                    const size = limitCanvasSize(templateImg.width, templateImg.height);
-                    canvas.width = size.width;
-                    canvas.height = size.height;
-                    const scaleRatio = size.width / templateImg.width;
-
-                    // Şeffaf arka plan ile başla
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    // Canvas boyutunu şablona göre ayarla
+                    canvas.width = templateImg.width;
+                    canvas.height = templateImg.height;
 
                     // 1. Şablonu çiz (arka plan)
-                    ctx.drawImage(templateImg, 0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(templateImg, 0, 0);
 
                     // 2. Takıyı pozisyon ayarlarına göre çiz
                     const pos = state.position;
-                    const jewelryWidth = canvas.width * (pos.scale / 100);
+                    const jewelryWidth = templateImg.width * (pos.scale / 100);
                     const jewelryHeight = (jewelryImg.height / jewelryImg.width) * jewelryWidth;
 
-                    const x = (canvas.width * (pos.x / 100)) - (jewelryWidth / 2);
-                    const y = (canvas.height * (pos.y / 100)) - (jewelryHeight / 2);
+                    const x = (templateImg.width * (pos.x / 100)) - (jewelryWidth / 2);
+                    const y = (templateImg.height * (pos.y / 100)) - (jewelryHeight / 2);
 
                     // Rotation desteği
                     const rotation = (pos.rotation || 0) * Math.PI / 180;
@@ -5003,250 +3472,18 @@ OUTPUT: The product must be PIXEL-PERFECT identical to Input Image 1, naturally 
             });
         }
 
-        // ========== ÇANTA GÖRSEL ÜRETİM FONKSİYONU ==========
-        async function generateBagImage() {
-            const falKey = localStorage.getItem('fal_api_key');
-            const imageModel = localStorage.getItem('image_model') || 'flux';
-
-            const bagType = bagTypes[state.settings.bagType];
-            const bagStyle = bagStyles[state.settings.bagStyle];
-            const bagModel = bagModelProfiles[state.settings.bagModel];
-            const bagPose = bagPoses[state.settings.bagPose];
-
-            const modelNames = {
-                'gemini3pro': 'Gemini 3 Pro Image',
-                'flux': 'FLUX.1 [dev]'
-            };
-            console.log(`👜 Çanta Modu: ${modelNames[imageModel] || imageModel} + BiRefNet başlatılıyor...`);
-
-            // API key kontrolü
-            if (!falKey) {
-                throw new Error('Fal.ai API key gerekli');
-            }
-
-            // ===== ADIM 1: BiRefNet ile çantayı çıkar =====
-            showLoader('Çanta Modu...', '1/3 Çanta çıkarılıyor (BiRefNet)');
-
-            const birefnetResponse = await fetch('https://fal.run/fal-ai/birefnet', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Key ${falKey}`
-                },
-                body: JSON.stringify({
-                    image_url: state.originalBase64,
-                    model: "General Use (Light)",
-                    operating_resolution: state.isHighRes ? "2048x2048" : "1024x1024",
-                    output_format: "png",
-                    refine_foreground: true
-                })
-            });
-
-            if (!birefnetResponse.ok) {
-                const err = await birefnetResponse.json();
-                throw new Error('BiRefNet hatası: ' + (err.detail || 'Çanta çıkarılamadı'));
-            }
-
-            const birefnetData = await birefnetResponse.json();
-            const transparentBagUrl = birefnetData.image?.url;
-            if (!transparentBagUrl) {
-                throw new Error('Çanta çıkarılamadı');
-            }
-            console.log('✅ Çanta şeffaf arka planla çıkarıldı');
-
-            const bagBase64 = await fetchImageAsBase64(transparentBagUrl);
-
-            // ===== ADIM 2: Çantayı analiz et =====
-            showLoader('Çanta Modu...', '2/3 Çanta analiz ediliyor');
-            console.log('🔍 Çanta analiz ediliyor...');
-
-            const bagAnalysisPrompt = `Analyze this bag/handbag image and provide specifications.
-
-Return ONLY a JSON object:
-{
-  "type": "${state.settings.bagType}",
-  "material": "leather/canvas/fabric/synthetic/suede",
-  "color": "primary color",
-  "hardware": "gold/silver/brass/none",
-  "size": "small/medium/large",
-  "features": ["list of features like pockets, zippers, etc"],
-  "description": "brief description of the bag"
-}
-
-Return ONLY the JSON, no other text.`;
-
-            const bagBase64Data = bagBase64.split(',')[1];
-            let bagAnalysis = {
-                type: state.settings.bagType,
-                material: 'leather',
-                color: 'neutral',
-                hardware: 'gold',
-                size: 'medium',
-                features: [],
-                description: 'stylish bag'
-            };
-
-            if (geminiKey) {
-                try {
-                    const analysisResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{
-                                parts: [
-                                    { text: bagAnalysisPrompt },
-                                    {
-                                        inlineData: {
-                                            mimeType: 'image/png',
-                                            data: bagBase64Data
-                                        }
-                                    }
-                                ]
-                            }],
-                            generationConfig: { temperature: 0.1 }
-                        })
-                    });
-
-                    if (analysisResponse.ok) {
-                        const analysisData = await analysisResponse.json();
-                        const analysisText = analysisData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-                        const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
-                        if (jsonMatch) {
-                            bagAnalysis = { ...bagAnalysis, ...JSON.parse(jsonMatch[0]) };
-                            console.log('✅ Çanta analizi:', bagAnalysis);
-                        }
-                    }
-                } catch (e) {
-                    console.warn('Çanta analizi yapılamadı, varsayılan değerler kullanılıyor');
-                }
-            }
-
-            // ===== ADIM 3: Görsel üret =====
-            showLoader(`${modelNames[imageModel]} Modu...`, '3/3 Çanta görseli oluşturuluyor');
-
-            // Model ile mi yoksa ürün çekimi mi?
-            const needsModel = bagPose.forModel;
-            const isEtsyStyle = bagStyle.platform === 'etsy';
-
-            // ANTI-HALLUCINATION: Güçlendirilmiş koruma talimatları
-            const antiHallucinationRules = `
-⚠️ ABSOLUTE RULES - ZERO TOLERANCE FOR CHANGES:
-1. DO NOT CHANGE THE BAG IN ANY WAY
-2. DO NOT add logos, text, patterns, or decorations that don't exist
-3. DO NOT change the color - keep EXACT original color
-4. DO NOT modify hardware (zippers, buckles, clasps) - keep original
-5. DO NOT alter stitching, seams, or texture patterns
-6. DO NOT add or remove pockets, straps, or handles
-7. DO NOT change proportions, shape, or size ratios
-8. The bag in the INPUT is SACRED - preserve it PIXEL-PERFECT
-
-This is IMAGE EDITING of an EXISTING product photo.
-The bag MUST remain 100% identical to the input.
-You are ONLY allowed to:
-- Change/add the background
-- Add a model holding/wearing the bag (if requested)
-- Adjust lighting on the scene (not the bag itself)`;
-
-            let imageGenPrompt;
-            if (needsModel) {
-                // Model ile çekim
-                imageGenPrompt = `TASK: Place this EXACT bag on a fashion model.
-
-${antiHallucinationRules}
-
-${modestyRules}
-
-MODEL REQUIREMENTS:
-${bagModel.desc}
-Outfit: ${bagModel.outfit}
-
-BAG INFO (for context only - DO NOT MODIFY):
-- Type: ${bagType.name}
-- Material: ${bagAnalysis.material}
-- Color: ${bagAnalysis.color}
-- Hardware: ${bagAnalysis.hardware}
-
-POSE: ${bagPose.prompt}
-
-${bagStyle.prompt}
-
-${isEtsyStyle ? 'ETSY AESTHETIC: Authentic, handmade feel. Warm natural lighting. NOT overly polished or commercial. Real, relatable, artisan marketplace vibe.' : ''}
-
-OUTPUT: Professional product photography where the bag is the UNCHANGED hero product.`;
-            } else {
-                // Ürün çekimi (model yok)
-                imageGenPrompt = `TASK: Create product photography of this EXACT bag - NO MODEL.
-
-${antiHallucinationRules}
-
-BAG INFO (for context only - DO NOT MODIFY):
-- Type: ${bagType.name}
-- Material: ${bagAnalysis.material}
-- Color: ${bagAnalysis.color}
-- Hardware: ${bagAnalysis.hardware}
-- Features: ${bagAnalysis.features?.join(', ') || 'standard'}
-
-ANGLE: ${bagPose.prompt}
-
-${bagStyle.prompt}
-
-${isEtsyStyle ? `ETSY AESTHETIC REQUIREMENTS:
-- Warm, natural lighting (like from a window)
-- Authentic handmade marketplace feel
-- Natural textures in background (wood, linen, kraft paper)
-- NOT harsh studio lighting
-- Cozy, artisan, authentic vibe
-- Props should feel organic (dried flowers, twine, vintage items)` : ''}
-
-OUTPUT: Beautiful product shot where the bag is UNCHANGED, only the environment is new.`;
-            }
-
-            let finalImage;
-            if (imageModel === 'gemini3pro') {
-                finalImage = await editImageWithGemini3Pro(imageGenPrompt, bagBase64, falKey);
-                console.log('✅ Gemini 3 Pro Image ile çanta görseli oluşturuldu!');
-            } else {
-                // Default: FLUX.1 [dev]
-                finalImage = await editImageWithFlux(imageGenPrompt, bagBase64, falKey);
-                console.log('✅ FLUX.1 [dev] ile çanta görseli oluşturuldu!');
-            }
-
-            // SEO bilgilerini güncelle
-            state.seo.category = bagType.name;
-            state.seo.keywords = bagType.keywords || [];
-            state.seo.attributes = {
-                material: bagAnalysis.material,
-                color: bagAnalysis.color,
-                hardware: bagAnalysis.hardware,
-                size: bagAnalysis.size
-            };
-
-            return finalImage;
-        }
-
-        // ========== GPT-4o + BiRefNet MODE - HALÜSİNASYON-FREE ==========
+        // ========== GEMINI EDIT MODE - HALÜSİNASYON-FREE ==========
         // 1. BiRefNet ile takıyı çıkar (orijinal korunur)
-        // 2. Gemini ile takı analizi (metin - ucuz)
-        // 3. GPT-4o vision ile detaylı takı analizi
-        // 4. DALL-E 3 ile model + takı oluştur
+        // 2. Gemini ile model/sahne oluştur (takısız)
+        // 3. Gemini Edit ile orijinal takıyı yerleştir
         async function generateWithGemini25() {
+            const geminiKey = localStorage.getItem('gemini_api_key');
             const falKey = localStorage.getItem('fal_api_key');
-            const imageModel = localStorage.getItem('image_model') || 'flux';
-
             const profile = modelProfiles[state.settings.modelProfile];
             const style = stylePresets[state.settings.style];
             const pose = posePresets[state.settings.pose];
 
-            const modelNames = {
-                'gemini3pro': 'Gemini 3 Pro Image',
-                'flux': 'FLUX.1 [dev]'
-            };
-            console.log(`🎨 ${modelNames[imageModel] || imageModel} + BiRefNet Modu başlatılıyor...`);
-
-            // API key kontrolü
-            if (!falKey) {
-                throw new Error('Fal.ai API key gerekli');
-            }
+            console.log('🎨 Manken Modu (Hallucination-Free) başlatılıyor...');
 
             // ===== ADIM 1: BiRefNet ile takıyı çıkar =====
             showLoader('Manken Modu...', '1/3 Takı çıkarılıyor (BiRefNet)');
@@ -5358,10 +3595,19 @@ Return ONLY the JSON, no other text.`;
                 console.log('⚠️ Takı analizi başarısız, varsayılan kullanılıyor:', e.message);
             }
 
-            // ===== ADIM 2: GPT-4o ile TAKIYİ MODEL ÜZERİNDE GÖSTER =====
+            // ===== ADIM 2: Gemini ile model + kolye TEK ADIMDA =====
+            // Model ayrı üretip birleştirmek yerine, kolyeyi verip direkt model oluştur
+            showLoader('Manken Modu...', '3/3 Model + kolye oluşturuluyor');
+
             const outfitSceneInstructions = getOutfitScenePrompt();
             const smartPromptInstructions = getSmartPromptInstructions();
             const hasAngleInstruction = smartPromptInstructions.includes('CAMERA ANGLE:');
+
+            const aspectRatio = state.originalWidth && state.originalHeight
+                ? (state.originalWidth / state.originalHeight).toFixed(2)
+                : 1;
+            const isPortrait = aspectRatio < 1;
+            const isLandscape = aspectRatio > 1;
 
             // Takı analizine göre frame ayarları
             const frameSettings = {
@@ -5373,89 +3619,86 @@ Return ONLY the JSON, no other text.`;
             };
             const frameSetting = frameSettings[jewelryAnalysis.length] || frameSettings.medium;
 
-            showLoader('Görsel Üretiliyor...', '3/3 Model + takı oluşturuluyor');
-            console.log('🎨 Takı modele yerleştiriliyor...');
+            // TEK ADIM: Kolyeyi verip model oluştur
+            const singleStepPrompt = `Görseldeki kolyeyi/takıyı takan profesyonel bir model fotoğrafı oluştur.
 
-            // Etsy mi genel mi?
-            const isEtsyJewelryStyle = style.platform === 'etsy';
+🚨 EN ÖNEMLİ KURAL - MUTLAKA UYULMALI 🚨
+Görseldeki kolye BİREBİR AYNI kalmalı:
+- AYNI boyut (küçültme/büyütme YOK)
+- AYNI renkler (değiştirme YOK)
+- AYNI taşlar, boncuklar, zincir detayları
+- AYNI pendant/uç kısmı
+- Kolyeyi YENİDEN ÜRETME - görseldekini AYNEN kullan
 
-            // ANTI-HALLUCINATION: Doğaltaş takı için güçlendirilmiş koruma
-            const jewelryAntiHallucination = `
-⚠️ ABSOLUTE RULES - ZERO TOLERANCE FOR CHANGES TO THE JEWELRY:
-
-1. BEAD COUNT: Do NOT add or remove ANY beads/stones. Count them - keep EXACT same number.
-2. STONE COLORS: Each stone's color must remain EXACTLY as in the input. No color shifts.
-3. STONE ARRANGEMENT: The pattern/sequence of stones must be IDENTICAL.
-4. STONE SIZES: Each individual stone size must be preserved. No scaling.
-5. METAL/WIRE: Any metal components, clasps, or wire work must remain unchanged.
-6. SPACING: The spacing between beads/stones must be preserved.
-7. TEXTURE: Stone textures (matte, polished, raw) must be maintained.
-8. SHAPE: Overall shape and drape of the jewelry must be identical.
-
-This is IMAGE EDITING of an EXISTING product photo.
-The jewelry is SACRED - it MUST remain 100% identical to the input.
-You are ONLY allowed to:
-- Add a model wearing/displaying the jewelry
-- Change the background/environment
-- Adjust scene lighting (but preserve jewelry colors)`;
-
-            // Görsel üretim prompt'u
-            const imageGenPrompt = `TASK: Place this EXACT jewelry on a model for e-commerce photography.
-
-${jewelryAntiHallucination}
-
-${modestyRules}
-
-MODEL REQUIREMENTS:
-${profile.desc}
-
-${style.prompt}
-
-${isEtsyJewelryStyle ? `ETSY NATURAL STONE AESTHETIC:
-- Soft, diffused natural lighting (like north-facing window)
-- Warm, authentic handmade feel
-- NOT harsh commercial studio lighting
-- Show the natural beauty of stones - their texture, color variations, inclusions
-- Artisan marketplace vibe - real, not overly polished` : 'Professional e-commerce studio lighting.'}
-
-OUTFIT:
-- ${frameSetting.neckline} neckline
-- ${isEtsyJewelryStyle ? 'Natural, neutral tones (cream, beige, soft grey)' : 'Dark solid color (black or charcoal)'}
-${outfitSceneInstructions}
-
-POSE:
-- ${pose?.prompt || 'Front facing, clear view of jewelry'}
+📐 FRAME/ÇERÇEVELEME:
 - ${frameSetting.frame}
+- Kolye tam görünsün, kesilmesin
+- Boyutlar: ${state.originalWidth || 1024}x${state.originalHeight || 1024}
 
-JEWELRY INFO (for context - DO NOT MODIFY):
-- Type: ${jewelryAnalysis.type}
-- Length: ${jewelryAnalysis.length}
-- Has pendant: ${jewelryAnalysis.hasLargePendant}
+👗 KIYAFETİ:
+- ${frameSetting.neckline} - kolyeyi gösterecek açık yaka
+- Siyah veya koyu düz renk
+- Kolye kıyafetin üstünde otursun
 
-OUTPUT: Professional product photo where the jewelry is UNCHANGED, IDENTICAL to input.`;
+👩 MODEL:
+- ${profile.desc}
+- ${style.prompt}
+- Profesyonel stüdyo ışıklandırması
+- ${hasAngleInstruction ? smartPromptInstructions : 'Önden, omuzlar görünür'}
 
-            // Seçilen modele göre görsel oluştur
-            let finalImage;
-            const loaderName = modelNames[imageModel] || imageModel;
-            showLoader(`${loaderName} Modu...`, '3/3 Model + takı oluşturuluyor');
+✅ SONUÇ:
+- Kolye DOĞAL şekilde boyunda otursun
+- Zincir boyunun arkasına doğal kavisli
+- Gerçekçi gölgeler
+- E-ticaret ürün fotoğrafı kalitesi
 
-            if (imageModel === 'gemini3pro') {
-                finalImage = await editImageWithGemini3Pro(imageGenPrompt, jewelryBase64, falKey);
-                console.log('✅ Gemini 3 Pro Image ile görsel oluşturuldu!');
-            } else {
-                // Default: FLUX.1 [dev]
-                finalImage = await editImageWithFlux(imageGenPrompt, jewelryBase64, falKey);
-                console.log('✅ FLUX.1 [dev] ile görsel oluşturuldu!');
+TEKRAR: Görseldeki kolyeyi DEĞİŞTİRME, AYNEN koru!`;
+
+            const response = await fetch(`${GEMINI_CONFIG.baseUrl}/${GEMINI_CONFIG.imageModel}:generateContent?key=${geminiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [
+                            { text: singleStepPrompt },
+                            {
+                                inlineData: {
+                                    mimeType: 'image/png',
+                                    data: jewelryBase64.replace(/^data:image\/\w+;base64,/, '')
+                                }
+                            }
+                        ]
+                    }],
+                    generationConfig: {
+                        responseModalities: ["image", "text"],
+                        temperature: 0.1  // Çok düşük = yaratıcılık minimum
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error('Gemini hatası: ' + (err.error?.message || 'Model oluşturulamadı'));
             }
 
-            return finalImage;
+            const data = await response.json();
+            const parts = data.candidates?.[0]?.content?.parts || [];
+
+            for (const part of parts) {
+                if (part.inlineData?.data) {
+                    console.log('✅ Model + kolye tek adımda oluşturuldu!');
+                    return `data:image/png;base64,${part.inlineData.data}`;
+                }
+            }
+
+            throw new Error('Görsel oluşturulamadı');
         }
 
-        // ========== CANVAS COMPOSITE - Yedek (kullanılmıyor) ==========
+        // ========== CANVAS COMPOSITE (Yedek - şu an kullanılmıyor) ==========
         async function createCanvasComposite(jewelryBase64, modelBase64, jewelryAnalysis) {
             return new Promise((resolve, reject) => {
                 const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d', { alpha: true });
+                const ctx = canvas.getContext('2d');
                 const modelImg = new Image();
                 const jewelryImg = new Image();
                 let loaded = 0;
@@ -5464,16 +3707,11 @@ OUTPUT: Professional product photo where the jewelry is UNCHANGED, IDENTICAL to 
                     loaded++;
                     if (loaded < 2) return;
 
-                    // Mobil uyumluluk için boyut sınırla
-                    const size = limitCanvasSize(modelImg.width, modelImg.height);
-                    canvas.width = size.width;
-                    canvas.height = size.height;
-
-                    // Şeffaf arka plan ile başla
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    canvas.width = modelImg.width;
+                    canvas.height = modelImg.height;
 
                     // Model arka plan
-                    ctx.drawImage(modelImg, 0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(modelImg, 0, 0);
 
                     // Takı boyutu - uzunluğa göre ayarla
                     const sizeMap = {
@@ -5558,7 +3796,7 @@ OUTPUT: Professional product photo where the jewelry is UNCHANGED, IDENTICAL to 
         async function createEdgeOnlyMask(jewelryBase64, modelBase64, jewelryAnalysis) {
             return new Promise((resolve) => {
                 const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                const ctx = canvas.getContext('2d');
                 const modelImg = new Image();
                 const jewelryImg = new Image();
                 let loaded = 0;
@@ -5620,7 +3858,7 @@ OUTPUT: Professional product photo where the jewelry is UNCHANGED, IDENTICAL to 
 
                     // Takının alpha kanalını kullanarak gerçek şeklini al
                     const tempCanvas = document.createElement('canvas');
-                    const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
+                    const tempCtx = tempCanvas.getContext('2d');
                     tempCanvas.width = Math.round(targetWidth);
                     tempCanvas.height = Math.round(targetHeight);
 
@@ -5636,15 +3874,15 @@ OUTPUT: Professional product photo where the jewelry is UNCHANGED, IDENTICAL to 
 
                     // Beyaz silhouette - takı şeklinin dışı
                     const edgeCanvas = document.createElement('canvas');
-                    const edgeCtx = edgeCanvas.getContext('2d', { alpha: true, willReadFrequently: true });
+                    const edgeCtx = edgeCanvas.getContext('2d');
                     edgeCanvas.width = tempCanvas.width;
                     edgeCanvas.height = tempCanvas.height;
 
-                    // Alpha > 50 olan pikselleri beyaz yap (siyah artifakt önleme için eşik artırıldı)
+                    // Alpha > 20 olan pikselleri beyaz yap
                     const edgeData = edgeCtx.createImageData(tempCanvas.width, tempCanvas.height);
                     for (let i = 0; i < data.length; i += 4) {
                         const alpha = data[i + 3];
-                        if (alpha > 50) {
+                        if (alpha > 20) {
                             edgeData.data[i] = 255;     // R
                             edgeData.data[i + 1] = 255; // G
                             edgeData.data[i + 2] = 255; // B
@@ -5871,19 +4109,14 @@ NOT: Tipik bir kolye için y=35-50 arası, scale=40-70 arası olur.`;
                         loadImage(state.originalBase64)
                     ]);
 
-                    // Create canvas with template size (mobil uyumluluk için sınırla)
+                    // Create canvas with template size
                     const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d', { alpha: true });
-                    const size = limitCanvasSize(templateImg.width, templateImg.height);
-                    canvas.width = size.width;
-                    canvas.height = size.height;
-                    const scaleRatio = size.width / templateImg.width;
-
-                    // Şeffaf arka plan ile başla (siyah piksel önleme)
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = templateImg.width;
+                    canvas.height = templateImg.height;
 
                     // Draw template (background - real model)
-                    ctx.drawImage(templateImg, 0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(templateImg, 0, 0);
 
                     // Slider'lardan pozisyon al
                     const smartPos = {
@@ -5913,7 +4146,7 @@ NOT: Tipik bir kolye için y=35-50 arası, scale=40-70 arası olur.`;
                     ctx.drawImage(jewelryImg, x, y, jWidth, jHeight);
 
                     console.log('✅ Kompozit tamamlandı!');
-                    resolve(canvas.toDataURL('image/png'));
+                    resolve(canvas.toDataURL('image/jpeg', 0.95));
                 } catch (error) {
                     reject(error);
                 }
@@ -6125,9 +4358,7 @@ SADECE JSON döndür.`;
                     const canvas = document.createElement('canvas');
                     canvas.width = img.width;
                     canvas.height = img.height;
-                    const ctx = canvas.getContext('2d', { alpha: true });
-                    // Şeffaf arka plan ile başla (siyah piksel önleme)
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0);
                     link.href = canvas.toDataURL('image/png');
                     link.click();
@@ -6139,261 +4370,6 @@ SADECE JSON döndür.`;
             }
 
             showToast(`${format.toUpperCase()} indirildi`, 'success');
-        }
-
-        // ========== VIDEO GENERATION ==========
-        // Halüsinasyonsuz I2V - Fal.ai Kling ve MiniMax
-
-        function openVideoModal() {
-            if (!state.processedImage) {
-                showToast('Önce bir görsel oluşturun', 'error');
-                return;
-            }
-
-            // Kaynak görseli göster
-            const sourceImg = document.getElementById('videoSourceImage');
-            sourceImg.src = state.processedImage;
-            sourceImg.classList.remove('hidden');
-            document.getElementById('videoSourcePlaceholder').classList.add('hidden');
-
-            // Modal'ı aç
-            document.getElementById('videoModal').classList.remove('hidden');
-
-            // Video output'u gizle (yeni oturum)
-            document.getElementById('videoOutputContainer').classList.add('hidden');
-        }
-
-        function closeVideoModal() {
-            document.getElementById('videoModal').classList.add('hidden');
-        }
-
-        function selectVideoModel(model) {
-            state.video.model = model;
-
-            // UI güncelle
-            document.querySelectorAll('.video-model-card').forEach(card => {
-                card.classList.remove('selected');
-                card.style.borderColor = '';
-                card.style.background = '';
-            });
-            const selected = document.querySelector(`.video-model-card[data-model="${model}"]`);
-            if (selected) {
-                selected.classList.add('selected');
-            }
-        }
-
-        function selectMotionType(motion) {
-            state.video.motionType = motion;
-
-            // UI güncelle
-            document.querySelectorAll('.motion-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-            const selected = document.querySelector(`.motion-card[data-motion="${motion}"]`);
-            if (selected) {
-                selected.classList.add('selected');
-            }
-        }
-
-        function selectVideoDuration(duration) {
-            state.video.duration = duration;
-
-            // UI güncelle
-            document.querySelectorAll('.video-duration-btn').forEach(btn => {
-                btn.classList.remove('selected');
-            });
-            const selected = document.querySelector(`.video-duration-btn[data-duration="${duration}"]`);
-            if (selected) {
-                selected.classList.add('selected');
-            }
-        }
-
-        function selectVideoAspect(aspect) {
-            state.video.aspectRatio = aspect;
-
-            // UI güncelle
-            document.querySelectorAll('.video-aspect-btn').forEach(btn => {
-                btn.classList.remove('selected');
-            });
-            const selected = document.querySelector(`.video-aspect-btn[data-aspect="${aspect}"]`);
-            if (selected) {
-                selected.classList.add('selected');
-            }
-        }
-
-        // Hareket promptları - halüsinasyonsuz
-        const motionPrompts = {
-            zoom_in: 'Slow, smooth camera zoom in on the product. Camera moves closer gradually. Product stays completely still and unchanged. Professional product video.',
-            zoom_out: 'Slow, smooth camera zoom out from the product. Camera moves back gradually. Product stays completely still and unchanged. Professional product video.',
-            pan_right: 'Slow, smooth camera pan from left to right. Very subtle horizontal movement. Product stays completely still and unchanged. Professional product video.',
-            subtle: 'Very subtle, almost imperceptible camera movement. Gentle floating effect. Product stays completely still and unchanged. Professional product video, minimal motion.'
-        };
-
-        async function generateVideo() {
-            const falKey = localStorage.getItem('fal_api_key');
-            if (!falKey) {
-                showToast('Fal.ai API key gerekli! Ayarlardan ekleyin.', 'error');
-                return;
-            }
-
-            if (!state.processedImage) {
-                showToast('Önce bir görsel oluşturun', 'error');
-                return;
-            }
-
-            // Progress göster
-            document.getElementById('videoProgress').classList.remove('hidden');
-            document.getElementById('generateVideoBtn').disabled = true;
-            document.getElementById('generateVideoBtn').classList.add('opacity-50');
-
-            try {
-                const imageUrl = state.processedImage.startsWith('data:')
-                    ? state.processedImage
-                    : `data:image/png;base64,${state.processedImage}`;
-
-                const prompt = motionPrompts[state.video.motionType];
-                let videoUrl;
-
-                if (state.video.model === 'kling') {
-                    videoUrl = await generateWithKling(imageUrl, prompt, falKey);
-                } else {
-                    videoUrl = await generateWithMiniMax(imageUrl, prompt, falKey);
-                }
-
-                // Video URL'i kaydet
-                state.video.generatedVideoUrl = videoUrl;
-
-                // Video'yu göster
-                const videoOutput = document.getElementById('videoOutput');
-                videoOutput.src = videoUrl;
-                document.getElementById('videoOutputContainer').classList.remove('hidden');
-
-                showToast('Video başarıyla oluşturuldu!', 'success');
-
-            } catch (error) {
-                console.error('Video generation error:', error);
-                showToast('Video oluşturma hatası: ' + error.message, 'error');
-            } finally {
-                document.getElementById('videoProgress').classList.add('hidden');
-                document.getElementById('generateVideoBtn').disabled = false;
-                document.getElementById('generateVideoBtn').classList.remove('opacity-50');
-            }
-        }
-
-        // Kling 1.0 Image-to-Video via Fal.ai
-        async function generateWithKling(imageUrl, prompt, falKey) {
-            console.log('🎬 Kling 1.0 Image-to-Video başlatılıyor...');
-            document.getElementById('videoProgressText').textContent = 'Kling AI video oluşturuyor...';
-            document.getElementById('videoProgressDetail').textContent = 'Bu işlem 30-90 saniye sürebilir';
-
-            // Aspect ratio mapping
-            const aspectRatioMap = {
-                '1:1': '1:1',
-                '16:9': '16:9',
-                '9:16': '9:16'
-            };
-
-            const response = await fetch('https://fal.run/fal-ai/kling-video/v1/standard/image-to-video', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Key ${falKey}`
-                },
-                body: JSON.stringify({
-                    image_url: imageUrl,
-                    prompt: prompt,
-                    duration: state.video.duration.toString(),
-                    aspect_ratio: aspectRatioMap[state.video.aspectRatio] || '1:1'
-                })
-            });
-
-            if (!response.ok) {
-                const err = await response.json();
-                console.error('Kling hatası:', err);
-                throw new Error(err.detail || err.error?.message || 'Kling video oluşturma hatası');
-            }
-
-            const data = await response.json();
-            console.log('✅ Kling video oluşturuldu!', data);
-
-            // Video URL'ini al
-            if (data.video?.url) {
-                return data.video.url;
-            }
-            if (data.video_url) {
-                return data.video_url;
-            }
-            if (data.output?.video?.url) {
-                return data.output.video.url;
-            }
-
-            throw new Error('Kling beklenmeyen response formatı');
-        }
-
-        // MiniMax Hailuo Image-to-Video via Fal.ai
-        async function generateWithMiniMax(imageUrl, prompt, falKey) {
-            console.log('🎬 MiniMax Hailuo Image-to-Video başlatılıyor...');
-            document.getElementById('videoProgressText').textContent = 'MiniMax video oluşturuyor...';
-            document.getElementById('videoProgressDetail').textContent = 'Bu işlem 20-60 saniye sürebilir';
-
-            const response = await fetch('https://fal.run/fal-ai/minimax-video/image-to-video', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Key ${falKey}`
-                },
-                body: JSON.stringify({
-                    image_url: imageUrl,
-                    prompt: prompt,
-                    prompt_optimizer: true
-                })
-            });
-
-            if (!response.ok) {
-                const err = await response.json();
-                console.error('MiniMax hatası:', err);
-                throw new Error(err.detail || err.error?.message || 'MiniMax video oluşturma hatası');
-            }
-
-            const data = await response.json();
-            console.log('✅ MiniMax video oluşturuldu!', data);
-
-            // Video URL'ini al
-            if (data.video?.url) {
-                return data.video.url;
-            }
-            if (data.video_url) {
-                return data.video_url;
-            }
-            if (data.output?.video?.url) {
-                return data.output.video.url;
-            }
-
-            throw new Error('MiniMax beklenmeyen response formatı');
-        }
-
-        function downloadVideo() {
-            if (!state.video.generatedVideoUrl) {
-                showToast('İndirilecek video yok', 'error');
-                return;
-            }
-
-            // Video'yu indir
-            const link = document.createElement('a');
-            link.href = state.video.generatedVideoUrl;
-            link.download = `trendyol_video_${Date.now()}.mp4`;
-            link.target = '_blank';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            showToast('Video indiriliyor...', 'success');
-        }
-
-        function regenerateVideo() {
-            // Mevcut video'yu gizle ve yeniden oluştur
-            document.getElementById('videoOutputContainer').classList.add('hidden');
-            generateVideo();
         }
 
         // ========== LOADER ==========

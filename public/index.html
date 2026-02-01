@@ -2815,6 +2815,10 @@ The jewelry must remain EXACTLY as provided - do not modify the jewelry in any w
                 console.log('🎬 Stüdyo kalitesi uygulanıyor...');
                 state.processedImage = await studioEnhance(state.processedImage);
 
+                // SIYAH ARKA PLAN FIX - Şeffaf PNG'yi beyaz arka plana composite et
+                console.log('🎨 Arka plan garantisi uygulanıyor...');
+                state.processedImage = await ensureWhiteBackground(state.processedImage);
+
                 // Orijinal processed image'ı sakla (rötuş için)
                 state.originalProcessedImage = state.processedImage;
 
@@ -3332,8 +3336,8 @@ OUTPUT: The product must be PIXEL-PERFECT identical to Input Image 1, naturally 
             }
 
             // Fallback: Şeffaf ürünü döndür
-            console.log('⚠️ Yerleştirme başarısız, şeffaf ürün döndürülüyor');
-            return productBase64;
+            console.log('⚠️ Yerleştirme başarısız, beyaz arka plana composite ediliyor');
+            return await addWhiteBackgroundToTransparent(productBase64);
         }
 
         // Helper: URL'den base64'e çevir
@@ -3344,6 +3348,73 @@ OUTPUT: The product must be PIXEL-PERFECT identical to Input Image 1, naturally 
                 const reader = new FileReader();
                 reader.onloadend = () => resolve(reader.result);
                 reader.readAsDataURL(blob);
+            });
+        }
+
+        // Helper: Şeffaf PNG'yi beyaz arka plana composite et
+        // Bu fonksiyon siyah arka plan sorununu çözer
+        async function addWhiteBackgroundToTransparent(transparentBase64) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+
+                    // Önce beyaz arka plan çiz
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    // Sonra şeffaf görüntüyü üzerine çiz
+                    ctx.drawImage(img, 0, 0);
+
+                    // PNG olarak döndür
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = () => reject(new Error('Görüntü yüklenemedi'));
+                img.src = transparentBase64;
+            });
+        }
+
+        // Helper: Görüntünün şeffaf piksel içerip içermediğini kontrol et ve beyaz arka plan ekle
+        // Bu fonksiyon tüm çıktılarda siyah arka plan sorununu önler
+        async function ensureWhiteBackground(imageBase64) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+
+                    // Görüntüyü çiz ve alpha kanalını kontrol et
+                    ctx.drawImage(img, 0, 0);
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const data = imageData.data;
+
+                    // Şeffaf piksel var mı kontrol et (alpha < 255)
+                    let hasTransparency = false;
+                    for (let i = 3; i < data.length; i += 4) {
+                        if (data[i] < 250) { // Alpha değeri 250'den küçükse şeffaf kabul et
+                            hasTransparency = true;
+                            break;
+                        }
+                    }
+
+                    if (hasTransparency) {
+                        console.log('⚠️ Şeffaf piksel tespit edildi, beyaz arka plan ekleniyor...');
+                        // Canvas'ı temizle ve beyaz arka plan ile yeniden çiz
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0);
+                    }
+
+                    // JPEG olarak döndür (şeffaflık olmadan, daha küçük dosya boyutu)
+                    resolve(canvas.toDataURL('image/jpeg', 0.95));
+                };
+                img.onerror = () => reject(new Error('Görüntü yüklenemedi'));
+                img.src = imageBase64;
             });
         }
 
