@@ -1906,6 +1906,28 @@ Task: ${prompt}`,
             }
         }
 
+        // ========== MOBİL UYUMLULUK HELPER'LARI ==========
+        // Mobil cihazlarda canvas boyut sınırlaması (iOS Safari max 4096, eski Android daha düşük)
+        const MAX_CANVAS_SIZE = 2048; // Güvenli maksimum boyut
+
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        function limitCanvasSize(width, height) {
+            const maxSize = isMobileDevice() ? MAX_CANVAS_SIZE : 4096;
+
+            if (width <= maxSize && height <= maxSize) {
+                return { width, height };
+            }
+
+            const ratio = Math.min(maxSize / width, maxSize / height);
+            return {
+                width: Math.floor(width * ratio),
+                height: Math.floor(height * ratio)
+            };
+        }
+
         // ========== STATE ==========
         let state = {
             originalImage: null,
@@ -2042,13 +2064,15 @@ Task: ${prompt}`,
             const img = new Image();
             img.onload = function() {
                 const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = img.width;
-                canvas.height = img.height;
+                const ctx = canvas.getContext('2d', { alpha: true });
+                // Mobil uyumluluk için boyut sınırla
+                const size = limitCanvasSize(img.width, img.height);
+                canvas.width = size.width;
+                canvas.height = size.height;
 
                 // Filter uygula
                 ctx.filter = `brightness(${100 + brightness}%) contrast(${100 + contrast}%) saturate(${100 + saturation}%)`;
-                ctx.drawImage(img, 0, 0);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
                 // Yeni base64 oluştur
                 state.processedImage = canvas.toDataURL('image/png');
@@ -4827,11 +4851,12 @@ OUTPUT: Clean, professional background only.`;
                 // Fallback: Basit beyaz arka plan
                 console.log('⚠️ Arka plan oluşturulamadı, beyaz kullanılıyor');
                 const canvas = document.createElement('canvas');
-                canvas.width = 1024;
-                canvas.height = 1024;
-                const ctx = canvas.getContext('2d');
+                const fallbackSize = isMobileDevice() ? 768 : 1024;
+                canvas.width = fallbackSize;
+                canvas.height = fallbackSize;
+                const ctx = canvas.getContext('2d', { alpha: true });
                 ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, 1024, 1024);
+                ctx.fillRect(0, 0, fallbackSize, fallbackSize);
                 backgroundBase64 = canvas.toDataURL('image/png');
             }
             console.log('✅ Arka plan oluşturuldu');
@@ -4931,20 +4956,25 @@ OUTPUT: The product must be PIXEL-PERFECT identical to Input Image 1, naturally 
                     loadedCount++;
                     if (loadedCount < 2) return;
 
-                    // Canvas boyutunu şablona göre ayarla
-                    canvas.width = templateImg.width;
-                    canvas.height = templateImg.height;
+                    // Canvas boyutunu şablona göre ayarla (mobil uyumluluk için sınırla)
+                    const size = limitCanvasSize(templateImg.width, templateImg.height);
+                    canvas.width = size.width;
+                    canvas.height = size.height;
+                    const scaleRatio = size.width / templateImg.width;
+
+                    // Şeffaf arka plan ile başla
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
                     // 1. Şablonu çiz (arka plan)
-                    ctx.drawImage(templateImg, 0, 0);
+                    ctx.drawImage(templateImg, 0, 0, canvas.width, canvas.height);
 
                     // 2. Takıyı pozisyon ayarlarına göre çiz
                     const pos = state.position;
-                    const jewelryWidth = templateImg.width * (pos.scale / 100);
+                    const jewelryWidth = canvas.width * (pos.scale / 100);
                     const jewelryHeight = (jewelryImg.height / jewelryImg.width) * jewelryWidth;
 
-                    const x = (templateImg.width * (pos.x / 100)) - (jewelryWidth / 2);
-                    const y = (templateImg.height * (pos.y / 100)) - (jewelryHeight / 2);
+                    const x = (canvas.width * (pos.x / 100)) - (jewelryWidth / 2);
+                    const y = (canvas.height * (pos.y / 100)) - (jewelryHeight / 2);
 
                     // Rotation desteği
                     const rotation = (pos.rotation || 0) * Math.PI / 180;
@@ -5419,7 +5449,7 @@ OUTPUT: Professional product photo where the jewelry is UNCHANGED, IDENTICAL to 
         async function createCanvasComposite(jewelryBase64, modelBase64, jewelryAnalysis) {
             return new Promise((resolve, reject) => {
                 const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
+                const ctx = canvas.getContext('2d', { alpha: true });
                 const modelImg = new Image();
                 const jewelryImg = new Image();
                 let loaded = 0;
@@ -5428,11 +5458,16 @@ OUTPUT: Professional product photo where the jewelry is UNCHANGED, IDENTICAL to 
                     loaded++;
                     if (loaded < 2) return;
 
-                    canvas.width = modelImg.width;
-                    canvas.height = modelImg.height;
+                    // Mobil uyumluluk için boyut sınırla
+                    const size = limitCanvasSize(modelImg.width, modelImg.height);
+                    canvas.width = size.width;
+                    canvas.height = size.height;
+
+                    // Şeffaf arka plan ile başla
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
                     // Model arka plan
-                    ctx.drawImage(modelImg, 0, 0);
+                    ctx.drawImage(modelImg, 0, 0, canvas.width, canvas.height);
 
                     // Takı boyutu - uzunluğa göre ayarla
                     const sizeMap = {
@@ -5595,7 +5630,7 @@ OUTPUT: Professional product photo where the jewelry is UNCHANGED, IDENTICAL to 
 
                     // Beyaz silhouette - takı şeklinin dışı
                     const edgeCanvas = document.createElement('canvas');
-                    const edgeCtx = edgeCanvas.getContext('2d');
+                    const edgeCtx = edgeCanvas.getContext('2d', { alpha: true, willReadFrequently: true });
                     edgeCanvas.width = tempCanvas.width;
                     edgeCanvas.height = tempCanvas.height;
 
@@ -5830,17 +5865,19 @@ NOT: Tipik bir kolye için y=35-50 arası, scale=40-70 arası olur.`;
                         loadImage(state.originalBase64)
                     ]);
 
-                    // Create canvas with template size
+                    // Create canvas with template size (mobil uyumluluk için sınırla)
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d', { alpha: true });
-                    canvas.width = templateImg.width;
-                    canvas.height = templateImg.height;
+                    const size = limitCanvasSize(templateImg.width, templateImg.height);
+                    canvas.width = size.width;
+                    canvas.height = size.height;
+                    const scaleRatio = size.width / templateImg.width;
 
                     // Şeffaf arka plan ile başla (siyah piksel önleme)
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
                     // Draw template (background - real model)
-                    ctx.drawImage(templateImg, 0, 0);
+                    ctx.drawImage(templateImg, 0, 0, canvas.width, canvas.height);
 
                     // Slider'lardan pozisyon al
                     const smartPos = {
