@@ -1419,46 +1419,18 @@
             </div>
 
             <div class="space-y-4">
-                <!-- Gemini 2.5 -->
-                <!-- OpenAI GPT-4o - Görsel Üretim -->
-                <div class="p-4 bg-slate-800/30 rounded-xl border border-blue-500/30">
+                <!-- Fal.ai - Tek API Key -->
+                <div class="p-4 bg-slate-800/30 rounded-xl border border-orange-500/30">
                     <label class="text-sm font-medium text-white mb-2 block flex items-center gap-2">
-                        <i class="fa-solid fa-image text-blue-400"></i> OpenAI GPT-4o
-                        <span class="text-[10px] px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-full">GÖRSEL ÜRETİM</span>
-                    </label>
-                    <input type="password" id="openaiKeyInput"
-                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:border-blue-500 outline-none"
-                           placeholder="OpenAI API Key">
-                    <p class="text-xs text-slate-500 mt-1">
-                        <a href="https://platform.openai.com/api-keys" target="_blank" class="text-blue-400 hover:underline">OpenAI API key al →</a>
-                    </p>
-                </div>
-
-                <!-- Gemini - SEO/Analiz -->
-                <div class="p-4 bg-slate-800/30 rounded-xl border border-purple-500/30">
-                    <label class="text-sm font-medium text-white mb-2 block flex items-center gap-2">
-                        <i class="fa-solid fa-brain text-purple-400"></i> Gemini
-                        <span class="text-[10px] px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded-full">SEO & ANALİZ</span>
-                    </label>
-                    <input type="password" id="geminiKeyInput"
-                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:border-purple-500 outline-none"
-                           placeholder="Gemini API Key">
-                    <p class="text-xs text-slate-500 mt-1">
-                        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-purple-400 hover:underline">Gemini API key al →</a>
-                    </p>
-                </div>
-
-                <!-- Fal.ai BiRefNet -->
-                <div class="p-4 bg-slate-800/30 rounded-xl border border-green-500/30">
-                    <label class="text-sm font-medium text-white mb-2 block flex items-center gap-2">
-                        <i class="fa-solid fa-cut text-green-400"></i> Fal.ai BiRefNet
-                        <span class="text-[10px] px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full">ARKA PLAN KALDIRMA</span>
+                        <i class="fa-solid fa-key text-orange-400"></i> Fal.ai API Key
+                        <span class="text-[10px] px-2 py-0.5 bg-orange-500/20 text-orange-400 rounded-full">TEK KEY YETERLİ</span>
                     </label>
                     <input type="password" id="falKeyInput"
-                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:border-green-500 outline-none"
+                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:border-orange-500 outline-none"
                            placeholder="Fal.ai API Key">
                     <p class="text-xs text-slate-500 mt-1">
-                        <a href="https://fal.ai/dashboard/keys" target="_blank" class="text-green-400 hover:underline">Fal.ai API key al →</a>
+                        <a href="https://fal.ai/dashboard/keys" target="_blank" class="text-orange-400 hover:underline">Fal.ai API key al →</a>
+                        <span class="text-slate-600 ml-2">Tüm modeller bu key ile çalışır</span>
                     </p>
                 </div>
 
@@ -1468,11 +1440,10 @@
                         <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> Görsel Üretim Modeli
                     </label>
                     <select id="imageModelSelect" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:border-amber-500 outline-none">
-                        <option value="openai">OpenAI GPT-Image-1 (Önerilen)</option>
-                        <option value="gemini3pro">Gemini 3 Pro Image (fal.ai)</option>
-                        <option value="flux">FLUX.1 [dev] (fal.ai)</option>
+                        <option value="flux">FLUX.1 [dev] (Önerilen)</option>
+                        <option value="gemini3pro">Gemini 3 Pro Image</option>
                     </select>
-                    <p class="text-xs text-slate-500 mt-1">Gemini 3 Pro ve FLUX: fal.ai key ile çalışır (OAuth2 yok!)</p>
+                    <p class="text-xs text-slate-500 mt-1">Tüm modeller Fal.ai üzerinden çalışır</p>
                 </div>
 
             </div>
@@ -3527,13 +3498,9 @@ ${seo.hashtags || ''}
 
         // ========== SETTINGS ==========
         function loadSettings() {
-            const openaiKey = localStorage.getItem('openai_api_key');
-            const geminiKey = localStorage.getItem('gemini_api_key');
             const falKey = localStorage.getItem('fal_api_key');
-            const imageModel = localStorage.getItem('image_model') || 'openai';
+            const imageModel = localStorage.getItem('image_model') || 'flux';
 
-            if (openaiKey) document.getElementById('openaiKeyInput').value = openaiKey;
-            if (geminiKey) document.getElementById('geminiKeyInput').value = geminiKey;
             if (falKey) document.getElementById('falKeyInput').value = falKey;
             document.getElementById('imageModelSelect').value = imageModel;
 
@@ -3541,22 +3508,12 @@ ${seo.hashtags || ''}
         }
 
         function updateApiStatus() {
-            const hasOpenai = localStorage.getItem('openai_api_key');
-            const hasGemini = localStorage.getItem('gemini_api_key');
             const hasFal = localStorage.getItem('fal_api_key');
 
-            if (hasOpenai && hasGemini && hasFal) {
+            if (hasFal) {
                 document.getElementById('apiDot').className = 'w-2 h-2 rounded-full bg-green-500';
-                document.getElementById('apiStatus').textContent = 'GPT-4o + Gemini Hazır';
+                document.getElementById('apiStatus').textContent = 'Fal.ai Hazır';
                 document.getElementById('apiStatus').className = 'text-xs text-green-400';
-            } else if (hasOpenai && hasFal) {
-                document.getElementById('apiDot').className = 'w-2 h-2 rounded-full bg-blue-500';
-                document.getElementById('apiStatus').textContent = 'GPT-4o Hazır (SEO yok)';
-                document.getElementById('apiStatus').className = 'text-xs text-blue-400';
-            } else if ((hasOpenai || hasGemini) && hasFal) {
-                document.getElementById('apiDot').className = 'w-2 h-2 rounded-full bg-yellow-500';
-                document.getElementById('apiStatus').textContent = 'API Eksik';
-                document.getElementById('apiStatus').className = 'text-xs text-yellow-400';
             } else {
                 document.getElementById('apiDot').className = 'w-2 h-2 rounded-full bg-red-500';
                 document.getElementById('apiStatus').textContent = 'API Key Gerekli';
@@ -3573,25 +3530,14 @@ ${seo.hashtags || ''}
         }
 
         function saveSettings() {
-            const openaiKey = document.getElementById('openaiKeyInput').value.trim();
-            const geminiKey = document.getElementById('geminiKeyInput').value.trim();
             const falKey = document.getElementById('falKeyInput').value.trim();
             const imageModel = document.getElementById('imageModelSelect').value;
 
-            // fal.ai zorunlu (BiRefNet + alternatif modeller için)
             if (!falKey) {
-                showToast('Fal.ai API Key zorunlu (BiRefNet için)', 'error');
+                showToast('Fal.ai API Key gerekli', 'error');
                 return;
             }
 
-            // OpenAI seçildiyse OpenAI key zorunlu
-            if (imageModel === 'openai' && !openaiKey) {
-                showToast('OpenAI seçildi ama API key yok', 'error');
-                return;
-            }
-
-            localStorage.setItem('openai_api_key', openaiKey);
-            localStorage.setItem('gemini_api_key', geminiKey);
             localStorage.setItem('fal_api_key', falKey);
             localStorage.setItem('image_model', imageModel);
 
@@ -3599,11 +3545,10 @@ ${seo.hashtags || ''}
             closeSettings();
 
             const modelNames = {
-                'openai': 'GPT-Image-1',
                 'gemini3pro': 'Gemini 3 Pro Image',
                 'flux': 'FLUX.1 [dev]'
             };
-            showToast(`${modelNames[imageModel] || imageModel} + BiRefNet hazır!`, 'success');
+            showToast(`${modelNames[imageModel] || imageModel} hazır!`, 'success');
         }
 
         // ========== FILE UPLOAD ==========
@@ -4350,19 +4295,12 @@ The jewelry must remain EXACTLY as provided - do not modify the jewelry in any w
             }
         }
 
-        // ========== MAIN IMAGE GENERATION - GPT-4o + BiRefNet ==========
+        // ========== MAIN IMAGE GENERATION - Fal.ai + BiRefNet ==========
         async function generateImage() {
-            const openaiKey = localStorage.getItem('openai_api_key');
             const falKey = localStorage.getItem('fal_api_key');
-            const imageModel = localStorage.getItem('image_model') || 'openai';
+            const imageModel = localStorage.getItem('image_model') || 'flux';
 
-            // API key kontrolü - model tipine göre
-            if (imageModel === 'openai' && !openaiKey) {
-                openSettings();
-                showToast('Lütfen OpenAI API Key girin', 'error');
-                return;
-            }
-
+            // API key kontrolü
             if (!falKey) {
                 openSettings();
                 showToast('Lütfen Fal.ai API Key girin', 'error');
@@ -5030,10 +4968,8 @@ OUTPUT: The product must be PIXEL-PERFECT identical to Input Image 1, naturally 
 
         // ========== ÇANTA GÖRSEL ÜRETİM FONKSİYONU ==========
         async function generateBagImage() {
-            const openaiKey = localStorage.getItem('openai_api_key');
-            const geminiKey = localStorage.getItem('gemini_api_key');
             const falKey = localStorage.getItem('fal_api_key');
-            const imageModel = localStorage.getItem('image_model') || 'openai';
+            const imageModel = localStorage.getItem('image_model') || 'flux';
 
             const bagType = bagTypes[state.settings.bagType];
             const bagStyle = bagStyles[state.settings.bagStyle];
@@ -5041,21 +4977,14 @@ OUTPUT: The product must be PIXEL-PERFECT identical to Input Image 1, naturally 
             const bagPose = bagPoses[state.settings.bagPose];
 
             const modelNames = {
-                'openai': 'GPT-Image-1',
                 'gemini3pro': 'Gemini 3 Pro Image',
                 'flux': 'FLUX.1 [dev]'
             };
             console.log(`👜 Çanta Modu: ${modelNames[imageModel] || imageModel} + BiRefNet başlatılıyor...`);
 
             // API key kontrolü
-            if (imageModel === 'openai' && !openaiKey) {
-                throw new Error('OpenAI API key gerekli');
-            }
-            if ((imageModel === 'gemini3pro' || imageModel === 'flux') && !falKey) {
-                throw new Error('Fal.ai API key gerekli');
-            }
             if (!falKey) {
-                throw new Error('Fal.ai API key gerekli - BiRefNet için');
+                throw new Error('Fal.ai API key gerekli');
             }
 
             // ===== ADIM 1: BiRefNet ile çantayı çıkar =====
@@ -5238,12 +5167,10 @@ OUTPUT: Beautiful product shot where the bag is UNCHANGED, only the environment 
             if (imageModel === 'gemini3pro') {
                 finalImage = await editImageWithGemini3Pro(imageGenPrompt, bagBase64, falKey);
                 console.log('✅ Gemini 3 Pro Image ile çanta görseli oluşturuldu!');
-            } else if (imageModel === 'flux') {
+            } else {
+                // Default: FLUX.1 [dev]
                 finalImage = await editImageWithFlux(imageGenPrompt, bagBase64, falKey);
                 console.log('✅ FLUX.1 [dev] ile çanta görseli oluşturuldu!');
-            } else {
-                finalImage = await generateImageWithGPT4o(imageGenPrompt, bagBase64, openaiKey);
-                console.log('✅ GPT-Image-1 ile çanta görseli oluşturuldu!');
             }
 
             // SEO bilgilerini güncelle
@@ -5265,27 +5192,21 @@ OUTPUT: Beautiful product shot where the bag is UNCHANGED, only the environment 
         // 3. GPT-4o vision ile detaylı takı analizi
         // 4. DALL-E 3 ile model + takı oluştur
         async function generateWithGemini25() {
-            const openaiKey = localStorage.getItem('openai_api_key');
-            const geminiKey = localStorage.getItem('gemini_api_key');
             const falKey = localStorage.getItem('fal_api_key');
-            const imageModel = localStorage.getItem('image_model') || 'openai';
+            const imageModel = localStorage.getItem('image_model') || 'flux';
 
             const profile = modelProfiles[state.settings.modelProfile];
             const style = stylePresets[state.settings.style];
             const pose = posePresets[state.settings.pose];
 
             const modelNames = {
-                'openai': 'GPT-Image-1',
                 'gemini3pro': 'Gemini 3 Pro Image',
                 'flux': 'FLUX.1 [dev]'
             };
             console.log(`🎨 ${modelNames[imageModel] || imageModel} + BiRefNet Modu başlatılıyor...`);
 
             // API key kontrolü
-            if (imageModel === 'openai' && !openaiKey) {
-                throw new Error('OpenAI API key gerekli');
-            }
-            if ((imageModel === 'gemini3pro' || imageModel === 'flux') && !falKey) {
+            if (!falKey) {
                 throw new Error('Fal.ai API key gerekli');
             }
 
@@ -5482,13 +5403,10 @@ OUTPUT: Professional product photo where the jewelry is UNCHANGED, IDENTICAL to 
             if (imageModel === 'gemini3pro') {
                 finalImage = await editImageWithGemini3Pro(imageGenPrompt, jewelryBase64, falKey);
                 console.log('✅ Gemini 3 Pro Image ile görsel oluşturuldu!');
-            } else if (imageModel === 'flux') {
+            } else {
+                // Default: FLUX.1 [dev]
                 finalImage = await editImageWithFlux(imageGenPrompt, jewelryBase64, falKey);
                 console.log('✅ FLUX.1 [dev] ile görsel oluşturuldu!');
-            } else {
-                // Default: OpenAI GPT-Image-1
-                finalImage = await generateImageWithGPT4o(imageGenPrompt, jewelryBase64, openaiKey);
-                console.log('✅ GPT-Image-1 ile görsel oluşturuldu!');
             }
 
             return finalImage;
