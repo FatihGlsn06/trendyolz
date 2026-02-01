@@ -2784,7 +2784,7 @@ ${seo.hashtags || ''}
             if (!state.templateBase64 || !state.extractedJewelry) return;
 
             const canvas = document.getElementById('interactiveCanvas');
-            const ctx = canvas.getContext('2d');
+            const ctx = canvas.getContext('2d', { alpha: true });
 
             // Eğer resimler yüklenmediyse yükle
             if (!interactiveImages.template || !interactiveImages.jewelry) {
@@ -2798,6 +2798,9 @@ ${seo.hashtags || ''}
             // Canvas boyutunu ayarla
             canvas.width = templateImg.width;
             canvas.height = templateImg.height;
+
+            // Şeffaf arka plan ile başla (siyah piksel önleme)
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             // 1. Şablonu çiz
             ctx.drawImage(templateImg, 0, 0);
@@ -4917,7 +4920,7 @@ OUTPUT: The product must be PIXEL-PERFECT identical to Input Image 1, naturally 
         async function compositeJewelryOnTemplate(jewelryBase64, templateBase64) {
             return new Promise((resolve, reject) => {
                 const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
+                const ctx = canvas.getContext('2d', { alpha: true });
 
                 const templateImg = new Image();
                 const jewelryImg = new Image();
@@ -5514,7 +5517,7 @@ OUTPUT: Professional product photo where the jewelry is UNCHANGED, IDENTICAL to 
         async function createEdgeOnlyMask(jewelryBase64, modelBase64, jewelryAnalysis) {
             return new Promise((resolve) => {
                 const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
                 const modelImg = new Image();
                 const jewelryImg = new Image();
                 let loaded = 0;
@@ -5576,7 +5579,7 @@ OUTPUT: Professional product photo where the jewelry is UNCHANGED, IDENTICAL to 
 
                     // Takının alpha kanalını kullanarak gerçek şeklini al
                     const tempCanvas = document.createElement('canvas');
-                    const tempCtx = tempCanvas.getContext('2d');
+                    const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
                     tempCanvas.width = Math.round(targetWidth);
                     tempCanvas.height = Math.round(targetHeight);
 
@@ -5596,11 +5599,11 @@ OUTPUT: Professional product photo where the jewelry is UNCHANGED, IDENTICAL to 
                     edgeCanvas.width = tempCanvas.width;
                     edgeCanvas.height = tempCanvas.height;
 
-                    // Alpha > 20 olan pikselleri beyaz yap
+                    // Alpha > 50 olan pikselleri beyaz yap (siyah artifakt önleme için eşik artırıldı)
                     const edgeData = edgeCtx.createImageData(tempCanvas.width, tempCanvas.height);
                     for (let i = 0; i < data.length; i += 4) {
                         const alpha = data[i + 3];
-                        if (alpha > 20) {
+                        if (alpha > 50) {
                             edgeData.data[i] = 255;     // R
                             edgeData.data[i + 1] = 255; // G
                             edgeData.data[i + 2] = 255; // B
@@ -5829,9 +5832,12 @@ NOT: Tipik bir kolye için y=35-50 arası, scale=40-70 arası olur.`;
 
                     // Create canvas with template size
                     const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
+                    const ctx = canvas.getContext('2d', { alpha: true });
                     canvas.width = templateImg.width;
                     canvas.height = templateImg.height;
+
+                    // Şeffaf arka plan ile başla (siyah piksel önleme)
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
                     // Draw template (background - real model)
                     ctx.drawImage(templateImg, 0, 0);
@@ -5864,7 +5870,7 @@ NOT: Tipik bir kolye için y=35-50 arası, scale=40-70 arası olur.`;
                     ctx.drawImage(jewelryImg, x, y, jWidth, jHeight);
 
                     console.log('✅ Kompozit tamamlandı!');
-                    resolve(canvas.toDataURL('image/jpeg', 0.95));
+                    resolve(canvas.toDataURL('image/png'));
                 } catch (error) {
                     reject(error);
                 }
@@ -6076,7 +6082,9 @@ SADECE JSON döndür.`;
                     const canvas = document.createElement('canvas');
                     canvas.width = img.width;
                     canvas.height = img.height;
-                    const ctx = canvas.getContext('2d');
+                    const ctx = canvas.getContext('2d', { alpha: true });
+                    // Şeffaf arka plan ile başla (siyah piksel önleme)
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
                     ctx.drawImage(img, 0, 0);
                     link.href = canvas.toDataURL('image/png');
                     link.click();
