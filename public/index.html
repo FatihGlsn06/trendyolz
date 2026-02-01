@@ -1825,7 +1825,8 @@ ${seo.hashtags || ''}
                         image_url: state.originalBase64,
                         model: "General Use (Light)",
                         operating_resolution: state.isHighRes ? "2048x2048" : "1024x1024",
-                        output_format: "png"
+                        output_format: "png",
+                        refine_foreground: true
                     })
                 });
 
@@ -2865,7 +2866,8 @@ The jewelry must remain EXACTLY as provided - do not modify the jewelry in any w
                     image_url: state.originalBase64,
                     model: "General Use (Light)",
                     operating_resolution: state.isHighRes ? "2048x2048" : "1024x1024",
-                    output_format: "png"
+                    output_format: "png",
+                    refine_foreground: true
                 })
             });
 
@@ -3176,7 +3178,8 @@ OUTPUT: Jewelry on model at EXACT SAME SCALE as seen in [Input Image 1].`;
                     image_url: state.originalBase64,
                     model: "General Use (Light)",
                     operating_resolution: state.isHighRes ? "2048x2048" : "1024x1024",
-                    output_format: "png"
+                    output_format: "png",
+                    refine_foreground: true
                 })
             });
 
@@ -3428,7 +3431,8 @@ OUTPUT: The product must be PIXEL-PERFECT identical to Input Image 1, naturally 
                     image_url: state.originalBase64,
                     model: "General Use (Light)",
                     operating_resolution: state.isHighRes ? "2048x2048" : "1024x1024",
-                    output_format: "png"
+                    output_format: "png",
+                    refine_foreground: true
                 })
             });
 
