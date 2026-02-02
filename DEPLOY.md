@@ -73,9 +73,45 @@ Tarayıcıda açın: http://localhost:3000 veya http://localhost:8000
 
 ---
 
+## Demo Modu (Tek API Key ile Test)
+
+Dışarıdan gelen kullanıcıların API key girmeden test edebilmesi için Demo Modu kullanabilirsiniz.
+
+### Netlify'da Demo Modu Kurulumu
+
+1. **Netlify Dashboard > Site Settings > Environment Variables** bölümüne gidin
+
+2. **Şu değişkenleri ekleyin:**
+   ```
+   GEMINI_API_KEY=your_gemini_api_key_here
+   FAL_API_KEY=your_fal_api_key_here
+   ```
+
+3. **Deploy edin** - Artık kullanıcılar "Demo Modu" toggle'ını açarak API key girmeden test edebilir!
+
+### Vercel'de Demo Modu Kurulumu
+
+1. **Vercel Dashboard > Project Settings > Environment Variables**
+
+2. **Production ortamı için ekleyin:**
+   ```
+   GEMINI_API_KEY=your_gemini_api_key_here
+   FAL_API_KEY=your_fal_api_key_here
+   ```
+
+3. **Redeploy edin**
+
+### Nasıl Çalışır?
+
+- Demo modunda API çağrıları Netlify/Vercel Functions üzerinden yapılır
+- API key'leriniz environment variables'da güvenli şekilde saklanır
+- Kullanıcılar key'leri göremez, sadece sistemi test edebilir
+
+---
+
 ## Notlar
 
-- Uygulama tamamen client-side çalışır
-- Google AI API key tarayıcıda localStorage'da saklanır
-- Hiçbir sunucu tarafı kod gerekmez
-- Tüm işlemler kullanıcının tarayıcısında gerçekleşir
+- Uygulama tamamen client-side çalışır (Demo modu hariç)
+- Normal modda API key'ler tarayıcıda localStorage'da saklanır
+- Demo modunda API key'ler sunucu tarafında güvenli saklanır
+- Tüm görsel işlemler kullanıcının tarayıcısında gerçekleşir

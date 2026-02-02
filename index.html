@@ -961,8 +961,28 @@
             </div>
 
             <div class="space-y-4">
+                <!-- Demo Modu Toggle -->
+                <div class="p-4 bg-gradient-to-r from-orange-500/20 to-amber-500/20 rounded-xl border border-orange-500/50">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-rocket text-orange-400 text-xl"></i>
+                            <div>
+                                <label class="text-sm font-medium text-white block">Demo Modu</label>
+                                <p class="text-xs text-slate-400">API key girmeden test edin</p>
+                            </div>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="demoModeToggle" class="sr-only peer" onchange="toggleDemoMode()">
+                            <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                        </label>
+                    </div>
+                    <p id="demoModeStatus" class="text-xs text-orange-300 mt-2 hidden">
+                        <i class="fa-solid fa-check-circle mr-1"></i>Demo modu aktif - Sunucu API kullaniliyor
+                    </p>
+                </div>
+
                 <!-- Gemini 2.5 -->
-                <div class="p-4 bg-slate-800/30 rounded-xl border border-purple-500/30">
+                <div id="geminiKeySection" class="p-4 bg-slate-800/30 rounded-xl border border-purple-500/30">
                     <label class="text-sm font-medium text-white mb-2 block flex items-center gap-2">
                         <i class="fa-solid fa-brain text-purple-400"></i> Gemini 2.5 Flash
                         <span class="text-[10px] px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded-full">CİLT ÜRETİM</span>
@@ -976,7 +996,7 @@
                 </div>
 
                 <!-- Fal.ai BiRefNet -->
-                <div class="p-4 bg-slate-800/30 rounded-xl border border-green-500/30">
+                <div id="falKeySection" class="p-4 bg-slate-800/30 rounded-xl border border-green-500/30">
                     <label class="text-sm font-medium text-white mb-2 block flex items-center gap-2">
                         <i class="fa-solid fa-cut text-green-400"></i> Fal.ai BiRefNet
                         <span class="text-[10px] px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full">ARKA PLAN KALDIRMA</span>
@@ -1006,6 +1026,95 @@
     </div>
 
     <script>
+        // ========== DEMO MODE ==========
+        let isDemoMode = false;
+        const DEMO_PROXY_BASE = '/.netlify/functions';
+
+        function toggleDemoMode() {
+            isDemoMode = document.getElementById('demoModeToggle').checked;
+            localStorage.setItem('demo_mode', isDemoMode ? 'true' : 'false');
+
+            const geminiSection = document.getElementById('geminiKeySection');
+            const falSection = document.getElementById('falKeySection');
+            const demoStatus = document.getElementById('demoModeStatus');
+
+            if (isDemoMode) {
+                geminiSection.classList.add('opacity-50', 'pointer-events-none');
+                falSection.classList.add('opacity-50', 'pointer-events-none');
+                demoStatus.classList.remove('hidden');
+            } else {
+                geminiSection.classList.remove('opacity-50', 'pointer-events-none');
+                falSection.classList.remove('opacity-50', 'pointer-events-none');
+                demoStatus.classList.add('hidden');
+            }
+
+            updateApiStatus();
+        }
+
+        function loadDemoMode() {
+            const saved = localStorage.getItem('demo_mode');
+            isDemoMode = saved === 'true';
+            document.getElementById('demoModeToggle').checked = isDemoMode;
+            if (isDemoMode) {
+                toggleDemoMode();
+            }
+        }
+
+        // Demo proxy ile FAL API cagirisi
+        async function callFalAPIProxy(endpoint, params) {
+            const response = await fetch(`${DEMO_PROXY_BASE}/fal-proxy`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ endpoint, ...params })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'FAL API hatasi');
+            }
+
+            return response.json();
+        }
+
+        // Demo proxy ile Gemini API cagirisi
+        async function callGeminiAPIProxy(model, requestBody) {
+            const response = await fetch(`${DEMO_PROXY_BASE}/gemini-proxy`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ model, requestBody })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Gemini API hatasi');
+            }
+
+            return response.json();
+        }
+
+        // Unified FAL API wrapper - demo modunu otomatik handle eder
+        async function callFalAPI(endpoint, params, falKey) {
+            if (isDemoMode) {
+                return callFalAPIProxy(endpoint, params);
+            }
+
+            const response = await fetch(`https://fal.run/${endpoint}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Key ${falKey}`
+                },
+                body: JSON.stringify(params)
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || error.error || 'FAL API hatasi');
+            }
+
+            return response.json();
+        }
+
         // ========== GEMINI MODEL CONFIG ==========
         const GEMINI_CONFIG = {
             // Gemini 3 - Text analiz için
@@ -1027,6 +1136,11 @@
 
         // Retry mekanizması ile API çağrısı
         async function callGeminiAPI(model, body, apiKey, retries = GEMINI_CONFIG.maxRetries) {
+            // Demo modunda proxy kullan
+            if (isDemoMode) {
+                return callGeminiAPIProxy(model, body);
+            }
+
             const url = `${GEMINI_CONFIG.baseUrl}/${model}:generateContent?key=${apiKey}`;
 
             for (let attempt = 1; attempt <= retries; attempt++) {
@@ -1214,7 +1328,7 @@
         // ========== SEO GENERATOR - ADVANCED ==========
         async function generateSEO() {
             const geminiKey = localStorage.getItem('gemini_api_key');
-            if (!geminiKey) {
+            if (!geminiKey && !isDemoMode) {
                 showToast('Gemini API key gerekli', 'error');
                 return;
             }
@@ -1805,7 +1919,7 @@ ${seo.hashtags || ''}
             }
 
             const falKey = localStorage.getItem('fal_api_key');
-            if (!falKey) {
+            if (!falKey && !isDemoMode) {
                 showToast('Fal.ai API key gerekli - BiRefNet için', 'error');
                 openSettings();
                 return;
@@ -1815,26 +1929,13 @@ ${seo.hashtags || ''}
                 showLoader('Önizleme hazırlanıyor...', '1/2 Takı çıkarılıyor');
 
                 // BiRefNet ile takıyı çıkar
-                const birefnetResponse = await fetch('https://fal.run/fal-ai/birefnet', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Key ${falKey}`
-                    },
-                    body: JSON.stringify({
-                        image_url: state.originalBase64,
-                        model: "General Use (Light)",
-                        operating_resolution: state.isHighRes ? "2048x2048" : "1024x1024",
-                        output_format: "png",
-                        refine_foreground: true
-                    })
-                });
-
-                if (!birefnetResponse.ok) {
-                    throw new Error('BiRefNet hatası');
-                }
-
-                const birefnetData = await birefnetResponse.json();
+                const birefnetData = await callFalAPI('fal-ai/birefnet', {
+                    image_url: state.originalBase64,
+                    model: "General Use (Light)",
+                    operating_resolution: state.isHighRes ? "2048x2048" : "1024x1024",
+                    output_format: "png",
+                    refine_foreground: true
+                }, falKey);
                 const transparentJewelryUrl = birefnetData.image?.url;
 
                 if (!transparentJewelryUrl) {
@@ -2134,10 +2235,19 @@ ${seo.hashtags || ''}
             if (falKey) {
                 document.getElementById('falKeyInput').value = falKey;
             }
+            loadDemoMode();
             updateApiStatus();
         }
 
         function updateApiStatus() {
+            // Demo modunda her zaman hazir
+            if (isDemoMode) {
+                document.getElementById('apiDot').className = 'w-2 h-2 rounded-full bg-orange-500';
+                document.getElementById('apiStatus').textContent = 'Demo Modu Aktif';
+                document.getElementById('apiStatus').className = 'text-xs text-orange-400';
+                return;
+            }
+
             const hasGemini = localStorage.getItem('gemini_api_key');
             const hasFal = localStorage.getItem('fal_api_key');
 
@@ -2388,7 +2498,7 @@ ${seo.hashtags || ''}
         // ========== AUTO-DETECT JEWELRY PROPERTIES ==========
         async function autoDetectJewelryProperties(imageBase64) {
             const geminiKey = localStorage.getItem('gemini_api_key');
-            if (!geminiKey) return null;
+            if (!geminiKey && !isDemoMode) return null;
 
             console.log('🔍 Takı özellikleri otomatik analiz ediliyor...');
 
@@ -2793,7 +2903,7 @@ The jewelry must remain EXACTLY as provided - do not modify the jewelry in any w
         // ========== MAIN IMAGE GENERATION - GEMINI 2.5 ONLY ==========
         async function generateImage() {
             const geminiKey = localStorage.getItem('gemini_api_key');
-            if (!geminiKey) {
+            if (!geminiKey && !isDemoMode) {
                 openSettings();
                 showToast('Lütfen Gemini API Key girin', 'error');
                 return;
@@ -2856,31 +2966,17 @@ The jewelry must remain EXACTLY as provided - do not modify the jewelry in any w
             console.log('✂️ ADIM 1: BiRefNet ile takı çıkarılıyor...');
             showLoader('Düz Zemin Modu...', '1/3 Takı çıkarılıyor');
 
-            if (!falKey) {
+            if (!falKey && !isDemoMode) {
                 throw new Error('Fal.ai API key gerekli - Düz zemin modu için BiRefNet lazım');
             }
 
-            const birefnetResponse = await fetch('https://fal.run/fal-ai/birefnet', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Key ${falKey}`
-                },
-                body: JSON.stringify({
-                    image_url: state.originalBase64,
-                    model: "General Use (Light)",
-                    operating_resolution: state.isHighRes ? "2048x2048" : "1024x1024",
-                    output_format: "png",
-                    refine_foreground: true
-                })
-            });
-
-            if (!birefnetResponse.ok) {
-                const err = await birefnetResponse.json();
-                throw new Error('BiRefNet hatası: ' + (err.detail || 'Arka plan kaldırılamadı'));
-            }
-
-            const birefnetData = await birefnetResponse.json();
+            const birefnetData = await callFalAPI('fal-ai/birefnet', {
+                image_url: state.originalBase64,
+                model: "General Use (Light)",
+                operating_resolution: state.isHighRes ? "2048x2048" : "1024x1024",
+                output_format: "png",
+                refine_foreground: true
+            }, falKey);
             const transparentJewelryUrl = birefnetData.image?.url;
             if (!transparentJewelryUrl) {
                 throw new Error('Takı çıkarılamadı');
@@ -3168,31 +3264,17 @@ OUTPUT: Jewelry on model at EXACT SAME SCALE as seen in [Input Image 1].`;
             // ===== ADIM 1: BiRefNet ile ürünü çıkar =====
             showLoader('Sadece Ürün Modu...', '1/3 Ürün çıkarılıyor (BiRefNet)');
 
-            if (!falKey) {
+            if (!falKey && !isDemoMode) {
                 throw new Error('Fal.ai API key gerekli - Hallucination-free mod için BiRefNet lazım');
             }
 
-            const birefnetResponse = await fetch('https://fal.run/fal-ai/birefnet', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Key ${falKey}`
-                },
-                body: JSON.stringify({
-                    image_url: state.originalBase64,
-                    model: "General Use (Light)",
-                    operating_resolution: state.isHighRes ? "2048x2048" : "1024x1024",
-                    output_format: "png",
-                    refine_foreground: true
-                })
-            });
-
-            if (!birefnetResponse.ok) {
-                const err = await birefnetResponse.json();
-                throw new Error('BiRefNet hatası: ' + (err.detail || 'Ürün çıkarılamadı'));
-            }
-
-            const birefnetData = await birefnetResponse.json();
+            const birefnetData = await callFalAPI('fal-ai/birefnet', {
+                image_url: state.originalBase64,
+                model: "General Use (Light)",
+                operating_resolution: state.isHighRes ? "2048x2048" : "1024x1024",
+                output_format: "png",
+                refine_foreground: true
+            }, falKey);
             const transparentProductUrl = birefnetData.image?.url;
             if (!transparentProductUrl) {
                 throw new Error('Ürün çıkarılamadı');
@@ -3488,31 +3570,18 @@ OUTPUT: The product must be PIXEL-PERFECT identical to Input Image 1, naturally 
             // ===== ADIM 1: BiRefNet ile takıyı çıkar =====
             showLoader('Manken Modu...', '1/3 Takı çıkarılıyor (BiRefNet)');
 
-            if (!falKey) {
+            if (!falKey && !isDemoMode) {
                 throw new Error('Fal.ai API key gerekli - Hallucination-free mod için BiRefNet lazım');
             }
 
-            const birefnetResponse = await fetch('https://fal.run/fal-ai/birefnet', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Key ${falKey}`
-                },
-                body: JSON.stringify({
-                    image_url: state.originalBase64,
-                    model: "General Use (Light)",
-                    operating_resolution: state.isHighRes ? "2048x2048" : "1024x1024",
-                    output_format: "png",
-                    refine_foreground: true
-                })
-            });
+            const birefnetData = await callFalAPI('fal-ai/birefnet', {
+                image_url: state.originalBase64,
+                model: "General Use (Light)",
+                operating_resolution: state.isHighRes ? "2048x2048" : "1024x1024",
+                output_format: "png",
+                refine_foreground: true
+            }, falKey);
 
-            if (!birefnetResponse.ok) {
-                const err = await birefnetResponse.json();
-                throw new Error('BiRefNet hatası: ' + (err.detail || 'Takı çıkarılamadı'));
-            }
-
-            const birefnetData = await birefnetResponse.json();
             const transparentJewelryUrl = birefnetData.image?.url;
             if (!transparentJewelryUrl) {
                 throw new Error('Takı çıkarılamadı');
@@ -3958,7 +4027,7 @@ TEKRAR: Görseldeki kolyeyi DEĞİŞTİRME, AYNEN koru!`;
         // ========== STUDIO ENHANCE - CLARITY UPSCALER ==========
         async function studioEnhance(imageBase64) {
             const falKey = localStorage.getItem('fal_api_key');
-            if (!falKey) {
+            if (!falKey && !isDemoMode) {
                 console.warn('⚠️ Fal.ai key yok, upscale atlanıyor');
                 return imageBase64;
             }
@@ -3967,34 +4036,24 @@ TEKRAR: Görseldeki kolyeyi DEĞİŞTİRME, AYNEN koru!`;
                 console.log('🔍 Clarity Upscaler ile HD kalite...');
                 showLoader('HD Kalite...', 'Yüksek çözünürlük');
 
-                const upscaleResponse = await fetch('https://fal.run/fal-ai/clarity-upscaler', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Key ${falKey}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        image_url: imageBase64,
-                        prompt: "professional jewelry photography, sharp details, high quality, studio lighting, e-commerce product photo",
-                        scale: 2,
-                        resemblance: 0.95,
-                        creativity: 0.1
-                    })
-                });
+                const upscaleData = await callFalAPI('fal-ai/clarity-upscaler', {
+                    image_url: imageBase64,
+                    prompt: "professional jewelry photography, sharp details, high quality, studio lighting, e-commerce product photo",
+                    scale: 2,
+                    resemblance: 0.95,
+                    creativity: 0.1
+                }, falKey);
 
-                if (upscaleResponse.ok) {
-                    const upscaleData = await upscaleResponse.json();
-                    if (upscaleData.image?.url) {
-                        const imgResponse = await fetch(upscaleData.image.url);
-                        const imgBlob = await imgResponse.blob();
-                        const result = await new Promise(resolve => {
-                            const reader = new FileReader();
-                            reader.onload = () => resolve(reader.result);
-                            reader.readAsDataURL(imgBlob);
-                        });
-                        console.log('✅ Upscale tamamlandı');
-                        return result;
-                    }
+                if (upscaleData.image?.url) {
+                    const imgResponse = await fetch(upscaleData.image.url);
+                    const imgBlob = await imgResponse.blob();
+                    const result = await new Promise(resolve => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.readAsDataURL(imgBlob);
+                    });
+                    console.log('✅ Upscale tamamlandı');
+                    return result;
                 }
 
                 console.warn('⚠️ Upscaler başarısız');
@@ -4009,7 +4068,7 @@ TEKRAR: Görseldeki kolyeyi DEĞİŞTİRME, AYNEN koru!`;
         // ========== SMART POSITION - GEMINI ILE AKILLI KONUMLANDIRMA ==========
         async function calculateSmartPosition(templateBase64, jewelryBase64, templateWidth, templateHeight, jewelryWidth, jewelryHeight) {
             const geminiKey = localStorage.getItem('gemini_api_key');
-            if (!geminiKey) {
+            if (!geminiKey && !isDemoMode) {
                 console.warn('⚠️ Gemini key yok, varsayılan pozisyon kullanılacak');
                 return { x: 50, y: 45, scale: 55 }; // Varsayılan boyun pozisyonu
             }
