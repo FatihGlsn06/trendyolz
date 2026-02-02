@@ -1028,7 +1028,18 @@
     <script>
         // ========== DEMO MODE ==========
         let isDemoMode = false;
-        const DEMO_PROXY_BASE = '/.netlify/functions';
+
+        // Otomatik platform tespiti - Netlify veya Vercel
+        function getProxyBase() {
+            // Vercel'de VERCEL env var var, Netlify'da ise /.netlify klasoru calisir
+            // URL'den anlayabiliriz veya her ikisini de deneyebiliriz
+            if (window.location.hostname.includes('vercel.app')) {
+                return '/api';
+            }
+            // Varsayilan Netlify (veya lokal test icin)
+            return '/.netlify/functions';
+        }
+        const DEMO_PROXY_BASE = getProxyBase();
 
         function toggleDemoMode() {
             isDemoMode = document.getElementById('demoModeToggle').checked;
