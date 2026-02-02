@@ -1031,13 +1031,16 @@
 
         // Otomatik platform tespiti - Netlify veya Vercel
         function getProxyBase() {
-            // Vercel'de VERCEL env var var, Netlify'da ise /.netlify klasoru calisir
-            // URL'den anlayabiliriz veya her ikisini de deneyebiliriz
-            if (window.location.hostname.includes('vercel.app')) {
-                return '/api';
+            const hostname = window.location.hostname;
+
+            // Netlify tespiti
+            if (hostname.includes('netlify.app') || hostname.includes('netlify.com')) {
+                return '/.netlify/functions';
             }
-            // Varsayilan Netlify (veya lokal test icin)
-            return '/.netlify/functions';
+
+            // Vercel veya diğer tüm platformlar için /api kullan
+            // (Vercel varsayılan olarak /api routes destekler)
+            return '/api';
         }
         const DEMO_PROXY_BASE = getProxyBase();
 
