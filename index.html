@@ -1029,17 +1029,8 @@
         // ========== DEMO MODE ==========
         let isDemoMode = false;
 
-        // Otomatik platform tespiti - Netlify veya Vercel
+        // Vercel API proxy base
         function getProxyBase() {
-            const hostname = window.location.hostname;
-
-            // Netlify tespiti
-            if (hostname.includes('netlify.app') || hostname.includes('netlify.com')) {
-                return '/.netlify/functions';
-            }
-
-            // Vercel veya diğer tüm platformlar için /api kullan
-            // (Vercel varsayılan olarak /api routes destekler)
             return '/api';
         }
         const DEMO_PROXY_BASE = getProxyBase();
