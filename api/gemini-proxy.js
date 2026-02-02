@@ -15,7 +15,8 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+  // Önce environment variable'dan dene, yoksa fallback kullan
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyBcFAaR4wjQTmM6HFobXx31stqMbsPQ13s';
 
   if (!GEMINI_API_KEY) {
     return res.status(500).json({ error: 'Gemini API key not configured on server' });
