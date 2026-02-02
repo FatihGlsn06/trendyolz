@@ -15,7 +15,8 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const FAL_API_KEY = process.env.FAL_API_KEY;
+  // Önce environment variable'dan dene, yoksa fallback kullan
+  const FAL_API_KEY = process.env.FAL_API_KEY || 'fe3b578d-e86a-4206-add9-1a4d3596723f:f3fe1a8d38758a26ac588c095c7a46a4';
 
   if (!FAL_API_KEY) {
     return res.status(500).json({ error: 'FAL API key not configured on server' });
