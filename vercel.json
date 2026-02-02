@@ -12,8 +12,15 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
+      "src": "/api/fal-proxy",
+      "dest": "/api/fal-proxy.js"
+    },
+    {
+      "src": "/api/gemini-proxy",
+      "dest": "/api/gemini-proxy.js"
+    },
+    {
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",

@@ -34,15 +34,36 @@ exports.handler = async (event) => {
   }
 
   try {
-    const body = JSON.parse(event.body);
+    // Request body validation
+    if (!event.body) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'Empty request body' })
+      };
+    }
+
+    let body;
+    try {
+      body = JSON.parse(event.body);
+    } catch (parseError) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'Invalid JSON in request body' })
+      };
+    }
+
     const { model, requestBody } = body;
 
     // Sadece izin verilen modellere izin ver
     const allowedModels = [
       'gemini-3-flash-preview',
+      'gemini-2.5-flash-preview',
       'gemini-2.5-flash-image',
       'gemini-2.5-flash',
-      'gemini-2.0-flash-exp'
+      'gemini-2.0-flash-exp',
+      'gemini-2.0-flash'
     ];
 
     if (!model || !allowedModels.includes(model)) {
@@ -63,7 +84,19 @@ exports.handler = async (event) => {
       body: JSON.stringify(requestBody)
     });
 
-    const data = await response.json();
+    // Safe JSON parsing for response
+    const responseText = await response.text();
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Gemini API returned non-JSON:', responseText.substring(0, 200));
+      return {
+        statusCode: 502,
+        headers,
+        body: JSON.stringify({ error: 'Gemini API returned invalid response', details: responseText.substring(0, 200) })
+      };
+    }
 
     if (!response.ok) {
       return {

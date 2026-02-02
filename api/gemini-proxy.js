@@ -22,14 +22,21 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Request body validation
+    if (!req.body || Object.keys(req.body).length === 0) {
+      return res.status(400).json({ error: 'Empty request body' });
+    }
+
     const { model, requestBody } = req.body;
 
     // Sadece izin verilen modellere izin ver
     const allowedModels = [
       'gemini-3-flash-preview',
+      'gemini-2.5-flash-preview',
       'gemini-2.5-flash-image',
       'gemini-2.5-flash',
-      'gemini-2.0-flash-exp'
+      'gemini-2.0-flash-exp',
+      'gemini-2.0-flash'
     ];
 
     if (!model || !allowedModels.includes(model)) {
@@ -46,7 +53,18 @@ export default async function handler(req, res) {
       body: JSON.stringify(requestBody)
     });
 
-    const data = await response.json();
+    // Safe JSON parsing for response
+    const responseText = await response.text();
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Gemini API returned non-JSON:', responseText.substring(0, 200));
+      return res.status(502).json({
+        error: 'Gemini API returned invalid response',
+        details: responseText.substring(0, 200)
+      });
+    }
 
     if (!response.ok) {
       return res.status(response.status).json({

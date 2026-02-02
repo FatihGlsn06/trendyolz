@@ -34,13 +34,34 @@ exports.handler = async (event) => {
   }
 
   try {
-    const body = JSON.parse(event.body);
+    // Request body validation
+    if (!event.body) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'Empty request body' })
+      };
+    }
+
+    let body;
+    try {
+      body = JSON.parse(event.body);
+    } catch (parseError) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'Invalid JSON in request body' })
+      };
+    }
+
     const { endpoint, ...params } = body;
 
     // Sadece izin verilen endpoint'lere izin ver
     const allowedEndpoints = [
       'fal-ai/birefnet',
-      'fal-ai/clarity-upscaler'
+      'fal-ai/clarity-upscaler',
+      'fal-ai/flux/dev',
+      'fal-ai/flux-pro/v1.1-ultra'
     ];
 
     if (!endpoint || !allowedEndpoints.includes(endpoint)) {
@@ -62,13 +83,25 @@ exports.handler = async (event) => {
       body: JSON.stringify(params)
     });
 
-    const data = await response.json();
+    // Safe JSON parsing for response
+    const responseText = await response.text();
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('FAL API returned non-JSON:', responseText.substring(0, 200));
+      return {
+        statusCode: 502,
+        headers,
+        body: JSON.stringify({ error: 'FAL API returned invalid response', details: responseText.substring(0, 200) })
+      };
+    }
 
     if (!response.ok) {
       return {
         statusCode: response.status,
         headers,
-        body: JSON.stringify({ error: data.error || 'FAL API error', details: data })
+        body: JSON.stringify({ error: data.error || data.detail || 'FAL API error', details: data })
       };
     }
 

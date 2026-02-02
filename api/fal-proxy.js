@@ -22,12 +22,19 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Request body validation
+    if (!req.body || Object.keys(req.body).length === 0) {
+      return res.status(400).json({ error: 'Empty request body' });
+    }
+
     const { endpoint, ...params } = req.body;
 
     // Sadece izin verilen endpoint'lere izin ver
     const allowedEndpoints = [
       'fal-ai/birefnet',
-      'fal-ai/clarity-upscaler'
+      'fal-ai/clarity-upscaler',
+      'fal-ai/flux/dev',
+      'fal-ai/flux-pro/v1.1-ultra'
     ];
 
     if (!endpoint || !allowedEndpoints.includes(endpoint)) {
@@ -45,11 +52,22 @@ export default async function handler(req, res) {
       body: JSON.stringify(params)
     });
 
-    const data = await response.json();
+    // Safe JSON parsing for response
+    const responseText = await response.text();
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('FAL API returned non-JSON:', responseText.substring(0, 200));
+      return res.status(502).json({
+        error: 'FAL API returned invalid response',
+        details: responseText.substring(0, 200)
+      });
+    }
 
     if (!response.ok) {
       return res.status(response.status).json({
-        error: data.error || 'FAL API error',
+        error: data.error || data.detail || 'FAL API error',
         details: data
       });
     }
