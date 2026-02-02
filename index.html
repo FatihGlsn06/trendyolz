@@ -2577,29 +2577,18 @@ Return ONLY this JSON:
 }`;
 
             try {
-                const response = await fetch(`${GEMINI_CONFIG.baseUrl}/${GEMINI_CONFIG.textModel}:generateContent?key=${geminiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [
-                                { text: analysisPrompt },
-                                { inlineData: { mimeType: 'image/jpeg', data: imageBase64.split(',')[1] } }
-                            ]
-                        }],
-                        generationConfig: {
-                            temperature: 0.1,
-                            maxOutputTokens: 200
-                        }
-                    })
-                });
-
-                if (!response.ok) {
-                    console.warn('Auto-detect API hatası');
-                    return null;
-                }
-
-                const data = await response.json();
+                const data = await callGeminiAPI(GEMINI_CONFIG.textModel, {
+                    contents: [{
+                        parts: [
+                            { text: analysisPrompt },
+                            { inlineData: { mimeType: 'image/jpeg', data: imageBase64.split(',')[1] } }
+                        ]
+                    }],
+                    generationConfig: {
+                        temperature: 0.1,
+                        maxOutputTokens: 200
+                    }
+                }, geminiKey);
                 const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
                 // Extract JSON from response
@@ -3049,10 +3038,8 @@ ABSOLUTELY DO NOT:
 
 The jewelry placement is FINAL. Only enhance the blending and overall image quality.`;
 
-                const blendResponse = await fetch(`${GEMINI_CONFIG.baseUrl}/${GEMINI_CONFIG.imageModel}:generateContent?key=${geminiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
+                try {
+                    const blendData = await callGeminiAPI(GEMINI_CONFIG.imageModel, {
                         contents: [{
                             parts: [
                                 { text: blendPrompt },
@@ -3063,11 +3050,8 @@ The jewelry placement is FINAL. Only enhance the blending and overall image qual
                             responseModalities: ["IMAGE", "TEXT"],
                             temperature: 0.2
                         }
-                    })
-                });
+                    }, geminiKey);
 
-                if (blendResponse.ok) {
-                    const blendData = await blendResponse.json();
                     const blendParts = blendData.candidates?.[0]?.content?.parts || [];
                     for (const part of blendParts) {
                         if (part.inlineData?.mimeType?.startsWith('image/')) {
@@ -3075,6 +3059,8 @@ The jewelry placement is FINAL. Only enhance the blending and overall image qual
                             return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
                         }
                     }
+                } catch (blendErr) {
+                    console.warn('AI blend hatası:', blendErr);
                 }
 
                 // AI başarısız olursa composite'i döndür
@@ -3148,29 +3134,18 @@ ${hasAngleInstruction ? 'Use the CAMERA ANGLE from USER CUSTOM INSTRUCTIONS' : '
 OUTPUT: Professional model photo with COMPLETELY BARE neck, ready for jewelry overlay.`;
 
             // NOT: Takı görselini GÖNDERMİYORUZ - AI görünce kopyalıyor!
-            const modelResponse = await fetch(`${GEMINI_CONFIG.baseUrl}/${GEMINI_CONFIG.imageModel}:generateContent?key=${geminiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [
-                            { text: modelOnlyPrompt }
-                            // Takı görseli YOK - AI kopyalamasın diye
-                        ]
-                    }],
-                    generationConfig: {
-                        responseModalities: ["IMAGE", "TEXT"],
-                        temperature: 0.3  // Düşük = daha az yaratıcılık
-                    }
-                })
-            });
-
-            if (!modelResponse.ok) {
-                const err = await modelResponse.json();
-                throw new Error(err.error?.message || 'Model oluşturulamadı');
-            }
-
-            const modelData = await modelResponse.json();
+            const modelData = await callGeminiAPI(GEMINI_CONFIG.imageModel, {
+                contents: [{
+                    parts: [
+                        { text: modelOnlyPrompt }
+                        // Takı görseli YOK - AI kopyalamasın diye
+                    ]
+                }],
+                generationConfig: {
+                    responseModalities: ["IMAGE", "TEXT"],
+                    temperature: 0.3  // Düşük = daha az yaratıcılık
+                }
+            }, geminiKey);
             const modelParts = modelData.candidates?.[0]?.content?.parts || [];
             let modelImageBase64 = null;
 
@@ -3242,34 +3217,23 @@ Example: If necklace covers 60% of visible chest in Image 1 → It MUST cover 60
 
 OUTPUT: Jewelry on model at EXACT SAME SCALE as seen in [Input Image 1].`;
 
-            const placeResponse = await fetch(`${GEMINI_CONFIG.baseUrl}/${GEMINI_CONFIG.imageModel}:generateContent?key=${geminiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [
-                            { text: placeJewelryPrompt },
-                            // Image 1: ORIGINAL - boyut referansı için
-                            { inlineData: { mimeType: 'image/jpeg', data: state.originalBase64.split(',')[1] } },
-                            // Image 2: BiRefNet çıktısı - detay için
-                            { inlineData: { mimeType: 'image/png', data: jewelryBase64.split(',')[1] } },
-                            // Image 3: Üretilen model
-                            { inlineData: { mimeType: 'image/png', data: modelImageBase64.split(',')[1] } }
-                        ]
-                    }],
-                    generationConfig: {
-                        responseModalities: ["IMAGE", "TEXT"],
-                        temperature: 0.1
-                    }
-                })
-            });
-
-            if (!placeResponse.ok) {
-                const err = await placeResponse.json();
-                throw new Error(err.error?.message || 'Takı yerleştirilemedi');
-            }
-
-            const placeData = await placeResponse.json();
+            const placeData = await callGeminiAPI(GEMINI_CONFIG.imageModel, {
+                contents: [{
+                    parts: [
+                        { text: placeJewelryPrompt },
+                        // Image 1: ORIGINAL - boyut referansı için
+                        { inlineData: { mimeType: 'image/jpeg', data: state.originalBase64.split(',')[1] } },
+                        // Image 2: BiRefNet çıktısı - detay için
+                        { inlineData: { mimeType: 'image/png', data: jewelryBase64.split(',')[1] } },
+                        // Image 3: Üretilen model
+                        { inlineData: { mimeType: 'image/png', data: modelImageBase64.split(',')[1] } }
+                    ]
+                }],
+                generationConfig: {
+                    responseModalities: ["IMAGE", "TEXT"],
+                    temperature: 0.1
+                }
+            }, geminiKey);
             const placeParts = placeData.candidates?.[0]?.content?.parts || [];
 
             for (const part of placeParts) {
@@ -3346,10 +3310,10 @@ DO NOT include any jewelry or objects - just the empty background/surface.
 
 OUTPUT: Clean, professional background only.`;
 
-            const bgResponse = await fetch(`${GEMINI_CONFIG.baseUrl}/${GEMINI_CONFIG.imageModel}:generateContent?key=${geminiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+            let backgroundBase64 = null;
+
+            try {
+                const bgData = await callGeminiAPI(GEMINI_CONFIG.imageModel, {
                     contents: [{
                         parts: [{ text: backgroundPrompt }]
                     }],
@@ -3357,13 +3321,8 @@ OUTPUT: Clean, professional background only.`;
                         responseModalities: ["IMAGE", "TEXT"],
                         temperature: 0.5
                     }
-                })
-            });
+                }, geminiKey);
 
-            let backgroundBase64 = null;
-
-            if (bgResponse.ok) {
-                const bgData = await bgResponse.json();
                 const bgParts = bgData.candidates?.[0]?.content?.parts || [];
                 for (const part of bgParts) {
                     if (part.inlineData?.mimeType?.startsWith('image/')) {
@@ -3371,6 +3330,8 @@ OUTPUT: Clean, professional background only.`;
                         break;
                     }
                 }
+            } catch (bgErr) {
+                console.warn('Arka plan oluşturma hatası:', bgErr);
             }
 
             if (!backgroundBase64) {
@@ -3416,30 +3377,19 @@ PRESERVE 100%:
 
 OUTPUT: The product must be PIXEL-PERFECT identical to Input Image 1, naturally placed on the background.`;
 
-            const placeResponse = await fetch(`${GEMINI_CONFIG.baseUrl}/${GEMINI_CONFIG.imageModel}:generateContent?key=${geminiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [
-                            { text: placeProductPrompt },
-                            { inlineData: { mimeType: 'image/png', data: productBase64.split(',')[1] } },
-                            { inlineData: { mimeType: 'image/png', data: backgroundBase64.split(',')[1] } }
-                        ]
-                    }],
-                    generationConfig: {
-                        responseModalities: ["IMAGE", "TEXT"],
-                        temperature: 0.1
-                    }
-                })
-            });
-
-            if (!placeResponse.ok) {
-                const err = await placeResponse.json();
-                throw new Error(err.error?.message || 'Ürün yerleştirilemedi');
-            }
-
-            const placeData = await placeResponse.json();
+            const placeData = await callGeminiAPI(GEMINI_CONFIG.imageModel, {
+                contents: [{
+                    parts: [
+                        { text: placeProductPrompt },
+                        { inlineData: { mimeType: 'image/png', data: productBase64.split(',')[1] } },
+                        { inlineData: { mimeType: 'image/png', data: backgroundBase64.split(',')[1] } }
+                    ]
+                }],
+                generationConfig: {
+                    responseModalities: ["IMAGE", "TEXT"],
+                    temperature: 0.1
+                }
+            }, geminiKey);
             const placeParts = placeData.candidates?.[0]?.content?.parts || [];
 
             for (const part of placeParts) {
@@ -3661,35 +3611,28 @@ Return ONLY the JSON, no other text.`;
             };
 
             try {
-                const analysisResponse = await fetch(`${GEMINI_CONFIG.baseUrl}/${GEMINI_CONFIG.textModel}:generateContent?key=${geminiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [
-                                { text: jewelryAnalysisPrompt },
-                                {
-                                    inlineData: {
-                                        mimeType: 'image/png',
-                                        data: jewelryBase64Data
-                                    }
+                const analysisData = await callGeminiAPI(GEMINI_CONFIG.textModel, {
+                    contents: [{
+                        parts: [
+                            { text: jewelryAnalysisPrompt },
+                            {
+                                inlineData: {
+                                    mimeType: 'image/png',
+                                    data: jewelryBase64Data
                                 }
-                            ]
-                        }],
-                        generationConfig: {
-                            temperature: 0.1
-                        }
-                    })
-                });
-
-                if (analysisResponse.ok) {
-                    const analysisData = await analysisResponse.json();
-                    const analysisText = analysisData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-                    // JSON'u parse et
-                    const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
-                    if (jsonMatch) {
-                        jewelryAnalysis = { ...jewelryAnalysis, ...JSON.parse(jsonMatch[0]) };
+                            }
+                        ]
+                    }],
+                    generationConfig: {
+                        temperature: 0.1
                     }
+                }, geminiKey);
+
+                const analysisText = analysisData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                // JSON'u parse et
+                const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    jewelryAnalysis = { ...jewelryAnalysis, ...JSON.parse(jsonMatch[0]) };
                 }
                 console.log('✅ Takı analizi:', jewelryAnalysis);
             } catch (e) {
@@ -3755,34 +3698,23 @@ Görseldeki kolye BİREBİR AYNI kalmalı:
 
 TEKRAR: Görseldeki kolyeyi DEĞİŞTİRME, AYNEN koru!`;
 
-            const response = await fetch(`${GEMINI_CONFIG.baseUrl}/${GEMINI_CONFIG.imageModel}:generateContent?key=${geminiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [
-                            { text: singleStepPrompt },
-                            {
-                                inlineData: {
-                                    mimeType: 'image/png',
-                                    data: jewelryBase64.replace(/^data:image\/\w+;base64,/, '')
-                                }
+            const data = await callGeminiAPI(GEMINI_CONFIG.imageModel, {
+                contents: [{
+                    parts: [
+                        { text: singleStepPrompt },
+                        {
+                            inlineData: {
+                                mimeType: 'image/png',
+                                data: jewelryBase64.replace(/^data:image\/\w+;base64,/, '')
                             }
-                        ]
-                    }],
-                    generationConfig: {
-                        responseModalities: ["image", "text"],
-                        temperature: 0.1  // Çok düşük = yaratıcılık minimum
-                    }
-                })
-            });
-
-            if (!response.ok) {
-                const err = await response.json();
-                throw new Error('Gemini hatası: ' + (err.error?.message || 'Model oluşturulamadı'));
-            }
-
-            const data = await response.json();
+                        }
+                    ]
+                }],
+                generationConfig: {
+                    responseModalities: ["image", "text"],
+                    temperature: 0.1  // Çok düşük = yaratıcılık minimum
+                }
+            }, geminiKey);
             const parts = data.candidates?.[0]?.content?.parts || [];
 
             for (const part of parts) {
@@ -4025,26 +3957,16 @@ TEKRAR: Görseldeki kolyeyi DEĞİŞTİRME, AYNEN koru!`;
         // ========== GEMINI IMAGE GENERATION (IMAGEN) ==========
         async function generateWithGeminiImageGen(apiKey, prompt) {
             // Gemini 2.5 Flash ile görsel üretim
-            const response = await fetch(`${GEMINI_CONFIG.baseUrl}/${GEMINI_CONFIG.imageModel}:generateContent?key=${apiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{
-                            text: prompt + "\n\nGenerate an image based on this description."
-                        }]
-                    }],
-                    generationConfig: {
-                        responseModalities: ["IMAGE", "TEXT"]
-                    }
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error('Gemini görsel üretemedi');
-            }
-
-            const data = await response.json();
+            const data = await callGeminiAPI(GEMINI_CONFIG.imageModel, {
+                contents: [{
+                    parts: [{
+                        text: prompt + "\n\nGenerate an image based on this description."
+                    }]
+                }],
+                generationConfig: {
+                    responseModalities: ["IMAGE", "TEXT"]
+                }
+            }, apiKey);
             const parts = data.candidates?.[0]?.content?.parts || [];
 
             for (const part of parts) {
@@ -4133,31 +4055,19 @@ SADECE JSON DÖNDÜR (başka hiçbir şey yazma):
 NOT: Tipik bir kolye için y=35-50 arası, scale=40-70 arası olur.`;
 
             try {
-                const response = await fetch(`${GEMINI_CONFIG.baseUrl}/${GEMINI_CONFIG.textModel}:generateContent?key=${geminiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [
-                                { text: prompt },
-                                { inlineData: { mimeType: 'image/jpeg', data: templateBase64.split(',')[1] } },
-                                { inlineData: { mimeType: 'image/png', data: jewelryBase64.split(',')[1] } }
-                            ]
-                        }],
-                        generationConfig: {
-                            temperature: 0.1,  // Düşük temperature = tutarlı sonuç
-                            maxOutputTokens: 256
-                        }
-                    })
-                });
-
-                if (!response.ok) {
-                    const err = await response.json();
-                    console.error('Gemini hatası:', err);
-                    throw new Error(err.error?.message || 'Gemini yanıt vermedi');
-                }
-
-                const data = await response.json();
+                const data = await callGeminiAPI(GEMINI_CONFIG.textModel, {
+                    contents: [{
+                        parts: [
+                            { text: prompt },
+                            { inlineData: { mimeType: 'image/jpeg', data: templateBase64.split(',')[1] } },
+                            { inlineData: { mimeType: 'image/png', data: jewelryBase64.split(',')[1] } }
+                        ]
+                    }],
+                    generationConfig: {
+                        temperature: 0.1,  // Düşük temperature = tutarlı sonuç
+                        maxOutputTokens: 256
+                    }
+                }, geminiKey);
                 const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
                 console.log('🧠 Gemini yanıtı:', text);
 
@@ -4294,30 +4204,18 @@ SADECE JSON döndür.`;
 
             try {
                 // Gemini 3 Flash - en yeni ve hızlı model (Ocak 2026)
-                const response = await fetch(`${GEMINI_CONFIG.baseUrl}/${GEMINI_CONFIG.textModel}:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [
-                                { text: analysisPrompt },
-                                { inlineData: { mimeType: 'image/jpeg', data: base64Image.split(',')[1] } }
-                            ]
-                        }],
-                        generationConfig: {
-                            temperature: 0.2,
-                            maxOutputTokens: 2048
-                        }
-                    })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error('Analiz API hatası:', errorData);
-                    throw new Error(errorData.error?.message || 'API yanıt vermedi');
-                }
-
-                const data = await response.json();
+                const data = await callGeminiAPI(GEMINI_CONFIG.textModel, {
+                    contents: [{
+                        parts: [
+                            { text: analysisPrompt },
+                            { inlineData: { mimeType: 'image/jpeg', data: base64Image.split(',')[1] } }
+                        ]
+                    }],
+                    generationConfig: {
+                        temperature: 0.2,
+                        maxOutputTokens: 2048
+                    }
+                }, apiKey);
                 console.log('Gemini yanıtı:', data);
 
                 const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
