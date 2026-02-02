@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Trendyol Pro Studio v18.2 - SEO PRO+ Edition -->
+<!-- Trendyol Pro Studio v19.0 - SEO PRO+ Edition -->
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trendyol Pro Studio v18.2 - SEO PRO+</title>
+    <title>Trendyol Pro Studio v19.0 - SEO PRO+</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -159,7 +159,7 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-sm sm:text-lg">Trendyol Pro Studio</h1>
-                    <p class="text-[9px] sm:text-[10px] text-slate-400">v18.2 SEO PRO+ Edition</p>
+                    <p class="text-[9px] sm:text-[10px] text-slate-400">v19.0 SEO PRO+ Edition</p>
                 </div>
             </div>
 
@@ -202,23 +202,13 @@
 
                     <!-- ====== ANA KONTROLLER (Her Zaman Görünür) ====== -->
                     <div class="glass rounded-2xl p-4">
-                        <!-- Mode + Upload Kompakt -->
-                        <div class="flex gap-3 mb-4">
-                            <!-- Mode Buttons -->
-                            <div class="flex gap-1 bg-slate-800/50 p-1 rounded-lg">
-                                <button onclick="setWorkMode('mannequin')" id="modeMannequin" class="mode-btn active px-3 py-2 rounded-md text-[10px] font-medium transition-all" title="Manken fotoğrafı">
-                                    <i class="fa-solid fa-person-dress text-cyan-400"></i>
-                                </button>
-                                <button onclick="setWorkMode('flatlay')" id="modeFlatlay" class="mode-btn px-3 py-2 rounded-md text-[10px] font-medium text-slate-400 transition-all" title="Düz zemin">
-                                    <i class="fa-solid fa-table-cells"></i>
-                                </button>
-                                <button onclick="setWorkMode('product')" id="modeProduct" class="mode-btn px-3 py-2 rounded-md text-[10px] font-medium text-slate-400 transition-all" title="Sadece ürün">
-                                    <i class="fa-solid fa-gem"></i>
-                                </button>
+                        <!-- Başlık -->
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-wand-magic-sparkles text-orange-400"></i>
+                                <span class="text-sm font-medium">Stüdyo Pro</span>
                             </div>
-                            <div class="flex-1 text-right">
-                                <span id="currentModeText" class="text-xs text-slate-400">Manken Modu</span>
-                            </div>
+                            <span class="text-xs text-slate-500">Halüsinasyonsuz AI</span>
                         </div>
 
                         <!-- Upload Area Kompakt -->
@@ -961,8 +951,8 @@
     </main>
 
     <!-- Settings Modal -->
-    <div id="settingsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="glass rounded-2xl w-full max-w-lg p-6">
+    <div id="settingsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4" onclick="if(event.target === this) closeSettings()">
+        <div class="glass rounded-2xl w-full max-w-lg p-6 relative z-10">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="font-bold text-lg">API Ayarları</h3>
                 <button onclick="closeSettings()" class="text-slate-400 hover:text-white">
@@ -1016,6 +1006,72 @@
     </div>
 
     <script>
+        // ========== GEMINI MODEL CONFIG ==========
+        const GEMINI_CONFIG = {
+            // Gemini 3 - Text analiz için
+            textModel: 'gemini-3-flash-preview',           // Analiz, SEO, JSON çıktı (hızlı)
+
+            // Gemini 2.5 Flash Image - Edit için (daha sadık, az halüsinasyon)
+            // NOT: Gemini 3 Pro Image çok yaratıcı, renkleri değiştiriyor!
+            imageModel: 'gemini-2.5-flash-image',  // Eski çalışan model - renkleri koruyor
+
+            // Fallback modeller
+            fallbackTextModel: 'gemini-2.5-flash',
+            fallbackImageModel: 'gemini-2.0-flash-exp',
+
+            // API ayarları
+            baseUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
+            maxRetries: 3,
+            retryDelayMs: 1000
+        };
+
+        // Retry mekanizması ile API çağrısı
+        async function callGeminiAPI(model, body, apiKey, retries = GEMINI_CONFIG.maxRetries) {
+            const url = `${GEMINI_CONFIG.baseUrl}/${model}:generateContent?key=${apiKey}`;
+
+            for (let attempt = 1; attempt <= retries; attempt++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+
+                    if (response.ok) {
+                        return await response.json();
+                    }
+
+                    // 429 (rate limit) veya 5xx hatalarında retry
+                    if (response.status === 429 || response.status >= 500) {
+                        if (attempt < retries) {
+                            const delay = GEMINI_CONFIG.retryDelayMs * Math.pow(2, attempt - 1);
+                            console.log(`⏳ API hatası (${response.status}), ${delay}ms sonra tekrar deneniyor... (${attempt}/${retries})`);
+                            await new Promise(r => setTimeout(r, delay));
+                            continue;
+                        }
+                    }
+
+                    // Model bulunamadı - fallback'e geç
+                    if (response.status === 404) {
+                        const fallbackModel = model.includes('image')
+                            ? GEMINI_CONFIG.fallbackImageModel
+                            : GEMINI_CONFIG.fallbackTextModel;
+                        console.log(`⚠️ ${model} bulunamadı, ${fallbackModel} deneniyor...`);
+                        return callGeminiAPI(fallbackModel, body, apiKey, 1);
+                    }
+
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error?.message || `API hatası: ${response.status}`);
+
+                } catch (error) {
+                    if (attempt === retries) throw error;
+                    const delay = GEMINI_CONFIG.retryDelayMs * Math.pow(2, attempt - 1);
+                    console.log(`⏳ Hata: ${error.message}, ${delay}ms sonra tekrar... (${attempt}/${retries})`);
+                    await new Promise(r => setTimeout(r, delay));
+                }
+            }
+        }
+
         // ========== STATE ==========
         let state = {
             originalImage: null,
@@ -1069,36 +1125,10 @@
         }
 
         // ========== WORK MODE ==========
+        // Tek mod - setWorkMode artık gerekli değil
         function setWorkMode(mode) {
-            state.workMode = mode;
-
-            const activeClass = 'mode-btn active px-3 py-2 rounded-md text-[10px] font-medium transition-all';
-            const inactiveClass = 'mode-btn px-3 py-2 rounded-md text-[10px] font-medium text-slate-400 transition-all';
-
-            // UI güncelle
-            document.getElementById('modeMannequin').className = mode === 'mannequin' ? activeClass : inactiveClass;
-            document.getElementById('modeFlatlay').className = mode === 'flatlay' ? activeClass : inactiveClass;
-            document.getElementById('modeProduct').className = mode === 'product' ? activeClass : inactiveClass;
-
-            // İkon renklerini güncelle
-            document.querySelector('#modeMannequin i').className = mode === 'mannequin'
-                ? 'fa-solid fa-person-dress text-cyan-400'
-                : 'fa-solid fa-person-dress text-slate-400';
-
-            document.querySelector('#modeFlatlay i').className = mode === 'flatlay'
-                ? 'fa-solid fa-table-cells text-cyan-400'
-                : 'fa-solid fa-table-cells text-slate-400';
-
-            document.querySelector('#modeProduct i').className = mode === 'product'
-                ? 'fa-solid fa-gem text-cyan-400'
-                : 'fa-solid fa-gem text-slate-400';
-
-            // Mod text güncelle
-            const modeNames = { mannequin: 'Manken Modu', flatlay: 'Düz Zemin Modu', product: 'Sadece Ürün Modu' };
-            const modeTextEl = document.getElementById('currentModeText');
-            if (modeTextEl) modeTextEl.textContent = modeNames[mode];
-
-            showToast(`${modeNames[mode]} seçildi`, 'success');
+            // Artık tek mod var: Stüdyo Pro (halüsinasyonsuz)
+            state.workMode = 'mannequin';
         }
 
         // ========== MANUAL IMAGE ADJUSTMENTS ==========
@@ -1200,14 +1230,11 @@
                 : '';
 
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [
-                                {
-                                    text: `SEN BİR TRENDYOL SEO UZMANSIN.
+                const seoRequestBody = {
+                    contents: [{
+                        parts: [
+                            {
+                                text: `SEN BİR TRENDYOL SEO UZMANSIN.
 
 ===== TRENDYOL ÜRÜN YAPISI (ÇOK ÖNEMLİ!) =====
 Trendyol'da ürün listelerken 3 farklı alan var:
@@ -1341,17 +1368,14 @@ MODEL KODU FORMATI:
 - Örnek: KLY-RG-847, YZK-GMS-213, BLK-ALT-456
 
 SADECE JSON döndür, başka bir şey yazma!`
-                                },
-                                ...(state.originalBase64 ? [{ inlineData: { mimeType: 'image/jpeg', data: state.originalBase64.split(',')[1] } }] : [])
-                            ]
-                        }],
-                        generationConfig: { temperature: 0.3 }
-                    })
-                });
+                            },
+                            ...(state.originalBase64 ? [{ inlineData: { mimeType: 'image/jpeg', data: state.originalBase64.split(',')[1] } }] : [])
+                        ]
+                    }],
+                    generationConfig: { temperature: 0.3 }
+                };
 
-                if (!response.ok) throw new Error('SEO oluşturulamadı');
-
-                const data = await response.json();
+                const data = await callGeminiAPI(GEMINI_CONFIG.textModel, seoRequestBody, geminiKey);
                 const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
                 // JSON parse - markdown code block'u da yakala
@@ -1801,7 +1825,8 @@ ${seo.hashtags || ''}
                         image_url: state.originalBase64,
                         model: "General Use (Light)",
                         operating_resolution: state.isHighRes ? "2048x2048" : "1024x1024",
-                        output_format: "png"
+                        output_format: "png",
+                        refine_foreground: true
                     })
                 });
 
@@ -2410,7 +2435,7 @@ Return ONLY this JSON:
 }`;
 
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
+                const response = await fetch(`${GEMINI_CONFIG.baseUrl}/${GEMINI_CONFIG.textModel}:generateContent?key=${geminiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -2779,24 +2804,20 @@ The jewelry must remain EXACTLY as provided - do not modify the jewelry in any w
                 return;
             }
 
-            showLoader('Gemini 2.5 ile dönüştürülüyor...', '1/2 Takı analiz ediliyor');
+            showLoader('Stüdyo Pro...', '1/3 Ürün çıkarılıyor');
 
             try {
-                // Mod'a göre işlem yap
-                if (state.workMode === 'mannequin') {
-                    console.log('🎯 Manken Modu - Gemini Edit başlatılıyor...');
-                    state.processedImage = await generateWithGemini25();
-                } else if (state.workMode === 'flatlay') {
-                    console.log('🎯 Düz Zemin Modu - Flatlay başlatılıyor...');
-                    state.processedImage = await generateFlatlayMode();
-                } else if (state.workMode === 'product') {
-                    console.log('🎯 Sadece Ürün Modu - Ürün iyileştirme başlatılıyor...');
-                    state.processedImage = await generateProductOnlyMode();
-                }
+                // Tek mod: Halüsinasyonsuz Stüdyo Pro
+                console.log('🎯 Stüdyo Pro - Halüsinasyonsuz mod başlatılıyor...');
+                state.processedImage = await generateWithGemini25();
 
                 // STUDIO ENHANCE - Fal.ai ile kalite artırma
                 console.log('🎬 Stüdyo kalitesi uygulanıyor...');
                 state.processedImage = await studioEnhance(state.processedImage);
+
+                // SIYAH ARKA PLAN FIX - Şeffaf PNG'yi beyaz arka plana composite et
+                console.log('🎨 Arka plan garantisi uygulanıyor...');
+                state.processedImage = await ensureWhiteBackground(state.processedImage);
 
                 // Orijinal processed image'ı sakla (rötuş için)
                 state.originalProcessedImage = state.processedImage;
@@ -2849,7 +2870,8 @@ The jewelry must remain EXACTLY as provided - do not modify the jewelry in any w
                     image_url: state.originalBase64,
                     model: "General Use (Light)",
                     operating_resolution: state.isHighRes ? "2048x2048" : "1024x1024",
-                    output_format: "png"
+                    output_format: "png",
+                    refine_foreground: true
                 })
             });
 
@@ -2899,7 +2921,7 @@ ABSOLUTELY DO NOT:
 
 The jewelry placement is FINAL. Only enhance the blending and overall image quality.`;
 
-                const blendResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${geminiKey}`, {
+                const blendResponse = await fetch(`${GEMINI_CONFIG.baseUrl}/${GEMINI_CONFIG.imageModel}:generateContent?key=${geminiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -2955,24 +2977,17 @@ The jewelry placement is FINAL. Only enhance the blending and overall image qual
             const layerCount = state.detectedProperties?.layerCount || 1;
             const verticalSpread = state.detectedProperties?.verticalSpread || 'moderate';
 
-            // Takısız model oluşturma prompt'u - AI TAKIYI GÖRSÜN VE ONA GÖRE MODEL ÜRETSİN
-            const modelOnlyPrompt = `Look at [Input Image 1] - this is the jewelry that will be placed on the model.
+            // Takısız model oluşturma prompt'u - KESINLIKLE TAKISIZ
+            const modelOnlyPrompt = `Generate a professional model photo for jewelry product photography.
 
-⚠️ ANALYZE THE JEWELRY FIRST:
-- How LONG is this necklace? Does it hang to mid-chest? To stomach?
-- How WIDE is the pendant/centerpiece?
-- Is it multi-layer (multiple chains)?
-- What is the total VERTICAL SPREAD?
-
-Based on your analysis, create a model with ENOUGH visible chest/body area to fit this jewelry.
-
-YOUR TASK: Create a professional model photo WITHOUT any jewelry, but with correct framing for THIS specific jewelry.
-
-FRAMING RULES (based on jewelry analysis):
-- If necklace is LONG (hangs to chest/stomach): Show chin to stomach area
-- If necklace is MEDIUM (hangs to mid-chest): Show chin to mid-chest area
-- If necklace is SHORT/CHOKER: Closer crop, chin to upper chest
-- If MULTI-LAYER: Need extra vertical space for all rows
+🚨🚨🚨 ABSOLUTELY NO JEWELRY 🚨🚨🚨
+The model must NOT wear ANY jewelry:
+- NO necklaces
+- NO earrings
+- NO bracelets
+- NO rings
+- COMPLETELY BARE neck and chest area
+- The jewelry will be added LATER via digital editing
 
 ${smartPromptInstructions ? `USER CUSTOM INSTRUCTIONS (PRIORITY):\n${smartPromptInstructions}\n` : ''}
 
@@ -2980,39 +2995,44 @@ MODEL REQUIREMENTS:
 - ${profile.desc}
 - ${outfitSceneInstructions}
 - Professional studio lighting
-- Clear, unobstructed neck and chest area
+- BARE neck - absolutely no accessories
 
-🚫 MODESTY RULES (VERY IMPORTANT):
+🚫 MODESTY RULES:
 - CONSERVATIVE clothing only - NO low-cut, NO deep V-neck, NO cleavage
 - High neckline or modest V-neck that covers chest appropriately
 - This is for e-commerce, must be FAMILY-FRIENDLY
-- Professional and elegant, NOT sexy or provocative
-- Think: department store catalog, NOT fashion magazine
+- Think: department store catalog style
 
 FACE & FRAMING:
-- Face can be partially visible (chin, lips) or turned away
-- Natural "headless crop" from above eyebrows is preferred
-- DO NOT blur or artificially remove face
+- Natural "headless crop" from above eyebrows preferred
+- Show enough chest/body area for necklace placement
+- Clear, unobstructed neck area
 
 POSE: ${pose?.prompt || 'Front facing, clear view of neck area'}
 ${hasAngleInstruction ? 'Use the CAMERA ANGLE from USER CUSTOM INSTRUCTIONS' : ''}
 
-CRITICAL: Generate ENOUGH visible body area for the jewelry in [Input Image 1] to fit naturally.
-DO NOT include any jewelry on the model - leave neck completely bare.`;
+⛔ FORBIDDEN - ZERO TOLERANCE:
+- ANY jewelry whatsoever
+- ANY necklace or chain
+- ANY accessories on neck/chest
+- The neck MUST be completely bare
 
-            const modelResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${geminiKey}`, {
+OUTPUT: Professional model photo with COMPLETELY BARE neck, ready for jewelry overlay.`;
+
+            // NOT: Takı görselini GÖNDERMİYORUZ - AI görünce kopyalıyor!
+            const modelResponse = await fetch(`${GEMINI_CONFIG.baseUrl}/${GEMINI_CONFIG.imageModel}:generateContent?key=${geminiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     contents: [{
                         parts: [
-                            { text: modelOnlyPrompt },
-                            { inlineData: { mimeType: 'image/png', data: jewelryBase64.split(',')[1] } }
+                            { text: modelOnlyPrompt }
+                            // Takı görseli YOK - AI kopyalamasın diye
                         ]
                     }],
                     generationConfig: {
                         responseModalities: ["IMAGE", "TEXT"],
-                        temperature: 0.5
+                        temperature: 0.3  // Düşük = daha az yaratıcılık
                     }
                 })
             });
@@ -3094,7 +3114,7 @@ Example: If necklace covers 60% of visible chest in Image 1 → It MUST cover 60
 
 OUTPUT: Jewelry on model at EXACT SAME SCALE as seen in [Input Image 1].`;
 
-            const placeResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${geminiKey}`, {
+            const placeResponse = await fetch(`${GEMINI_CONFIG.baseUrl}/${GEMINI_CONFIG.imageModel}:generateContent?key=${geminiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -3162,7 +3182,8 @@ OUTPUT: Jewelry on model at EXACT SAME SCALE as seen in [Input Image 1].`;
                     image_url: state.originalBase64,
                     model: "General Use (Light)",
                     operating_resolution: state.isHighRes ? "2048x2048" : "1024x1024",
-                    output_format: "png"
+                    output_format: "png",
+                    refine_foreground: true
                 })
             });
 
@@ -3211,7 +3232,7 @@ DO NOT include any jewelry or objects - just the empty background/surface.
 
 OUTPUT: Clean, professional background only.`;
 
-            const bgResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${geminiKey}`, {
+            const bgResponse = await fetch(`${GEMINI_CONFIG.baseUrl}/${GEMINI_CONFIG.imageModel}:generateContent?key=${geminiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -3281,7 +3302,7 @@ PRESERVE 100%:
 
 OUTPUT: The product must be PIXEL-PERFECT identical to Input Image 1, naturally placed on the background.`;
 
-            const placeResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${geminiKey}`, {
+            const placeResponse = await fetch(`${GEMINI_CONFIG.baseUrl}/${GEMINI_CONFIG.imageModel}:generateContent?key=${geminiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -3315,8 +3336,8 @@ OUTPUT: The product must be PIXEL-PERFECT identical to Input Image 1, naturally 
             }
 
             // Fallback: Şeffaf ürünü döndür
-            console.log('⚠️ Yerleştirme başarısız, şeffaf ürün döndürülüyor');
-            return productBase64;
+            console.log('⚠️ Yerleştirme başarısız, beyaz arka plana composite ediliyor');
+            return await addWhiteBackgroundToTransparent(productBase64);
         }
 
         // Helper: URL'den base64'e çevir
@@ -3327,6 +3348,73 @@ OUTPUT: The product must be PIXEL-PERFECT identical to Input Image 1, naturally 
                 const reader = new FileReader();
                 reader.onloadend = () => resolve(reader.result);
                 reader.readAsDataURL(blob);
+            });
+        }
+
+        // Helper: Şeffaf PNG'yi beyaz arka plana composite et
+        // Bu fonksiyon siyah arka plan sorununu çözer
+        async function addWhiteBackgroundToTransparent(transparentBase64) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+
+                    // Önce beyaz arka plan çiz
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    // Sonra şeffaf görüntüyü üzerine çiz
+                    ctx.drawImage(img, 0, 0);
+
+                    // PNG olarak döndür
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = () => reject(new Error('Görüntü yüklenemedi'));
+                img.src = transparentBase64;
+            });
+        }
+
+        // Helper: Görüntünün şeffaf piksel içerip içermediğini kontrol et ve beyaz arka plan ekle
+        // Bu fonksiyon tüm çıktılarda siyah arka plan sorununu önler
+        async function ensureWhiteBackground(imageBase64) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+
+                    // Görüntüyü çiz ve alpha kanalını kontrol et
+                    ctx.drawImage(img, 0, 0);
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const data = imageData.data;
+
+                    // Şeffaf piksel var mı kontrol et (alpha < 255)
+                    let hasTransparency = false;
+                    for (let i = 3; i < data.length; i += 4) {
+                        if (data[i] < 250) { // Alpha değeri 250'den küçükse şeffaf kabul et
+                            hasTransparency = true;
+                            break;
+                        }
+                    }
+
+                    if (hasTransparency) {
+                        console.log('⚠️ Şeffaf piksel tespit edildi, beyaz arka plan ekleniyor...');
+                        // Canvas'ı temizle ve beyaz arka plan ile yeniden çiz
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0);
+                    }
+
+                    // JPEG olarak döndür (şeffaflık olmadan, daha küçük dosya boyutu)
+                    resolve(canvas.toDataURL('image/jpeg', 0.95));
+                };
+                img.onerror = () => reject(new Error('Görüntü yüklenemedi'));
+                img.src = imageBase64;
             });
         }
 
@@ -3414,7 +3502,8 @@ OUTPUT: The product must be PIXEL-PERFECT identical to Input Image 1, naturally 
                     image_url: state.originalBase64,
                     model: "General Use (Light)",
                     operating_resolution: state.isHighRes ? "2048x2048" : "1024x1024",
-                    output_format: "png"
+                    output_format: "png",
+                    refine_foreground: true
                 })
             });
 
@@ -3432,215 +3521,410 @@ OUTPUT: The product must be PIXEL-PERFECT identical to Input Image 1, naturally 
 
             const jewelryBase64 = await fetchImageAsBase64(transparentJewelryUrl);
 
-            // ===== ADIM 2: Gemini ile model oluştur (takısız, orijinal poza benzer) =====
-            showLoader('Manken Modu...', '2/3 Model oluşturuluyor');
+            // ===== ADIM 1.5: Takıyı analiz et - boyut ve alan ihtiyacı =====
+            showLoader('Manken Modu...', '2/4 Takı analiz ediliyor');
+            console.log('🔍 Takı analiz ediliyor...');
+
+            const jewelryAnalysisPrompt = `Analyze this jewelry image and provide specifications for model generation.
+
+Return ONLY a JSON object with these fields:
+{
+  "type": "necklace/earring/bracelet/ring",
+  "length": "choker/short/medium/long/very_long",
+  "verticalSpace": "small/medium/large/very_large",
+  "width": "narrow/medium/wide",
+  "hasLargePendant": true/false,
+  "recommendedNeckline": "high/medium/low/deep_v",
+  "recommendedFraming": "close_up/medium/wide",
+  "description": "brief description"
+}
+
+IMPORTANT:
+- "very_long" = necklace hangs below chest, needs lots of vertical space
+- "long" = hangs to mid-chest
+- "medium" = sits at collarbone level
+- "short/choker" = sits at neck
+
+Return ONLY the JSON, no other text.`;
+
+            const jewelryBase64Data = jewelryBase64.split(',')[1];
+            let jewelryAnalysis = {
+                type: 'necklace',
+                length: 'medium',
+                verticalSpace: 'medium',
+                width: 'medium',
+                hasLargePendant: false,
+                recommendedNeckline: 'medium',
+                recommendedFraming: 'medium',
+                description: 'standard necklace'
+            };
+
+            try {
+                const analysisResponse = await fetch(`${GEMINI_CONFIG.baseUrl}/${GEMINI_CONFIG.textModel}:generateContent?key=${geminiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { text: jewelryAnalysisPrompt },
+                                {
+                                    inlineData: {
+                                        mimeType: 'image/png',
+                                        data: jewelryBase64Data
+                                    }
+                                }
+                            ]
+                        }],
+                        generationConfig: {
+                            temperature: 0.1
+                        }
+                    })
+                });
+
+                if (analysisResponse.ok) {
+                    const analysisData = await analysisResponse.json();
+                    const analysisText = analysisData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                    // JSON'u parse et
+                    const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        jewelryAnalysis = { ...jewelryAnalysis, ...JSON.parse(jsonMatch[0]) };
+                    }
+                }
+                console.log('✅ Takı analizi:', jewelryAnalysis);
+            } catch (e) {
+                console.log('⚠️ Takı analizi başarısız, varsayılan kullanılıyor:', e.message);
+            }
+
+            // ===== ADIM 2: Gemini ile model + kolye TEK ADIMDA =====
+            // Model ayrı üretip birleştirmek yerine, kolyeyi verip direkt model oluştur
+            showLoader('Manken Modu...', '3/3 Model + kolye oluşturuluyor');
 
             const outfitSceneInstructions = getOutfitScenePrompt();
             const smartPromptInstructions = getSmartPromptInstructions();
-
-            // Smart prompt'ta açı var mı kontrol et
             const hasAngleInstruction = smartPromptInstructions.includes('CAMERA ANGLE:');
 
-            // Kolye uzunluğu ayarları
-            const neckLenConfig = necklaceLengthConfig[state.settings.necklaceLength] || necklaceLengthConfig.short;
-
-            // Takı boyutu ayarları
-            const sizeConfig = jewelrySizeConfig[state.settings.jewelrySize] || jewelrySizeConfig.medium;
-
-            // Çift sıra/katmanlı kolye kontrolü
-            const isMultiLayer = state.detectedProperties?.multiLayer || false;
-            const layerCount = state.detectedProperties?.layerCount || 1;
-            const verticalSpread = state.detectedProperties?.verticalSpread || 'moderate';
-
-            // Boyut bilgisi
             const aspectRatio = state.originalWidth && state.originalHeight
                 ? (state.originalWidth / state.originalHeight).toFixed(2)
                 : 1;
             const isPortrait = aspectRatio < 1;
             const isLandscape = aspectRatio > 1;
 
-            // Orijinal görsel + BiRefNet çıktısı ile model oluştur - AI TAKIYI ANALİZ ETSİN
-            const modelPrompt = `You have TWO input images:
-[Input Image 1] = Original photo showing the jewelry on a mannequin/model
-[Input Image 2] = The EXTRACTED jewelry with transparent background (from BiRefNet)
+            // Takı analizine göre frame ayarları
+            const frameSettings = {
+                'very_long': { neckline: 'very deep V-neck', frame: 'full torso - chin to waist' },
+                'long': { neckline: 'deep V-neck', frame: 'chin to below chest' },
+                'medium': { neckline: 'medium V-neck', frame: 'full neck and chest visible' },
+                'short': { neckline: 'V-neck', frame: 'neck and upper chest' },
+                'choker': { neckline: 'open neckline', frame: 'neck area visible' }
+            };
+            const frameSetting = frameSettings[jewelryAnalysis.length] || frameSettings.medium;
 
-⚠️ CRITICAL: ANALYZE [Input Image 2] (the extracted jewelry) FIRST!
-Look at the extracted jewelry carefully:
-- How LONG is this necklace? (How far down does it hang?)
-- How WIDE is the pendant/centerpiece?
-- Is it multi-layer (multiple chains)?
-- What is the total VERTICAL SPREAD of the entire piece?
+            // TEK ADIM: Kolyeyi verip model oluştur
+            const singleStepPrompt = `Görseldeki kolyeyi/takıyı takan profesyonel bir model fotoğrafı oluştur.
 
-YOUR TASK: Create a professional model photo WITHOUT any jewelry, but with CORRECT FRAMING to fit this specific jewelry.
+🚨 EN ÖNEMLİ KURAL - MUTLAKA UYULMALI 🚨
+Görseldeki kolye BİREBİR AYNI kalmalı:
+- AYNI boyut (küçültme/büyütme YOK)
+- AYNI renkler (değiştirme YOK)
+- AYNI taşlar, boncuklar, zincir detayları
+- AYNI pendant/uç kısmı
+- Kolyeyi YENİDEN ÜRETME - görseldekini AYNEN kullan
 
-FRAMING RULES (based on YOUR analysis of the jewelry):
-- If necklace is LONG (hangs to chest/stomach): Show chin to stomach area
-- If necklace is MEDIUM (hangs to mid-chest): Show chin to mid-chest area
-- If necklace is SHORT/CHOKER: Closer crop, chin to upper chest
-- If MULTI-LAYER: Need extra vertical space for all rows
+📐 FRAME/ÇERÇEVELEME:
+- ${frameSetting.frame}
+- Kolye tam görünsün, kesilmesin
+- Boyutlar: ${state.originalWidth || 1024}x${state.originalHeight || 1024}
 
-IMAGE SPECS:
-- Dimensions: ${state.originalWidth || 1024}x${state.originalHeight || 1024}
-- Aspect: ${isPortrait ? 'PORTRAIT' : isLandscape ? 'LANDSCAPE' : 'SQUARE'}
-- Match the aspect ratio
+👗 KIYAFETİ:
+- ${frameSetting.neckline} - kolyeyi gösterecek açık yaka
+- Siyah veya koyu düz renk
+- Kolye kıyafetin üstünde otursun
 
-${smartPromptInstructions ? `USER INSTRUCTIONS (PRIORITY):\n${smartPromptInstructions}\n` : ''}
-
-MODEL:
+👩 MODEL:
 - ${profile.desc}
-- ${outfitSceneInstructions}
 - ${style.prompt}
-- Professional studio lighting
+- Profesyonel stüdyo ışıklandırması
+- ${hasAngleInstruction ? smartPromptInstructions : 'Önden, omuzlar görünür'}
 
-🚫 MODESTY RULES (VERY IMPORTANT):
-- CONSERVATIVE clothing only - NO low-cut, NO deep V-neck, NO cleavage
-- High neckline or modest V-neck that covers chest appropriately
-- This is for e-commerce, must be FAMILY-FRIENDLY
-- Professional and elegant, NOT sexy or provocative
-- Think: department store catalog, NOT fashion magazine
+✅ SONUÇ:
+- Kolye DOĞAL şekilde boyunda otursun
+- Zincir boyunun arkasına doğal kavisli
+- Gerçekçi gölgeler
+- E-ticaret ürün fotoğrafı kalitesi
 
-FACE: Natural headless crop (from above eyebrows) or face turned away. DO NOT blur/remove artificially.
+TEKRAR: Görseldeki kolyeyi DEĞİŞTİRME, AYNEN koru!`;
 
-POSE: ${hasAngleInstruction ? 'Use angle from USER INSTRUCTIONS' : (pose?.prompt || 'Match the framing from Input Image 1')}
-
-CRITICAL:
-- Generate ENOUGH visible body area for the jewelry to fit naturally
-- DO NOT include any jewelry - leave neck completely bare
-- The framing must accommodate the ACTUAL size of the jewelry in Input Image 2`;
-
-            const modelResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${geminiKey}`, {
+            const response = await fetch(`${GEMINI_CONFIG.baseUrl}/${GEMINI_CONFIG.imageModel}:generateContent?key=${geminiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     contents: [{
                         parts: [
-                            { text: modelPrompt },
-                            { inlineData: { mimeType: 'image/jpeg', data: state.originalBase64.split(',')[1] } },
-                            { inlineData: { mimeType: 'image/png', data: jewelryBase64.split(',')[1] } }
+                            { text: singleStepPrompt },
+                            {
+                                inlineData: {
+                                    mimeType: 'image/png',
+                                    data: jewelryBase64.replace(/^data:image\/\w+;base64,/, '')
+                                }
+                            }
                         ]
                     }],
                     generationConfig: {
-                        responseModalities: ["IMAGE", "TEXT"],
-                        temperature: 0.5
+                        responseModalities: ["image", "text"],
+                        temperature: 0.1  // Çok düşük = yaratıcılık minimum
                     }
                 })
             });
 
-            if (!modelResponse.ok) {
-                const err = await modelResponse.json();
-                throw new Error(err.error?.message || 'Model oluşturulamadı');
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error('Gemini hatası: ' + (err.error?.message || 'Model oluşturulamadı'));
             }
 
-            const modelData = await modelResponse.json();
-            const modelParts = modelData.candidates?.[0]?.content?.parts || [];
-            let modelImageBase64 = null;
+            const data = await response.json();
+            const parts = data.candidates?.[0]?.content?.parts || [];
 
-            for (const part of modelParts) {
-                if (part.inlineData?.mimeType?.startsWith('image/')) {
-                    modelImageBase64 = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-                    break;
+            for (const part of parts) {
+                if (part.inlineData?.data) {
+                    console.log('✅ Model + kolye tek adımda oluşturuldu!');
+                    return `data:image/png;base64,${part.inlineData.data}`;
                 }
             }
 
-            if (!modelImageBase64) {
-                throw new Error('Model görseli oluşturulamadı');
-            }
-            console.log('✅ Takısız model oluşturuldu');
+            throw new Error('Görsel oluşturulamadı');
+        }
 
-            // ===== ADIM 3: Gemini Edit ile orijinal takıyı yerleştir =====
-            showLoader('Manken Modu...', '3/3 Takı yerleştiriliyor (Orijinal)');
+        // ========== CANVAS COMPOSITE (Yedek - şu an kullanılmıyor) ==========
+        async function createCanvasComposite(jewelryBase64, modelBase64, jewelryAnalysis) {
+            return new Promise((resolve, reject) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const modelImg = new Image();
+                const jewelryImg = new Image();
+                let loaded = 0;
 
-            // ÖNEMLİ: 3 GÖRSEL GÖNDERİYORUZ - Orijinal boyut referansı için
-            const placeJewelryPrompt = `You have THREE input images:
-[Input Image 1] = ORIGINAL photo showing the jewelry on a mannequin/body - USE THIS FOR SCALE REFERENCE!
-[Input Image 2] = EXTRACTED jewelry with transparent background - USE THIS FOR EXACT DETAILS
-[Input Image 3] = Generated model (no jewelry) - PLACE JEWELRY HERE
+                const onLoad = () => {
+                    loaded++;
+                    if (loaded < 2) return;
 
-🚨🚨🚨 CRITICAL SCALE INSTRUCTION 🚨🚨🚨
+                    canvas.width = modelImg.width;
+                    canvas.height = modelImg.height;
 
-Look at [Input Image 1] (the ORIGINAL):
-- See how LARGE the jewelry appears relative to the body/mannequin?
-- See how FAR DOWN the necklace hangs?
-- See how WIDE the pendant is compared to the neck/chest?
+                    // Model arka plan
+                    ctx.drawImage(modelImg, 0, 0);
 
-THE JEWELRY ON [Input Image 3] MUST HAVE THE EXACT SAME PROPORTIONS!
+                    // Takı boyutu - uzunluğa göre ayarla
+                    const sizeMap = {
+                        'very_long': 0.65,
+                        'long': 0.55,
+                        'medium': 0.45,
+                        'short': 0.35,
+                        'choker': 0.30
+                    };
+                    let scale = sizeMap[jewelryAnalysis?.length] || 0.50;
 
-[STEP-BY-STEP PROCESS]
-1. In [Input Image 1], measure: What % of the visible body does the jewelry cover vertically?
-2. In [Input Image 1], measure: What % of the neck/chest width does the jewelry span?
-3. Apply these EXACT SAME proportions to [Input Image 3]!
+                    // Takının aspect ratio'sunu hesapla
+                    const jewelryAspectRatio = jewelryImg.width / jewelryImg.height;
 
-Example: If necklace covers 60% of visible chest in Image 1 → It MUST cover 60% of visible chest in Image 3.
+                    // Çok geniş takılar için (genişlik > yükseklik) scale'i azalt
+                    if (jewelryAspectRatio > 1.2) {
+                        // Geniş kolye - canvas'a sığması için scale küçült
+                        const maxWidthRatio = 0.85; // Canvas genişliğinin max %85'i
+                        const neededScale = (modelImg.width * maxWidthRatio) / jewelryImg.width;
+                        const currentWidth = modelImg.width * scale;
 
-[USE IMAGE 2 FOR]
-• Exact jewelry details (every bead, link, stone)
-• Colors and textures
-• Shape accuracy
-
-[COPY FROM ORIGINAL - Image 1]
-• SCALE and SIZE relative to body
-• How far down it hangs
-• Width relative to neck/shoulders
-• Chain drape and curvature
-
-[ABSOLUTE RULES] ⚠️
-• The pendant in output must be SAME SIZE as in original (Image 1)
-• The chain must hang to the SAME LEVEL as in original
-• Multi-layer spacing must match original
-• If anything, err on the side of LARGER
-
-[FORBIDDEN - ZERO TOLERANCE] ❌
-• NEVER shrink the jewelry compared to original
-• NEVER make pendant smaller than original
-• NEVER shorten the necklace compared to original
-• NEVER compress chain spacing
-
-OUTPUT: Jewelry on model at EXACT SAME SCALE as seen in [Input Image 1].`;
-
-            const placeResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${geminiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [
-                            { text: placeJewelryPrompt },
-                            // Image 1: ORIGINAL - boyut referansı için
-                            { inlineData: { mimeType: 'image/jpeg', data: state.originalBase64.split(',')[1] } },
-                            // Image 2: BiRefNet çıktısı - detay için
-                            { inlineData: { mimeType: 'image/png', data: jewelryBase64.split(',')[1] } },
-                            // Image 3: Üretilen model
-                            { inlineData: { mimeType: 'image/png', data: modelImageBase64.split(',')[1] } }
-                        ]
-                    }],
-                    generationConfig: {
-                        responseModalities: ["IMAGE", "TEXT"],
-                        temperature: 0.1
+                        // Eğer mevcut genişlik canvas'ı aşıyorsa, küçült
+                        if (currentWidth > modelImg.width * maxWidthRatio) {
+                            scale = maxWidthRatio * (jewelryImg.height / jewelryImg.width);
+                            console.log(`⚠️ Geniş kolye tespit edildi, scale ayarlandı: ${scale.toFixed(2)}`);
+                        }
                     }
-                })
+
+                    let targetWidth = modelImg.width * scale;
+                    const aspectRatio = jewelryImg.height / jewelryImg.width;
+                    let targetHeight = targetWidth * aspectRatio;
+
+                    // SON KONTROL: Canvas sınırlarını aşmasın
+                    const padding = 20; // Kenarlardan minimum boşluk
+                    const maxWidth = modelImg.width - (padding * 2);
+                    const maxHeight = modelImg.height * 0.75; // Max yükseklik
+
+                    if (targetWidth > maxWidth) {
+                        const reductionRatio = maxWidth / targetWidth;
+                        targetWidth = maxWidth;
+                        targetHeight = targetHeight * reductionRatio;
+                        console.log(`⚠️ Genişlik sınırı aşıldı, küçültüldü: ${targetWidth.toFixed(0)}px`);
+                    }
+
+                    if (targetHeight > maxHeight) {
+                        const reductionRatio = maxHeight / targetHeight;
+                        targetHeight = maxHeight;
+                        targetWidth = targetWidth * reductionRatio;
+                        console.log(`⚠️ Yükseklik sınırı aşıldı, küçültüldü: ${targetHeight.toFixed(0)}px`);
+                    }
+
+                    // Pozisyon - merkez, göğüs hizası (kolye boyunda değil göğüste otursun)
+                    const x = (modelImg.width - targetWidth) / 2;
+                    const y = modelImg.height * 0.22;  // Üstten %22 - daha aşağıda
+
+                    console.log(`📐 Takı boyutları: ${targetWidth.toFixed(0)}x${targetHeight.toFixed(0)}px, pozisyon: (${x.toFixed(0)}, ${y.toFixed(0)})`);
+
+                    // Yumuşak gölge
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+                    ctx.shadowBlur = 20;
+                    ctx.shadowOffsetX = 3;
+                    ctx.shadowOffsetY = 8;
+
+                    // Takıyı çiz
+                    ctx.drawImage(jewelryImg, x, y, targetWidth, targetHeight);
+                    ctx.restore();
+
+                    resolve(canvas.toDataURL('image/png', 1.0));
+                };
+
+                modelImg.onload = onLoad;
+                jewelryImg.onload = onLoad;
+                modelImg.onerror = () => reject(new Error('Model yüklenemedi'));
+                jewelryImg.onerror = () => reject(new Error('Takı yüklenemedi'));
+                modelImg.src = modelBase64;
+                jewelryImg.src = jewelryBase64;
             });
+        }
 
-            if (!placeResponse.ok) {
-                const err = await placeResponse.json();
-                throw new Error(err.error?.message || 'Takı yerleştirilemedi');
-            }
+        // ========== KENAR MASK - Takının alpha şekline göre kenar oluştur ==========
+        async function createEdgeOnlyMask(jewelryBase64, modelBase64, jewelryAnalysis) {
+            return new Promise((resolve) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const modelImg = new Image();
+                const jewelryImg = new Image();
+                let loaded = 0;
 
-            const placeData = await placeResponse.json();
-            const placeParts = placeData.candidates?.[0]?.content?.parts || [];
+                const onLoad = () => {
+                    loaded++;
+                    if (loaded < 2) return;
 
-            for (const part of placeParts) {
-                if (part.inlineData?.mimeType?.startsWith('image/')) {
-                    console.log('✅ Manken modu tamamlandı (Hallucination-Free)!');
-                    return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-                }
-            }
+                    canvas.width = modelImg.width;
+                    canvas.height = modelImg.height;
 
-            throw new Error('Görsel üretilemedi - Gemini görsel döndürmedi');
+                    // Siyah arka plan (korunacak)
+                    ctx.fillStyle = 'black';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    // Takı pozisyonu (composite ile AYNI MANTIK)
+                    const sizeMap = {
+                        'very_long': 0.65,
+                        'long': 0.55,
+                        'medium': 0.45,
+                        'short': 0.35,
+                        'choker': 0.30
+                    };
+                    let scale = sizeMap[jewelryAnalysis?.length] || 0.50;
+
+                    // Geniş takılar için scale ayarla (composite ile aynı)
+                    const jewelryAspectRatio = jewelryImg.width / jewelryImg.height;
+                    if (jewelryAspectRatio > 1.2) {
+                        const maxWidthRatio = 0.85;
+                        const currentWidth = modelImg.width * scale;
+                        if (currentWidth > modelImg.width * maxWidthRatio) {
+                            scale = maxWidthRatio * (jewelryImg.height / jewelryImg.width);
+                        }
+                    }
+
+                    let targetWidth = modelImg.width * scale;
+                    const aspectRatio = jewelryImg.height / jewelryImg.width;
+                    let targetHeight = targetWidth * aspectRatio;
+
+                    // Canvas sınır kontrolü (composite ile aynı)
+                    const padding = 20;
+                    const maxWidth = modelImg.width - (padding * 2);
+                    const maxHeight = modelImg.height * 0.75;
+
+                    if (targetWidth > maxWidth) {
+                        const reductionRatio = maxWidth / targetWidth;
+                        targetWidth = maxWidth;
+                        targetHeight = targetHeight * reductionRatio;
+                    }
+
+                    if (targetHeight > maxHeight) {
+                        const reductionRatio = maxHeight / targetHeight;
+                        targetHeight = maxHeight;
+                        targetWidth = targetWidth * reductionRatio;
+                    }
+
+                    const x = (modelImg.width - targetWidth) / 2;
+                    const y = modelImg.height * 0.22;  // Composite ile aynı
+
+                    // Takının alpha kanalını kullanarak gerçek şeklini al
+                    const tempCanvas = document.createElement('canvas');
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCanvas.width = Math.round(targetWidth);
+                    tempCanvas.height = Math.round(targetHeight);
+
+                    // Takıyı scaled boyutta çiz
+                    tempCtx.drawImage(jewelryImg, 0, 0, targetWidth, targetHeight);
+                    const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+                    const data = imageData.data;
+
+                    // DIŞ KENAR: Takının genişletilmiş versiyonunu beyaz çiz (blur ile)
+                    ctx.save();
+                    ctx.filter = 'blur(12px)';  // Yumuşak kenar
+                    ctx.globalAlpha = 1.0;
+
+                    // Beyaz silhouette - takı şeklinin dışı
+                    const edgeCanvas = document.createElement('canvas');
+                    const edgeCtx = edgeCanvas.getContext('2d');
+                    edgeCanvas.width = tempCanvas.width;
+                    edgeCanvas.height = tempCanvas.height;
+
+                    // Alpha > 20 olan pikselleri beyaz yap
+                    const edgeData = edgeCtx.createImageData(tempCanvas.width, tempCanvas.height);
+                    for (let i = 0; i < data.length; i += 4) {
+                        const alpha = data[i + 3];
+                        if (alpha > 20) {
+                            edgeData.data[i] = 255;     // R
+                            edgeData.data[i + 1] = 255; // G
+                            edgeData.data[i + 2] = 255; // B
+                            edgeData.data[i + 3] = 255; // A
+                        }
+                    }
+                    edgeCtx.putImageData(edgeData, 0, 0);
+
+                    // Blur ile genişletilmiş beyaz kenar çiz
+                    ctx.drawImage(edgeCanvas, x, y, targetWidth, targetHeight);
+                    ctx.restore();
+
+                    // İÇ ALAN: Takının gerçek şeklini siyah çiz (korunacak)
+                    // Daha küçük (erozyon efekti) çizerek sadece kenarları bırak
+                    ctx.save();
+                    ctx.globalCompositeOperation = 'destination-out';
+
+                    // İç alanı temizle - takının %90'ı korunacak
+                    const innerScale = 0.92;  // %92'si korunacak, %8 kenar
+                    const innerWidth = targetWidth * innerScale;
+                    const innerHeight = targetHeight * innerScale;
+                    const innerX = x + (targetWidth - innerWidth) / 2;
+                    const innerY = y + (targetHeight - innerHeight) / 2;
+
+                    // Aynı alpha shape'i daha küçük çiz
+                    ctx.drawImage(edgeCanvas, innerX, innerY, innerWidth, innerHeight);
+                    ctx.restore();
+
+                    resolve(canvas.toDataURL('image/png'));
+                };
+
+                modelImg.onload = onLoad;
+                jewelryImg.onload = onLoad;
+                modelImg.src = modelBase64;
+                jewelryImg.src = jewelryBase64;
+            });
         }
 
         // ========== GEMINI IMAGE GENERATION (IMAGEN) ==========
         async function generateWithGeminiImageGen(apiKey, prompt) {
             // Gemini 2.5 Flash ile görsel üretim
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`, {
+            const response = await fetch(`${GEMINI_CONFIG.baseUrl}/${GEMINI_CONFIG.imageModel}:generateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -3758,7 +4042,7 @@ SADECE JSON DÖNDÜR (başka hiçbir şey yazma):
 NOT: Tipik bir kolye için y=35-50 arası, scale=40-70 arası olur.`;
 
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
+                const response = await fetch(`${GEMINI_CONFIG.baseUrl}/${GEMINI_CONFIG.textModel}:generateContent?key=${geminiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -3918,8 +4202,8 @@ JSON formatında yanıt ver:
 SADECE JSON döndür.`;
 
             try {
-                // gemini-2.5-flash - en yeni ve hızlı model
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+                // Gemini 3 Flash - en yeni ve hızlı model (Ocak 2026)
+                const response = await fetch(`${GEMINI_CONFIG.baseUrl}/${GEMINI_CONFIG.textModel}:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
