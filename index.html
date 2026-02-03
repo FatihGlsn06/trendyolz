@@ -3979,7 +3979,7 @@ TEKRAR: Görseldeki kolyeyi DEĞİŞTİRME, AYNEN koru!`;
         }
 
         // ========== STUDIO ENHANCE - FLUX REDUX ==========
-        // Çözünürlüğü koruyarak stüdyo kalitesi uygular (upscale yapmaz!)
+        // Düşük çözünürlüklü görselleri otomatik yükseltir, yüksek olanları korur
         async function studioEnhance(imageBase64) {
             const falKey = localStorage.getItem('fal_api_key');
             if (!falKey && !isDemoMode) {
@@ -3988,10 +3988,7 @@ TEKRAR: Görseldeki kolyeyi DEĞİŞTİRME, AYNEN koru!`;
             }
 
             try {
-                console.log('🎬 Flux Redux ile stüdyo kalitesi...');
-                showLoader('Stüdyo Kalitesi...', 'Görsel iyileştirme');
-
-                // Görsel boyutunu al (çözünürlüğü korumak için)
+                // Görsel boyutunu al
                 const img = new Image();
                 await new Promise((resolve, reject) => {
                     img.onload = resolve;
@@ -3999,11 +3996,30 @@ TEKRAR: Görseldeki kolyeyi DEĞİŞTİRME, AYNEN koru!`;
                     img.src = imageBase64;
                 });
 
-                // Orijinal boyutu koru (max 1440 sınırı ile - Flux limiti)
-                const maxSize = 1440;
-                let width = img.width;
-                let height = img.height;
+                const originalWidth = img.width;
+                const originalHeight = img.height;
+                const minSize = 1080;  // Minimum hedef çözünürlük
+                const maxSize = 1440;  // Flux limiti
 
+                let width = originalWidth;
+                let height = originalHeight;
+                let needsUpscale = false;
+
+                // Düşük çözünürlük kontrolü (720p veya altı)
+                if (width < minSize && height < minSize) {
+                    // En-boy oranını koru, minimum 1080'e çıkar
+                    const ratio = Math.max(minSize / width, minSize / height);
+                    width = Math.round(width * ratio);
+                    height = Math.round(height * ratio);
+                    needsUpscale = true;
+                    console.log(`📐 Düşük çözünürlük tespit (${originalWidth}x${originalHeight}), ${width}x${height}'e yükseltiliyor...`);
+                    showLoader('Çözünürlük Yükseltme...', `${originalWidth}x${originalHeight} → ${width}x${height}`);
+                } else {
+                    console.log(`✓ Çözünürlük yeterli (${originalWidth}x${originalHeight}), korunuyor`);
+                    showLoader('Stüdyo Kalitesi...', 'Görsel iyileştirme');
+                }
+
+                // Max limit kontrolü (Flux 1440'dan büyük desteklemiyor)
                 if (width > maxSize || height > maxSize) {
                     const ratio = Math.min(maxSize / width, maxSize / height);
                     width = Math.round(width * ratio);
@@ -4013,7 +4029,7 @@ TEKRAR: Görseldeki kolyeyi DEĞİŞTİRME, AYNEN koru!`;
                 const reduxData = await callFalAPI('fal-ai/flux-pro/v1.1/redux', {
                     image_url: imageBase64,
                     image_size: { width, height },
-                    num_inference_steps: 28,
+                    num_inference_steps: needsUpscale ? 35 : 28,  // Upscale için daha fazla adım
                     guidance_scale: 3.5
                 }, falKey);
 
