@@ -3978,43 +3978,62 @@ TEKRAR: Görseldeki kolyeyi DEĞİŞTİRME, AYNEN koru!`;
             throw new Error('Görsel üretilemedi - Gemini görsel döndürmedi');
         }
 
-        // ========== STUDIO ENHANCE - CLARITY UPSCALER ==========
+        // ========== STUDIO ENHANCE - FLUX REDUX ==========
+        // Çözünürlüğü koruyarak stüdyo kalitesi uygular (upscale yapmaz!)
         async function studioEnhance(imageBase64) {
             const falKey = localStorage.getItem('fal_api_key');
             if (!falKey && !isDemoMode) {
-                console.warn('⚠️ Fal.ai key yok, upscale atlanıyor');
+                console.warn('⚠️ Fal.ai key yok, stüdyo enhance atlanıyor');
                 return imageBase64;
             }
 
             try {
-                console.log('🔍 Clarity Upscaler ile HD kalite...');
-                showLoader('HD Kalite...', 'Yüksek çözünürlük');
+                console.log('🎬 Flux Redux ile stüdyo kalitesi...');
+                showLoader('Stüdyo Kalitesi...', 'Görsel iyileştirme');
 
-                const upscaleData = await callFalAPI('fal-ai/clarity-upscaler', {
+                // Görsel boyutunu al (çözünürlüğü korumak için)
+                const img = new Image();
+                await new Promise((resolve, reject) => {
+                    img.onload = resolve;
+                    img.onerror = reject;
+                    img.src = imageBase64;
+                });
+
+                // Orijinal boyutu koru (max 1440 sınırı ile - Flux limiti)
+                const maxSize = 1440;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxSize || height > maxSize) {
+                    const ratio = Math.min(maxSize / width, maxSize / height);
+                    width = Math.round(width * ratio);
+                    height = Math.round(height * ratio);
+                }
+
+                const reduxData = await callFalAPI('fal-ai/flux-pro/v1.1/redux', {
                     image_url: imageBase64,
-                    prompt: "professional jewelry photography, sharp details, high quality, studio lighting, e-commerce product photo",
-                    scale: 2,
-                    resemblance: 0.95,
-                    creativity: 0.1
+                    image_size: { width, height },
+                    num_inference_steps: 28,
+                    guidance_scale: 3.5
                 }, falKey);
 
-                if (upscaleData.image?.url) {
-                    const imgResponse = await fetch(upscaleData.image.url);
+                if (reduxData.images?.[0]?.url) {
+                    const imgResponse = await fetch(reduxData.images[0].url);
                     const imgBlob = await imgResponse.blob();
                     const result = await new Promise(resolve => {
                         const reader = new FileReader();
                         reader.onload = () => resolve(reader.result);
                         reader.readAsDataURL(imgBlob);
                     });
-                    console.log('✅ Upscale tamamlandı');
+                    console.log('✅ Stüdyo enhance tamamlandı');
                     return result;
                 }
 
-                console.warn('⚠️ Upscaler başarısız');
+                console.warn('⚠️ Flux Redux başarısız');
                 return imageBase64;
 
             } catch (error) {
-                console.error('Upscale hatası:', error);
+                console.error('Stüdyo enhance hatası:', error);
                 return imageBase64;
             }
         }

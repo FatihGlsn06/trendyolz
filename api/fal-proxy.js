@@ -33,9 +33,10 @@ export default async function handler(req, res) {
     // Sadece izin verilen endpoint'lere izin ver
     const allowedEndpoints = [
       'fal-ai/birefnet',
-      'fal-ai/clarity-upscaler',
       'fal-ai/flux/dev',
-      'fal-ai/flux-pro/v1.1-ultra'
+      'fal-ai/flux-pro/v1.1',
+      'fal-ai/flux-pro/v1.1-ultra',
+      'fal-ai/flux-pro/v1.1/redux'
     ];
 
     if (!endpoint || !allowedEndpoints.includes(endpoint)) {
