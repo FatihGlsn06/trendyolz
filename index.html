@@ -3162,86 +3162,22 @@ OUTPUT: Professional model photo with COMPLETELY BARE neck, ready for jewelry ov
 
             console.log('✅ Takısız model oluşturuldu');
 
-            // ADIM 2b: Gemini Edit ile takıyı model üzerine doğal yerleştir
-            console.log('💎 ADIM 2b: Gemini Edit ile takı yerleştiriliyor...');
+            // ADIM 2b: Canvas Composite ile orijinal takıyı model üzerine yerleştir
+            // ⚠️ HALÜSİNASYON KORUMASI: AI takıyı yeniden çizmiyor, orijinal BiRefNet çıktısı kullanılıyor!
+            console.log('💎 ADIM 2b: Canvas composite ile takı yerleştiriliyor (halüsinasyon yok)...');
             showLoader('Düz Zemin Modu...', '3/3 Takı yerleştiriliyor');
 
-            // Kıyafet ve sahne bilgilerini al
-            const outfit = outfitPresets[state.settings.outfit];
-            const scene = scenePresets[state.settings.scene];
+            // Otomatik tespit edilen özellikleri kullan
+            const jewelryAnalysis = state.detectedProperties || {
+                length: state.settings.necklaceLength,
+                size: state.settings.jewelrySize
+            };
 
-            // ÖNEMLİ: 3 GÖRSEL GÖNDERİYORUZ - Orijinal boyut referansı için
-            const placeJewelryPrompt = `You have THREE input images:
-[Input Image 1] = ORIGINAL photo showing the jewelry - USE THIS FOR SCALE REFERENCE!
-[Input Image 2] = EXTRACTED jewelry with transparent background - USE THIS FOR EXACT DETAILS
-[Input Image 3] = Generated model (no jewelry) - PLACE JEWELRY HERE
+            // Canvas composite - orijinal BiRefNet çıktısını model üzerine yerleştir
+            const compositeResult = await createCanvasComposite(jewelryBase64, modelImageBase64, jewelryAnalysis);
 
-🚨🚨🚨 CRITICAL SCALE INSTRUCTION 🚨🚨🚨
-
-Look at [Input Image 1] (the ORIGINAL):
-- See how LARGE the jewelry appears in the original context?
-- See how FAR DOWN the necklace hangs?
-- See how WIDE the pendant is?
-
-THE JEWELRY ON [Input Image 3] MUST HAVE THE EXACT SAME PROPORTIONS!
-
-[STEP-BY-STEP PROCESS]
-1. In [Input Image 1], measure: What % of the visible area does the jewelry cover vertically?
-2. In [Input Image 1], measure: What % of the width does the jewelry span?
-3. Apply these EXACT SAME proportions to [Input Image 3]!
-
-Example: If necklace covers 60% of visible chest in Image 1 → It MUST cover 60% of visible chest in Image 3.
-
-[USE IMAGE 2 FOR]
-• Exact jewelry details (every bead, link, stone)
-• Colors and textures
-• Shape accuracy
-
-[COPY FROM ORIGINAL - Image 1]
-• SCALE and SIZE relative to body
-• How far down it hangs
-• Width relative to neck/shoulders
-• Chain drape and curvature
-
-[ABSOLUTE RULES] ⚠️
-• The pendant in output must be SAME SIZE as in original (Image 1)
-• The chain must hang to the SAME LEVEL as in original
-• Multi-layer spacing must match original
-• If anything, err on the side of LARGER
-
-[FORBIDDEN - ZERO TOLERANCE] ❌
-• NEVER shrink the jewelry compared to original
-• NEVER make pendant smaller than original
-• NEVER shorten the necklace compared to original
-• NEVER compress chain spacing
-
-OUTPUT: Jewelry on model at EXACT SAME SCALE as seen in [Input Image 1].`;
-
-            const placeData = await callGeminiAPI(GEMINI_CONFIG.imageModel, {
-                contents: [{
-                    parts: [
-                        { text: placeJewelryPrompt },
-                        // Image 1: ORIGINAL - boyut referansı için
-                        { inlineData: { mimeType: 'image/jpeg', data: state.originalBase64.split(',')[1] } },
-                        // Image 2: BiRefNet çıktısı - detay için
-                        { inlineData: { mimeType: 'image/png', data: jewelryBase64.split(',')[1] } },
-                        // Image 3: Üretilen model
-                        { inlineData: { mimeType: 'image/png', data: modelImageBase64.split(',')[1] } }
-                    ]
-                }],
-                generationConfig: {
-                    responseModalities: ["IMAGE", "TEXT"],
-                    temperature: 0.1
-                }
-            }, geminiKey);
-            const placeParts = placeData.candidates?.[0]?.content?.parts || [];
-
-            for (const part of placeParts) {
-                if (part.inlineData?.mimeType?.startsWith('image/')) {
-                    console.log('✅ Flatlay modu tamamlandı (Gemini Edit)!');
-                    return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-                }
-            }
+            console.log('✅ Flatlay modu tamamlandı (Canvas Composite - Halüsinasyon Yok)!');
+            return compositeResult;
 
             throw new Error('Görsel üretilemedi');
         }
@@ -3639,19 +3575,13 @@ Return ONLY the JSON, no other text.`;
                 console.log('⚠️ Takı analizi başarısız, varsayılan kullanılıyor:', e.message);
             }
 
-            // ===== ADIM 2: Gemini ile model + kolye TEK ADIMDA =====
-            // Model ayrı üretip birleştirmek yerine, kolyeyi verip direkt model oluştur
-            showLoader('Manken Modu...', '3/3 Model + kolye oluşturuluyor');
+            // ===== ADIM 2: TAKISIZ model oluştur =====
+            // ⚠️ HALÜSİNASYON KORUMASI: AI takıyı yeniden çizMEZ, sadece model üretir
+            showLoader('Manken Modu...', '3/4 Takısız model oluşturuluyor');
 
             const outfitSceneInstructions = getOutfitScenePrompt();
             const smartPromptInstructions = getSmartPromptInstructions();
             const hasAngleInstruction = smartPromptInstructions.includes('CAMERA ANGLE:');
-
-            const aspectRatio = state.originalWidth && state.originalHeight
-                ? (state.originalWidth / state.originalHeight).toFixed(2)
-                : 1;
-            const isPortrait = aspectRatio < 1;
-            const isLandscape = aspectRatio > 1;
 
             // Takı analizine göre frame ayarları
             const frameSettings = {
@@ -3663,68 +3593,88 @@ Return ONLY the JSON, no other text.`;
             };
             const frameSetting = frameSettings[jewelryAnalysis.length] || frameSettings.medium;
 
-            // TEK ADIM: Kolyeyi verip model oluştur
-            const singleStepPrompt = `Görseldeki kolyeyi/takıyı takan profesyonel bir model fotoğrafı oluştur.
+            // TAKISIZ model üretme prompt'u
+            const modelOnlyPrompt = `Generate a professional model photo for jewelry product photography.
 
-🚨 EN ÖNEMLİ KURAL - MUTLAKA UYULMALI 🚨
-Görseldeki kolye BİREBİR AYNI kalmalı:
-- AYNI boyut (küçültme/büyütme YOK)
-- AYNI renkler (değiştirme YOK)
-- AYNI taşlar, boncuklar, zincir detayları
-- AYNI pendant/uç kısmı
-- Kolyeyi YENİDEN ÜRETME - görseldekini AYNEN kullan
+🚨🚨🚨 ABSOLUTELY NO JEWELRY 🚨🚨🚨
+The model must NOT wear ANY jewelry:
+- NO necklaces
+- NO earrings
+- NO bracelets
+- NO rings
+- COMPLETELY BARE neck and chest area
+- The jewelry will be added LATER via digital editing
 
-📐 FRAME/ÇERÇEVELEME:
-- ${frameSetting.frame}
-- Kolye tam görünsün, kesilmesin
-- Boyutlar: ${state.originalWidth || 1024}x${state.originalHeight || 1024}
+${smartPromptInstructions ? `USER CUSTOM INSTRUCTIONS (PRIORITY):\n${smartPromptInstructions}\n` : ''}
 
-👗 KIYAFETİ:
-- ${frameSetting.neckline} - kolyeyi gösterecek açık yaka
-- Siyah veya koyu düz renk
-- Kolye kıyafetin üstünde otursun
-
-👩 MODEL:
+MODEL REQUIREMENTS:
 - ${profile.desc}
 - ${style.prompt}
-- Profesyonel stüdyo ışıklandırması
-- ${hasAngleInstruction ? smartPromptInstructions : 'Önden, omuzlar görünür'}
+- Professional studio lighting
+- BARE neck - absolutely no accessories
 
-✅ SONUÇ:
-- Kolye DOĞAL şekilde boyunda otursun
-- Zincir boyunun arkasına doğal kavisli
-- Gerçekçi gölgeler
-- E-ticaret ürün fotoğrafı kalitesi
+OUTFIT:
+- ${frameSetting.neckline} - open neckline for jewelry placement
+- Dark solid color (black preferred)
+- ${outfitSceneInstructions}
 
-TEKRAR: Görseldeki kolyeyi DEĞİŞTİRME, AYNEN koru!`;
+🚫 MODESTY RULES:
+- CONSERVATIVE clothing only - NO low-cut, NO deep V-neck, NO cleavage
+- High neckline or modest V-neck that covers chest appropriately
+- Family-friendly e-commerce style
 
-            const data = await callGeminiAPI(GEMINI_CONFIG.imageModel, {
+FRAMING:
+- ${frameSetting.frame}
+- Natural "headless crop" from above eyebrows preferred
+- Show enough chest/body area for necklace placement
+- Clear, unobstructed neck area
+
+⛔ FORBIDDEN - ZERO TOLERANCE:
+- ANY jewelry whatsoever
+- ANY necklace or chain
+- ANY accessories on neck/chest
+- The neck MUST be completely bare
+
+OUTPUT: Professional model photo with COMPLETELY BARE neck, ready for jewelry overlay.`;
+
+            // NOT: Takı görselini GÖNDERMİYORUZ - AI görünce kopyalıyor/değiştiriyor!
+            const modelData = await callGeminiAPI(GEMINI_CONFIG.imageModel, {
                 contents: [{
                     parts: [
-                        { text: singleStepPrompt },
-                        {
-                            inlineData: {
-                                mimeType: 'image/png',
-                                data: jewelryBase64.replace(/^data:image\/\w+;base64,/, '')
-                            }
-                        }
+                        { text: modelOnlyPrompt }
+                        // Takı görseli YOK - AI kopyalamasın diye
                     ]
                 }],
                 generationConfig: {
-                    responseModalities: ["image", "text"],
-                    temperature: 0.1  // Çok düşük = yaratıcılık minimum
+                    responseModalities: ["IMAGE", "TEXT"],
+                    temperature: 0.3
                 }
             }, geminiKey);
-            const parts = data.candidates?.[0]?.content?.parts || [];
 
-            for (const part of parts) {
-                if (part.inlineData?.data) {
-                    console.log('✅ Model + kolye tek adımda oluşturuldu!');
-                    return `data:image/png;base64,${part.inlineData.data}`;
+            const modelParts = modelData.candidates?.[0]?.content?.parts || [];
+            let modelImageBase64 = null;
+
+            for (const part of modelParts) {
+                if (part.inlineData?.mimeType?.startsWith('image/')) {
+                    modelImageBase64 = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                    break;
                 }
             }
 
-            throw new Error('Görsel oluşturulamadı');
+            if (!modelImageBase64) {
+                throw new Error('Model görseli oluşturulamadı');
+            }
+            console.log('✅ Takısız model oluşturuldu');
+
+            // ===== ADIM 3: Canvas Composite - Orijinal takıyı model üzerine yerleştir =====
+            // ⚠️ HALÜSİNASYON YOK: BiRefNet'ten gelen orijinal takı kullanılıyor
+            showLoader('Manken Modu...', '4/4 Takı yerleştiriliyor (halüsinasyon yok)');
+            console.log('💎 Canvas composite ile orijinal takı yerleştiriliyor...');
+
+            const compositeResult = await createCanvasComposite(jewelryBase64, modelImageBase64, jewelryAnalysis);
+
+            console.log('✅ Manken modu tamamlandı (Canvas Composite - Halüsinasyon Yok)!');
+            return compositeResult;
         }
 
         // ========== CANVAS COMPOSITE (Yedek - şu an kullanılmıyor) ==========
