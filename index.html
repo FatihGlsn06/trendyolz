@@ -1084,7 +1084,10 @@
             }
 
             if (!response.ok) {
-                throw new Error(data.error || data.detail || 'FAL API hatasi');
+                const errMsg = typeof data.error === 'string' ? data.error
+                    : typeof data.detail === 'string' ? data.detail
+                    : JSON.stringify(data.error || data.detail || data);
+                throw new Error(errMsg || 'FAL API hatasi');
             }
 
             return data;
@@ -1109,7 +1112,9 @@
             }
 
             if (!response.ok) {
-                throw new Error(data.error || 'Gemini API hatasi');
+                const errMsg = typeof data.error === 'string' ? data.error
+                    : JSON.stringify(data.error || data);
+                throw new Error(errMsg || 'Gemini API hatasi');
             }
 
             return data;
@@ -1141,7 +1146,10 @@
             }
 
             if (!response.ok) {
-                throw new Error(data.detail || data.error || 'FAL API hatasi');
+                const errMsg = typeof data.detail === 'string' ? data.detail
+                    : typeof data.error === 'string' ? data.error
+                    : JSON.stringify(data.detail || data.error || data);
+                throw new Error(errMsg || 'FAL API hatasi');
             }
 
             return data;
