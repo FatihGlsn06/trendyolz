@@ -3472,13 +3472,13 @@ Empty surface ready for product placement.`;
                 console.log('⚠️ Analiz atlandı');
             }
 
-            // Takıyı şeffaf PNG olarak hazırla
-            const imageWithAlpha = await createTransparentJewelryCanvas(jewelryBase64, jewelryLength);
-            console.log('✅ Şeffaf canvas hazır');
+            // Takıyı canvas'a yerleştir + MASK oluştur
+            const { imageData, maskData } = await createImageAndMaskFromAlpha(jewelryBase64, jewelryLength);
+            console.log('✅ Görsel ve mask hazır');
 
-            // ===== ADIM 3: Flux Fill - şeffaf alanları doldur =====
+            // ===== ADIM 3: Flux Fill - mask'a göre doldur =====
             showLoader('Stüdyo Pro...', '3/3 Model oluşturuluyor (Flux Fill)');
-            console.log('🎨 Flux Fill çalışıyor - şeffaf alanlar dolduruluyor, takı korunuyor...');
+            console.log('🎨 Flux Fill çalışıyor - beyaz alanlar dolduruluyor, siyah alanlar (takı) korunuyor...');
 
             const outfitSceneInstructions = getOutfitScenePrompt();
             const smartPromptInstructions = getSmartPromptInstructions();
@@ -3495,7 +3495,8 @@ ${style.prompt}
 The jewelry is already in place - generate ONLY the model and background around it.`;
 
             const fillData = await callFalAPI('fal-ai/flux-pro/v1/fill', {
-                image_url: imageWithAlpha,
+                image_url: imageData,
+                mask_url: maskData,
                 prompt: fillPrompt,
                 num_inference_steps: 28,
                 guidance_scale: 3.5
@@ -3521,22 +3522,35 @@ The jewelry is already in place - generate ONLY the model and background around 
             return resultBase64;
         }
 
-        // ========== ŞEFFAF CANVAS OLUŞTUR ==========
-        // BiRefNet çıktısını şeffaf canvas'a yerleştirir
-        // Flux Fill şeffaf alanları dolduracak, opak alanları (takı) koruyacak
-        async function createTransparentJewelryCanvas(jewelryBase64, jewelryLength) {
+        // ========== GÖRSEL + MASK OLUŞTUR (Alpha'dan) ==========
+        // BiRefNet çıktısından hem görsel hem mask oluşturur
+        // Mask: Siyah = koru (takı), Beyaz = doldur (model/sahne)
+        async function createImageAndMaskFromAlpha(jewelryBase64, jewelryLength) {
             return new Promise((resolve, reject) => {
                 const jewelryImg = new Image();
 
                 jewelryImg.onload = () => {
                     const canvasSize = 1024;
-                    const canvas = document.createElement('canvas');
-                    canvas.width = canvasSize;
-                    canvas.height = canvasSize;
-                    const ctx = canvas.getContext('2d');
 
-                    // ŞEFFAF arka plan (doldurulacak alan)
-                    // Canvas varsayılan olarak şeffaf, bir şey yapmaya gerek yok
+                    // Ana görsel canvas - takı + nötr arka plan
+                    const imageCanvas = document.createElement('canvas');
+                    imageCanvas.width = canvasSize;
+                    imageCanvas.height = canvasSize;
+                    const imageCtx = imageCanvas.getContext('2d');
+
+                    // Mask canvas - siyah (koru) / beyaz (doldur)
+                    const maskCanvas = document.createElement('canvas');
+                    maskCanvas.width = canvasSize;
+                    maskCanvas.height = canvasSize;
+                    const maskCtx = maskCanvas.getContext('2d');
+
+                    // Görsel: Nötr gri arka plan (Flux için başlangıç noktası)
+                    imageCtx.fillStyle = '#888888';
+                    imageCtx.fillRect(0, 0, canvasSize, canvasSize);
+
+                    // Mask: Tamamen beyaz başla (her yer doldurulacak)
+                    maskCtx.fillStyle = '#ffffff';
+                    maskCtx.fillRect(0, 0, canvasSize, canvasSize);
 
                     // Takı boyutu - uzunluğa göre
                     const sizeMap = {
@@ -3569,15 +3583,57 @@ The jewelry is already in place - generate ONLY the model and background around 
                     }
 
                     // Pozisyon - üst orta (boyun hizası)
-                    const x = (canvasSize - targetWidth) / 2;
-                    const y = canvasSize * 0.20;  // Üstten %20
+                    const x = Math.round((canvasSize - targetWidth) / 2);
+                    const y = Math.round(canvasSize * 0.20);
 
-                    console.log(`📐 Takı: ${targetWidth.toFixed(0)}x${targetHeight.toFixed(0)}px, pos: (${x.toFixed(0)}, ${y.toFixed(0)})`);
+                    console.log(`📐 Takı: ${targetWidth.toFixed(0)}x${targetHeight.toFixed(0)}px, pos: (${x}, ${y})`);
 
-                    // Takıyı şeffaf canvas'a çiz (alpha korunur)
-                    ctx.drawImage(jewelryImg, x, y, targetWidth, targetHeight);
+                    // Takıyı ana görsele çiz
+                    imageCtx.drawImage(jewelryImg, x, y, targetWidth, targetHeight);
 
-                    resolve(canvas.toDataURL('image/png'));
+                    // Alpha kanalından mask oluştur
+                    // Geçici canvas'ta takıyı çizip alpha değerlerini al
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = Math.round(targetWidth);
+                    tempCanvas.height = Math.round(targetHeight);
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.drawImage(jewelryImg, 0, 0, targetWidth, targetHeight);
+
+                    const pixelData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+
+                    // Mask'a takı alanını SİYAH olarak çiz (korunacak)
+                    const maskImageData = maskCtx.createImageData(tempCanvas.width, tempCanvas.height);
+
+                    for (let i = 0; i < pixelData.data.length; i += 4) {
+                        const alpha = pixelData.data[i + 3];
+                        if (alpha > 30) {
+                            // Opak piksel = takı = SİYAH (koru)
+                            maskImageData.data[i] = 0;      // R
+                            maskImageData.data[i + 1] = 0;  // G
+                            maskImageData.data[i + 2] = 0;  // B
+                            maskImageData.data[i + 3] = 255; // A
+                        } else {
+                            // Şeffaf piksel = BEYAZ (doldur)
+                            maskImageData.data[i] = 255;
+                            maskImageData.data[i + 1] = 255;
+                            maskImageData.data[i + 2] = 255;
+                            maskImageData.data[i + 3] = 255;
+                        }
+                    }
+
+                    // Mask'ı ana canvas'a yerleştir
+                    const tempMaskCanvas = document.createElement('canvas');
+                    tempMaskCanvas.width = tempCanvas.width;
+                    tempMaskCanvas.height = tempCanvas.height;
+                    const tempMaskCtx = tempMaskCanvas.getContext('2d');
+                    tempMaskCtx.putImageData(maskImageData, 0, 0);
+
+                    maskCtx.drawImage(tempMaskCanvas, x, y);
+
+                    resolve({
+                        imageData: imageCanvas.toDataURL('image/png'),
+                        maskData: maskCanvas.toDataURL('image/png')
+                    });
                 };
 
                 jewelryImg.onerror = () => reject(new Error('Takı yüklenemedi'));
