@@ -3409,22 +3409,21 @@ Empty surface ready for product placement.`;
             });
         }
 
-        // ========== FLUX FILL INPAINTING - HALÜSİNASYON-FREE ==========
-        // 1. BiRefNet ile takıyı çıkar (orijinal korunur)
-        // 2. Takıyı canvas'a yerleştir + mask oluştur (takı alanı korunacak)
-        // 3. Flux Fill ile SADECE boş alanları doldur (model, sahne)
-        // Sonuç: Orijinal takı + AI üretimi çevre - SIFIR HALÜSİNASYON
+        // ========== FLUX FILL INPAINTING - ALPHA CHANNEL MODE ==========
+        // 1. BiRefNet ile takıyı çıkar (şeffaf arka plan)
+        // 2. Takıyı şeffaf canvas'a yerleştir (pozisyon ayarla)
+        // 3. Flux Fill'e gönder - şeffaf alanlar doldurulur, opak alanlar KORUNUR
+        // Sonuç: Orijinal takı + AI üretimi model/sahne - SIFIR HALÜSİNASYON
         async function generateWithGemini25() {
             const geminiKey = localStorage.getItem('gemini_api_key');
             const falKey = localStorage.getItem('fal_api_key');
             const profile = modelProfiles[state.settings.modelProfile];
             const style = stylePresets[state.settings.style];
-            const pose = posePresets[state.settings.pose];
 
-            console.log('🎨 Flux Fill Inpainting Modu başlatılıyor...');
+            console.log('🎨 Flux Fill Alpha Channel Modu başlatılıyor...');
 
             // ===== ADIM 1: BiRefNet ile takıyı çıkar =====
-            showLoader('Stüdyo Pro...', '1/4 Takı çıkarılıyor (BiRefNet)');
+            showLoader('Stüdyo Pro...', '1/3 Takı çıkarılıyor (BiRefNet)');
 
             if (!falKey && !isDemoMode) {
                 throw new Error('Fal.ai API key gerekli');
@@ -3446,84 +3445,57 @@ Empty surface ready for product placement.`;
 
             const jewelryBase64 = await fetchImageAsBase64(transparentJewelryUrl);
 
-            // ===== ADIM 2: Takıyı canvas'a yerleştir + MASK oluştur =====
-            showLoader('Stüdyo Pro...', '2/4 Takı konumlandırılıyor + Mask');
-            console.log('📐 Takı konumlandırılıyor ve mask oluşturuluyor...');
+            // ===== ADIM 2: Takıyı ŞEFFAF canvas'a yerleştir =====
+            showLoader('Stüdyo Pro...', '2/3 Takı konumlandırılıyor');
+            console.log('📐 Takı şeffaf canvas\'a yerleştiriliyor...');
 
-            // Takı analizini basit tut
+            // Takı boyut analizi (basit)
             const jewelryBase64Data = jewelryBase64.split(',')[1];
-            let jewelryAnalysis = {
-                type: 'necklace',
-                length: 'medium'
-            };
+            let jewelryLength = 'medium';
 
-            // Gemini ile hızlı analiz (opsiyonel)
             try {
                 const analysisData = await callGeminiAPI(GEMINI_CONFIG.textModel, {
                     contents: [{
                         parts: [
-                            { text: 'Analyze this jewelry. Return ONLY JSON: {"type":"necklace/earring/bracelet","length":"choker/short/medium/long/very_long"}' },
+                            { text: 'What is the length of this necklace? Reply with ONLY one word: choker, short, medium, long, or very_long' },
                             { inlineData: { mimeType: 'image/png', data: jewelryBase64Data } }
                         ]
                     }],
                     generationConfig: { temperature: 0.1 }
                 }, geminiKey);
-                const txt = analysisData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-                const m = txt.match(/\{[\s\S]*\}/);
-                if (m) jewelryAnalysis = { ...jewelryAnalysis, ...JSON.parse(m[0]) };
-                console.log('✅ Takı analizi:', jewelryAnalysis);
+                const txt = (analysisData.candidates?.[0]?.content?.parts?.[0]?.text || '').toLowerCase().trim();
+                if (['choker', 'short', 'medium', 'long', 'very_long'].includes(txt)) {
+                    jewelryLength = txt;
+                }
+                console.log('✅ Takı uzunluğu:', jewelryLength);
             } catch (e) {
-                console.log('⚠️ Analiz atlandı, varsayılan kullanılıyor');
+                console.log('⚠️ Analiz atlandı');
             }
 
-            // Canvas boyutu
-            const canvasSize = 1024;
+            // Takıyı şeffaf PNG olarak hazırla
+            const imageWithAlpha = await createTransparentJewelryCanvas(jewelryBase64, jewelryLength);
+            console.log('✅ Şeffaf canvas hazır');
 
-            // Takı boyutu - uzunluğa göre
-            const sizeMap = {
-                'very_long': 0.70,
-                'long': 0.60,
-                'medium': 0.50,
-                'short': 0.40,
-                'choker': 0.35
-            };
-            const scale = sizeMap[jewelryAnalysis.length] || 0.50;
-
-            // Takı pozisyonu - üst orta (boyun hizası)
-            const positionY = 0.18; // Üstten %18
-
-            // Canvas + Mask oluştur
-            const { imageWithJewelry, maskImage } = await createJewelryCanvasAndMask(
-                jewelryBase64,
-                canvasSize,
-                scale,
-                positionY
-            );
-
-            console.log('✅ Takı yerleştirildi, mask oluşturuldu');
-
-            // ===== ADIM 3: Flux Fill ile model/sahne oluştur =====
-            // ⚠️ MASK SAYESİNDE TAKI ALANI KORUNUYOR - AI DOKUNMUYOR!
-            showLoader('Stüdyo Pro...', '3/4 Model oluşturuluyor (Flux Fill)');
-            console.log('🎨 Flux Fill ile model oluşturuluyor (takı korunuyor)...');
+            // ===== ADIM 3: Flux Fill - şeffaf alanları doldur =====
+            showLoader('Stüdyo Pro...', '3/3 Model oluşturuluyor (Flux Fill)');
+            console.log('🎨 Flux Fill çalışıyor - şeffaf alanlar dolduruluyor, takı korunuyor...');
 
             const outfitSceneInstructions = getOutfitScenePrompt();
             const smartPromptInstructions = getSmartPromptInstructions();
 
-            // Flux Fill prompt - sadece model/sahne tanımla
-            const fillPrompt = `Professional jewelry product photography.
+            // Prompt - model/sahne tanımı
+            const fillPrompt = `Professional jewelry product photography on a model.
 ${profile.desc}
 ${smartPromptInstructions || ''}
-Model wearing dark elegant clothing, V-neck or open neckline.
+Model wearing elegant dark clothing with open neckline.
 ${outfitSceneInstructions}
 Professional studio lighting, soft shadows, e-commerce quality.
-Headless crop from above eyebrows, showing neck and chest area.
+Headless crop from nose/mouth level, showing neck and upper chest.
 ${style.prompt}
-IMPORTANT: Fill ONLY the masked area with model/background. The jewelry area is already placed and must NOT be changed.`;
+The jewelry is already in place - generate ONLY the model and background around it.`;
 
             const fillData = await callFalAPI('fal-ai/flux-pro/v1/fill', {
-                image_url: imageWithJewelry,
-                mask_url: maskImage,
+                image_url: imageWithAlpha,
                 prompt: fillPrompt,
                 num_inference_steps: 28,
                 guidance_scale: 3.5
@@ -3546,129 +3518,66 @@ IMPORTANT: Fill ONLY the masked area with model/background. The jewelry area is 
             }
 
             console.log('✅ Flux Fill tamamlandı - Takı korundu!');
-
-            // ===== ADIM 4: Studio enhance (opsiyonel kalite artırma) =====
-            showLoader('Stüdyo Pro...', '4/4 Kalite artırma');
-            console.log('🎬 Stüdyo kalitesi uygulanıyor...');
-
-            // NOT: Flux Fill çıktısına enhance uygulamak güvenli
-            // çünkü takı zaten orijinal olarak yerleştirildi
-            resultBase64 = await studioEnhance(resultBase64);
-
-            console.log('✅ Stüdyo Pro tamamlandı (Flux Fill - Halüsinasyon Yok)!');
             return resultBase64;
         }
 
-        // ========== TAKI CANVAS + MASK OLUŞTUR ==========
-        // Takıyı canvas'a yerleştirir ve inpainting için mask oluşturur
-        async function createJewelryCanvasAndMask(jewelryBase64, canvasSize, scale, positionY) {
+        // ========== ŞEFFAF CANVAS OLUŞTUR ==========
+        // BiRefNet çıktısını şeffaf canvas'a yerleştirir
+        // Flux Fill şeffaf alanları dolduracak, opak alanları (takı) koruyacak
+        async function createTransparentJewelryCanvas(jewelryBase64, jewelryLength) {
             return new Promise((resolve, reject) => {
                 const jewelryImg = new Image();
 
                 jewelryImg.onload = () => {
-                    // Ana canvas - takı + gri arka plan
+                    const canvasSize = 1024;
                     const canvas = document.createElement('canvas');
                     canvas.width = canvasSize;
                     canvas.height = canvasSize;
                     const ctx = canvas.getContext('2d');
 
-                    // Mask canvas - siyah (koru) / beyaz (doldur)
-                    const maskCanvas = document.createElement('canvas');
-                    maskCanvas.width = canvasSize;
-                    maskCanvas.height = canvasSize;
-                    const maskCtx = maskCanvas.getContext('2d');
+                    // ŞEFFAF arka plan (doldurulacak alan)
+                    // Canvas varsayılan olarak şeffaf, bir şey yapmaya gerek yok
 
-                    // Arka plan: Nötr gri (Flux için referans)
-                    ctx.fillStyle = '#808080';
-                    ctx.fillRect(0, 0, canvasSize, canvasSize);
-
-                    // Mask: Tamamen beyaz (her yer doldurulacak)
-                    maskCtx.fillStyle = '#ffffff';
-                    maskCtx.fillRect(0, 0, canvasSize, canvasSize);
+                    // Takı boyutu - uzunluğa göre
+                    const sizeMap = {
+                        'very_long': 0.65,
+                        'long': 0.55,
+                        'medium': 0.45,
+                        'short': 0.38,
+                        'choker': 0.32
+                    };
+                    const scale = sizeMap[jewelryLength] || 0.45;
 
                     // Takı boyutları
                     const aspectRatio = jewelryImg.height / jewelryImg.width;
                     let targetWidth = canvasSize * scale;
                     let targetHeight = targetWidth * aspectRatio;
 
-                    // Çok uzun takılar için yükseklik sınırı
-                    const maxHeight = canvasSize * 0.75;
+                    // Sınırlar
+                    const maxHeight = canvasSize * 0.70;
+                    const maxWidth = canvasSize * 0.85;
+
                     if (targetHeight > maxHeight) {
                         const ratio = maxHeight / targetHeight;
                         targetHeight = maxHeight;
-                        targetWidth = targetWidth * ratio;
+                        targetWidth *= ratio;
                     }
-
-                    // Çok geniş takılar için genişlik sınırı
-                    const maxWidth = canvasSize * 0.85;
                     if (targetWidth > maxWidth) {
                         const ratio = maxWidth / targetWidth;
                         targetWidth = maxWidth;
-                        targetHeight = targetHeight * ratio;
+                        targetHeight *= ratio;
                     }
 
-                    // Pozisyon - merkez X, üst Y
+                    // Pozisyon - üst orta (boyun hizası)
                     const x = (canvasSize - targetWidth) / 2;
-                    const y = canvasSize * positionY;
-
-                    // Takıyı ana canvas'a çiz
-                    ctx.drawImage(jewelryImg, x, y, targetWidth, targetHeight);
-
-                    // Mask: Takı alanını SİYAH yap (korunacak)
-                    // Takının alpha kanalını kullanarak mask oluştur
-
-                    // Geçici canvas ile takının alpha'sını al
-                    const tempCanvas = document.createElement('canvas');
-                    tempCanvas.width = targetWidth;
-                    tempCanvas.height = targetHeight;
-                    const tempCtx = tempCanvas.getContext('2d');
-                    tempCtx.drawImage(jewelryImg, 0, 0, targetWidth, targetHeight);
-                    const imageData = tempCtx.getImageData(0, 0, targetWidth, targetHeight);
-
-                    // Mask'a takı şeklini çiz (alpha > 0 olan pikseller siyah)
-                    const maskImageData = maskCtx.getImageData(x, y, targetWidth, targetHeight);
-                    for (let i = 0; i < imageData.data.length; i += 4) {
-                        const alpha = imageData.data[i + 3];
-                        if (alpha > 50) {  // Alpha eşiği
-                            // Bu piksel takının parçası - mask'ta siyah yap (koru)
-                            maskImageData.data[i] = 0;      // R
-                            maskImageData.data[i + 1] = 0;  // G
-                            maskImageData.data[i + 2] = 0;  // B
-                            maskImageData.data[i + 3] = 255; // A
-                        }
-                    }
-                    maskCtx.putImageData(maskImageData, x, y);
-
-                    // Mask'ı biraz genişlet (edge protection)
-                    // Basit dilation - kenarları koru
-                    const dilateRadius = 3;
-                    const finalMaskData = maskCtx.getImageData(0, 0, canvasSize, canvasSize);
-                    const originalMaskData = new Uint8ClampedArray(finalMaskData.data);
-
-                    for (let py = dilateRadius; py < canvasSize - dilateRadius; py++) {
-                        for (let px = dilateRadius; px < canvasSize - dilateRadius; px++) {
-                            const idx = (py * canvasSize + px) * 4;
-                            // Eğer komşulardan biri siyahsa, bunu da siyah yap
-                            for (let dy = -dilateRadius; dy <= dilateRadius; dy++) {
-                                for (let dx = -dilateRadius; dx <= dilateRadius; dx++) {
-                                    const nIdx = ((py + dy) * canvasSize + (px + dx)) * 4;
-                                    if (originalMaskData[nIdx] === 0) {  // Komşu siyah
-                                        finalMaskData.data[idx] = 0;
-                                        finalMaskData.data[idx + 1] = 0;
-                                        finalMaskData.data[idx + 2] = 0;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    maskCtx.putImageData(finalMaskData, 0, 0);
+                    const y = canvasSize * 0.20;  // Üstten %20
 
                     console.log(`📐 Takı: ${targetWidth.toFixed(0)}x${targetHeight.toFixed(0)}px, pos: (${x.toFixed(0)}, ${y.toFixed(0)})`);
 
-                    resolve({
-                        imageWithJewelry: canvas.toDataURL('image/png'),
-                        maskImage: maskCanvas.toDataURL('image/png')
-                    });
+                    // Takıyı şeffaf canvas'a çiz (alpha korunur)
+                    ctx.drawImage(jewelryImg, x, y, targetWidth, targetHeight);
+
+                    resolve(canvas.toDataURL('image/png'));
                 };
 
                 jewelryImg.onerror = () => reject(new Error('Takı yüklenemedi'));
