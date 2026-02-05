@@ -36,7 +36,8 @@ export default async function handler(req, res) {
       'fal-ai/flux/dev',
       'fal-ai/flux-pro/v1.1',
       'fal-ai/flux-pro/v1.1-ultra',
-      'fal-ai/flux-pro/v1.1/redux'
+      'fal-ai/flux-pro/v1.1/redux',
+      'fal-ai/flux-pro/v1/fill'  // Inpainting - mask ile halüsinasyon-free
     ];
 
     if (!endpoint || !allowedEndpoints.includes(endpoint)) {
