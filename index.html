@@ -2933,12 +2933,10 @@ The jewelry must remain EXACTLY as provided - do not modify the jewelry in any w
 
             try {
                 // Tek mod: Halüsinasyonsuz Stüdyo Pro
+                // ⚠️ studioEnhance artık generateWithGemini25 İÇİNDE, takıdan ÖNCE uygulanıyor
+                // Bu sayede Flux Redux takıyı değiştiremiyor!
                 console.log('🎯 Stüdyo Pro - Halüsinasyonsuz mod başlatılıyor...');
                 state.processedImage = await generateWithGemini25();
-
-                // STUDIO ENHANCE - Fal.ai ile kalite artırma
-                console.log('🎬 Stüdyo kalitesi uygulanıyor...');
-                state.processedImage = await studioEnhance(state.processedImage);
 
                 // SIYAH ARKA PLAN FIX - Şeffaf PNG'yi beyaz arka plana composite et
                 console.log('🎨 Arka plan garantisi uygulanıyor...');
@@ -3082,10 +3080,17 @@ OUTPUT: Professional model photo with COMPLETELY BARE neck, ready for jewelry ov
 
             console.log('✅ Takısız model oluşturuldu (Flux)');
 
+            // ADIM 2a.5: Model'e stüdyo kalitesi uygula (TAKIDAN ÖNCE!)
+            // ⚠️ ÖNEMLİ: Flux Redux'u takı EKLENMEDEN ÖNCE uyguluyoruz
+            console.log('🎬 Model görseline stüdyo kalitesi uygulanıyor (takıdan önce)...');
+            showLoader('Düz Zemin Modu...', '3/4 Stüdyo kalitesi');
+            modelImageBase64 = await studioEnhance(modelImageBase64);
+            console.log('✅ Model enhance tamamlandı');
+
             // ADIM 2b: Canvas Composite ile orijinal takıyı model üzerine yerleştir
             // ⚠️ HALÜSİNASYON KORUMASI: AI takıyı yeniden çizmiyor, orijinal BiRefNet çıktısı kullanılıyor!
             console.log('💎 ADIM 2b: Canvas composite ile takı yerleştiriliyor (halüsinasyon yok)...');
-            showLoader('Düz Zemin Modu...', '3/3 Takı yerleştiriliyor');
+            showLoader('Düz Zemin Modu...', '4/4 Takı yerleştiriliyor');
 
             // Otomatik tespit edilen özellikleri kullan
             const jewelryAnalysis = state.detectedProperties || {
@@ -3590,9 +3595,17 @@ OUTPUT: Professional model photo with COMPLETELY BARE neck, ready for jewelry ov
             }
             console.log('✅ Takısız model oluşturuldu');
 
+            // ===== ADIM 2.5: Model'e stüdyo kalitesi uygula (TAKIDAN ÖNCE!) =====
+            // ⚠️ ÖNEMLİ: Flux Redux'u takı EKLENMEDEN ÖNCE uyguluyoruz
+            // Böylece takı AI tarafından DEĞİŞTİRİLMEZ
+            showLoader('Manken Modu...', '3/5 Stüdyo kalitesi uygulanıyor');
+            console.log('🎬 Model görseline stüdyo kalitesi uygulanıyor (takıdan önce)...');
+            modelImageBase64 = await studioEnhance(modelImageBase64);
+            console.log('✅ Model enhance tamamlandı');
+
             // ===== ADIM 3: Canvas Composite - Orijinal takıyı model üzerine yerleştir =====
             // ⚠️ HALÜSİNASYON YOK: BiRefNet'ten gelen orijinal takı kullanılıyor
-            showLoader('Manken Modu...', '4/4 Takı yerleştiriliyor (halüsinasyon yok)');
+            showLoader('Manken Modu...', '4/5 Takı yerleştiriliyor (halüsinasyon yok)');
             console.log('💎 Canvas composite ile orijinal takı yerleştiriliyor...');
 
             const compositeResult = await createCanvasComposite(jewelryBase64, modelImageBase64, jewelryAnalysis);
