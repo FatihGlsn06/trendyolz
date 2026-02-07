@@ -237,6 +237,11 @@
                                 <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>Oluştur
                             </button>
                         </div>
+
+                        <!-- Çoklu Varyasyon Butonu -->
+                        <button onclick="quickGenerateVariations()" class="w-full mt-2 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 font-medium transition-all text-sm">
+                            <i class="fa-solid fa-layer-group mr-1"></i>4 Farklı Açıdan Üret
+                        </button>
                     </div>
 
                     <!-- ====== ACCORDION AYARLAR ====== -->
@@ -513,6 +518,116 @@
                                                 <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>
                                                 AI takıyı analiz edip en uygun kombinasyonu seçecek
                                             </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Accordion: Popüler Şablonlar -->
+                        <div class="glass rounded-xl overflow-hidden">
+                            <div class="accordion-header p-3 flex items-center justify-between" onclick="toggleAccordion(this)">
+                                <div class="flex items-center gap-2">
+                                    <i class="fa-solid fa-fire text-orange-400"></i>
+                                    <span class="font-medium text-sm">Popüler Şablonlar</span>
+                                    <span class="text-[9px] bg-orange-500/20 text-orange-300 px-2 py-0.5 rounded-full">HIZLI</span>
+                                </div>
+                                <i class="fa-solid fa-chevron-down accordion-icon text-slate-400 text-xs"></i>
+                            </div>
+                            <div class="accordion-content">
+                                <div class="p-4 pt-0 space-y-3">
+                                    <p class="text-[10px] text-slate-400 mb-2">Tek tıkla profesyonel pozlar uygula</p>
+
+                                    <!-- Kolye Şablonları -->
+                                    <div class="space-y-2">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <i class="fa-solid fa-gem text-purple-400 text-xs"></i>
+                                            <span class="text-xs font-medium text-purple-300">Kolye</span>
+                                        </div>
+                                        <div class="grid grid-cols-4 gap-1">
+                                            <button onclick="applyPopularTemplate('necklace', 0)" class="p-2 bg-slate-800/50 hover:bg-purple-600/30 rounded-lg text-center transition-all border border-slate-700 hover:border-purple-500" title="Klasik Önden">
+                                                <i class="fa-solid fa-user text-[10px] text-slate-400 block mb-0.5"></i>
+                                                <span class="text-[8px]">Klasik</span>
+                                            </button>
+                                            <button onclick="applyPopularTemplate('necklace', 1)" class="p-2 bg-slate-800/50 hover:bg-purple-600/30 rounded-lg text-center transition-all border border-slate-700 hover:border-purple-500" title="3/4 Açık Omuz">
+                                                <i class="fa-solid fa-rotate-right text-[10px] text-slate-400 block mb-0.5"></i>
+                                                <span class="text-[8px]">3/4</span>
+                                            </button>
+                                            <button onclick="applyPopularTemplate('necklace', 2)" class="p-2 bg-slate-800/50 hover:bg-purple-600/30 rounded-lg text-center transition-all border border-slate-700 hover:border-purple-500" title="Detay Lüks">
+                                                <i class="fa-solid fa-magnifying-glass-plus text-[10px] text-slate-400 block mb-0.5"></i>
+                                                <span class="text-[8px]">Detay</span>
+                                            </button>
+                                            <button onclick="applyPopularTemplate('necklace', 3)" class="p-2 bg-slate-800/50 hover:bg-purple-600/30 rounded-lg text-center transition-all border border-slate-700 hover:border-purple-500" title="Romantik Üstten">
+                                                <i class="fa-solid fa-heart text-[10px] text-pink-400 block mb-0.5"></i>
+                                                <span class="text-[8px]">Romantik</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Küpe Şablonları -->
+                                    <div class="space-y-2">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <i class="fa-solid fa-star text-amber-400 text-xs"></i>
+                                            <span class="text-xs font-medium text-amber-300">Küpe</span>
+                                        </div>
+                                        <div class="grid grid-cols-4 gap-1">
+                                            <button onclick="applyPopularTemplate('earring', 0)" class="p-2 bg-slate-800/50 hover:bg-amber-600/30 rounded-lg text-center transition-all border border-slate-700 hover:border-amber-500" title="Sağ Profil">
+                                                <i class="fa-solid fa-arrow-right text-[10px] text-slate-400 block mb-0.5"></i>
+                                                <span class="text-[8px]">Sağ</span>
+                                            </button>
+                                            <button onclick="applyPopularTemplate('earring', 1)" class="p-2 bg-slate-800/50 hover:bg-amber-600/30 rounded-lg text-center transition-all border border-slate-700 hover:border-amber-500" title="Sol Profil">
+                                                <i class="fa-solid fa-arrow-left text-[10px] text-slate-400 block mb-0.5"></i>
+                                                <span class="text-[8px]">Sol</span>
+                                            </button>
+                                            <button onclick="applyPopularTemplate('earring', 2)" class="p-2 bg-slate-800/50 hover:bg-amber-600/30 rounded-lg text-center transition-all border border-slate-700 hover:border-amber-500" title="Yakın Detay">
+                                                <i class="fa-solid fa-magnifying-glass-plus text-[10px] text-slate-400 block mb-0.5"></i>
+                                                <span class="text-[8px]">Detay</span>
+                                            </button>
+                                            <button onclick="applyPopularTemplate('earring', 3)" class="p-2 bg-slate-800/50 hover:bg-amber-600/30 rounded-lg text-center transition-all border border-slate-700 hover:border-amber-500" title="Romantik Açı">
+                                                <i class="fa-solid fa-heart text-[10px] text-pink-400 block mb-0.5"></i>
+                                                <span class="text-[8px]">Romantik</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Bileklik Şablonları -->
+                                    <div class="space-y-2">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <i class="fa-solid fa-ring text-emerald-400 text-xs"></i>
+                                            <span class="text-xs font-medium text-emerald-300">Bileklik / Yüzük</span>
+                                        </div>
+                                        <div class="grid grid-cols-4 gap-1">
+                                            <button onclick="applyPopularTemplate('bracelet', 0)" class="p-2 bg-slate-800/50 hover:bg-emerald-600/30 rounded-lg text-center transition-all border border-slate-700 hover:border-emerald-500" title="El Üstü Klasik">
+                                                <i class="fa-solid fa-hand text-[10px] text-slate-400 block mb-0.5"></i>
+                                                <span class="text-[8px]">El</span>
+                                            </button>
+                                            <button onclick="applyPopularTemplate('bracelet', 1)" class="p-2 bg-slate-800/50 hover:bg-emerald-600/30 rounded-lg text-center transition-all border border-slate-700 hover:border-emerald-500" title="Açılı El">
+                                                <i class="fa-solid fa-rotate-right text-[10px] text-slate-400 block mb-0.5"></i>
+                                                <span class="text-[8px]">Açılı</span>
+                                            </button>
+                                            <button onclick="applyPopularTemplate('bracelet', 2)" class="p-2 bg-slate-800/50 hover:bg-emerald-600/30 rounded-lg text-center transition-all border border-slate-700 hover:border-emerald-500" title="Detay Çekim">
+                                                <i class="fa-solid fa-magnifying-glass-plus text-[10px] text-slate-400 block mb-0.5"></i>
+                                                <span class="text-[8px]">Detay</span>
+                                            </button>
+                                            <button onclick="applyPopularTemplate('bracelet', 3)" class="p-2 bg-slate-800/50 hover:bg-emerald-600/30 rounded-lg text-center transition-all border border-slate-700 hover:border-emerald-500" title="Yaşam Tarzı">
+                                                <i class="fa-solid fa-camera text-[10px] text-slate-400 block mb-0.5"></i>
+                                                <span class="text-[8px]">Lifestyle</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Hepsini Üret Butonu -->
+                                    <div class="pt-2 border-t border-slate-700">
+                                        <div class="grid grid-cols-3 gap-2">
+                                            <button onclick="generateMultipleVariations('necklace')" class="py-2 bg-purple-600/20 hover:bg-purple-600/40 rounded-lg text-[10px] font-medium text-purple-300 transition-all">
+                                                <i class="fa-solid fa-layer-group mr-1"></i>4 Kolye
+                                            </button>
+                                            <button onclick="generateMultipleVariations('earring')" class="py-2 bg-amber-600/20 hover:bg-amber-600/40 rounded-lg text-[10px] font-medium text-amber-300 transition-all">
+                                                <i class="fa-solid fa-layer-group mr-1"></i>4 Küpe
+                                            </button>
+                                            <button onclick="generateMultipleVariations('bracelet')" class="py-2 bg-emerald-600/20 hover:bg-emerald-600/40 rounded-lg text-[10px] font-medium text-emerald-300 transition-all">
+                                                <i class="fa-solid fa-layer-group mr-1"></i>4 Bileklik
+                                            </button>
                                         </div>
                                     </div>
                                 </div>

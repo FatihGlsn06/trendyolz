@@ -1850,6 +1850,429 @@ const posePresets = {
 };
 
 // ============================================
+// 17. POPÜLER POZ ŞABLONLARI
+// ============================================
+
+const popularTemplates = {
+    necklace: {
+        name: 'Kolye Şablonları',
+        icon: 'fa-gem',
+        variations: [
+            { pose: 'front', outfit: 'black_vneck', scene: 'studio_clean', label: 'Klasik Önden' },
+            { pose: 'three_quarter', outfit: 'strapless', scene: 'studio_clean', label: '3/4 Açık Omuz' },
+            { pose: 'closeup', outfit: 'black_vneck', scene: 'luxury_dark', label: 'Detay Lüks' },
+            { pose: 'down', outfit: 'cream_silk', scene: 'romantic', label: 'Romantik Üstten' }
+        ]
+    },
+    bracelet: {
+        name: 'Bileklik Şablonları',
+        icon: 'fa-ring',
+        variations: [
+            { pose: 'front', outfit: 'none', scene: 'studio_clean', label: 'El Üstü Klasik' },
+            { pose: 'three_quarter', outfit: 'none', scene: 'minimalist', label: 'Açılı El' },
+            { pose: 'detail', outfit: 'none', scene: 'luxury_dark', label: 'Detay Çekim' },
+            { pose: 'lifestyle', outfit: 'cream_silk', scene: 'golden_hour', label: 'Yaşam Tarzı' }
+        ]
+    },
+    earring: {
+        name: 'Küpe Şablonları',
+        icon: 'fa-star',
+        variations: [
+            { pose: 'right', outfit: 'black_turtleneck', scene: 'studio_clean', label: 'Sağ Profil' },
+            { pose: 'left', outfit: 'black_turtleneck', scene: 'studio_clean', label: 'Sol Profil' },
+            { pose: 'closeup', outfit: 'black_vneck', scene: 'luxury_dark', label: 'Yakın Detay' },
+            { pose: 'three_quarter', outfit: 'white_off', scene: 'romantic', label: 'Romantik Açı' }
+        ]
+    },
+    ring: {
+        name: 'Yüzük Şablonları',
+        icon: 'fa-circle',
+        variations: [
+            { pose: 'front', outfit: 'none', scene: 'studio_clean', label: 'Parmak Üstü' },
+            { pose: 'closeup', outfit: 'none', scene: 'luxury_dark', label: 'Makro Detay' },
+            { pose: 'surface', outfit: 'none', scene: 'minimalist', label: 'Flat Lay' },
+            { pose: 'lifestyle', outfit: 'nude', scene: 'golden_hour', label: 'Doğal Görünüm' }
+        ]
+    },
+    set: {
+        name: 'Set Şablonları',
+        icon: 'fa-layer-group',
+        variations: [
+            { pose: 'front', outfit: 'black_vneck', scene: 'studio_clean', label: 'Tam Set Görünüm' },
+            { pose: 'surface', outfit: 'none', scene: 'luxury_dark', label: 'Flat Lay Set' },
+            { pose: 'three_quarter', outfit: 'strapless', scene: 'editorial', label: 'Editorial Set' },
+            { pose: 'lifestyle', outfit: 'cream_silk', scene: 'romantic', label: 'Yaşam Tarzı Set' }
+        ]
+    }
+};
+
+// Popüler şablon uygula
+function applyPopularTemplate(category, variationIndex) {
+    const template = popularTemplates[category];
+    if (!template || !template.variations[variationIndex]) {
+        showToast('Şablon bulunamadı', 'error');
+        return;
+    }
+
+    const variation = template.variations[variationIndex];
+
+    // Ayarları uygula
+    selectPose(variation.pose);
+    selectOutfit(variation.outfit);
+    selectScene(variation.scene);
+
+    showToast(`Şablon uygulandı: ${variation.label}`, 'success');
+}
+
+// ============================================
+// 17.5 ÇOKLU VARYASYON ÜRETİMİ
+// ============================================
+
+// Çoklu varyasyon state
+state.multiVariation = {
+    isGenerating: false,
+    results: [],
+    queue: []
+};
+
+// Çoklu varyasyon üret
+async function generateMultipleVariations(category = null) {
+    if (!state.originalBase64) {
+        showToast('Önce bir görsel yükleyin!', 'error');
+        return;
+    }
+
+    const falKey = state.settings.falApiKey;
+    if (!falKey && !isDemoMode) {
+        showToast('Fal.ai API key gerekli veya Demo Mode açın', 'error');
+        openSettings();
+        return;
+    }
+
+    // Kategori belirlenmemişse mevcut kategoriyi kullan
+    const selectedCategory = category || state.selectedCategory || 'necklace';
+    const template = popularTemplates[selectedCategory];
+
+    if (!template) {
+        showToast('Geçersiz kategori', 'error');
+        return;
+    }
+
+    state.multiVariation.isGenerating = true;
+    state.multiVariation.results = [];
+    state.multiVariation.queue = [...template.variations];
+
+    // Progress göster
+    showMultiVariationProgress(0, template.variations.length);
+
+    try {
+        for (let i = 0; i < template.variations.length; i++) {
+            const variation = template.variations[i];
+
+            // Progress güncelle
+            updateMultiVariationProgress(i + 1, template.variations.length, variation.label);
+
+            // Ayarları uygula
+            state.selectedPose = variation.pose;
+            state.selectedOutfit = variation.outfit;
+            state.selectedScene = variation.scene;
+
+            // Sahne açıklaması oluştur
+            const selectedOutfit = outfitPresets[variation.outfit] || outfitPresets.black_vneck;
+            const selectedPose = posePresets[variation.pose] || posePresets.front;
+            const selectedScene = scenePresets[variation.scene] || scenePresets.studio_clean;
+            const selectedStyle = stylePresets[state.selectedStyle] || stylePresets.studio;
+
+            const sceneDescription = buildSceneDescription(selectedOutfit, selectedPose, selectedScene, selectedStyle);
+
+            // API çağrısı
+            const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
+                product_image_url: state.originalBase64,
+                scene_description: sceneDescription,
+                optimize_description: true
+            }, falKey);
+
+            if (productPhotoData?.images?.[0]?.url) {
+                const resultBase64 = await fetchImageAsBase64(productPhotoData.images[0].url);
+
+                state.multiVariation.results.push({
+                    image: resultBase64,
+                    label: variation.label,
+                    pose: variation.pose,
+                    outfit: variation.outfit,
+                    scene: variation.scene
+                });
+
+                // Galeriye ekle
+                addToGallery(resultBase64, variation.label);
+            }
+
+            // Küçük bekleme (rate limit için)
+            if (i < template.variations.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+
+        // Sonuçları göster
+        hideMultiVariationProgress();
+        showMultiVariationResults();
+        showToast(`${state.multiVariation.results.length} varyasyon başarıyla oluşturuldu!`, 'success');
+
+    } catch (error) {
+        console.error('Multi-variation error:', error);
+        hideMultiVariationProgress();
+        showToast('Varyasyon üretim hatası: ' + error.message, 'error');
+    } finally {
+        state.multiVariation.isGenerating = false;
+    }
+}
+
+// Özel varyasyonlar seç ve üret
+async function generateCustomVariations(variations) {
+    if (!state.originalBase64) {
+        showToast('Önce bir görsel yükleyin!', 'error');
+        return;
+    }
+
+    const falKey = state.settings.falApiKey;
+    if (!falKey && !isDemoMode) {
+        showToast('Fal.ai API key gerekli veya Demo Mode açın', 'error');
+        openSettings();
+        return;
+    }
+
+    if (!variations || variations.length === 0) {
+        showToast('En az bir varyasyon seçin', 'error');
+        return;
+    }
+
+    state.multiVariation.isGenerating = true;
+    state.multiVariation.results = [];
+
+    showMultiVariationProgress(0, variations.length);
+
+    try {
+        for (let i = 0; i < variations.length; i++) {
+            const variation = variations[i];
+
+            updateMultiVariationProgress(i + 1, variations.length, variation.label || `Varyasyon ${i + 1}`);
+
+            const selectedOutfit = outfitPresets[variation.outfit] || outfitPresets.black_vneck;
+            const selectedPose = posePresets[variation.pose] || posePresets.front;
+            const selectedScene = scenePresets[variation.scene] || scenePresets.studio_clean;
+            const selectedStyle = stylePresets[state.selectedStyle] || stylePresets.studio;
+
+            const sceneDescription = buildSceneDescription(selectedOutfit, selectedPose, selectedScene, selectedStyle);
+
+            const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
+                product_image_url: state.originalBase64,
+                scene_description: sceneDescription,
+                optimize_description: true
+            }, falKey);
+
+            if (productPhotoData?.images?.[0]?.url) {
+                const resultBase64 = await fetchImageAsBase64(productPhotoData.images[0].url);
+
+                state.multiVariation.results.push({
+                    image: resultBase64,
+                    label: variation.label || `Varyasyon ${i + 1}`,
+                    pose: variation.pose,
+                    outfit: variation.outfit,
+                    scene: variation.scene
+                });
+
+                addToGallery(resultBase64, variation.label || `Var. ${i + 1}`);
+            }
+
+            if (i < variations.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+
+        hideMultiVariationProgress();
+        showMultiVariationResults();
+        showToast(`${state.multiVariation.results.length} varyasyon oluşturuldu!`, 'success');
+
+    } catch (error) {
+        console.error('Custom variation error:', error);
+        hideMultiVariationProgress();
+        showToast('Varyasyon hatası: ' + error.message, 'error');
+    } finally {
+        state.multiVariation.isGenerating = false;
+    }
+}
+
+// Progress UI
+function showMultiVariationProgress(current, total) {
+    let progressEl = document.getElementById('multiVariationProgress');
+
+    if (!progressEl) {
+        progressEl = document.createElement('div');
+        progressEl.id = 'multiVariationProgress';
+        progressEl.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-50';
+        progressEl.innerHTML = `
+            <div class="bg-slate-800 rounded-2xl p-6 max-w-md w-full mx-4 text-center">
+                <div class="mb-4">
+                    <i class="fa-solid fa-wand-magic-sparkles text-4xl text-purple-400 animate-pulse"></i>
+                </div>
+                <h3 class="text-lg font-bold mb-2">Çoklu Varyasyon Üretiliyor</h3>
+                <p id="mvProgressLabel" class="text-slate-400 text-sm mb-4">Hazırlanıyor...</p>
+                <div class="w-full bg-slate-700 rounded-full h-3 mb-2">
+                    <div id="mvProgressBar" class="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <p id="mvProgressCount" class="text-xs text-slate-500">${current}/${total}</p>
+            </div>
+        `;
+        document.body.appendChild(progressEl);
+    }
+
+    progressEl.style.display = 'flex';
+}
+
+function updateMultiVariationProgress(current, total, label) {
+    const progressBar = document.getElementById('mvProgressBar');
+    const progressLabel = document.getElementById('mvProgressLabel');
+    const progressCount = document.getElementById('mvProgressCount');
+
+    if (progressBar) {
+        progressBar.style.width = `${(current / total) * 100}%`;
+    }
+    if (progressLabel) {
+        progressLabel.textContent = `Üretiliyor: ${label}`;
+    }
+    if (progressCount) {
+        progressCount.textContent = `${current}/${total}`;
+    }
+}
+
+function hideMultiVariationProgress() {
+    const progressEl = document.getElementById('multiVariationProgress');
+    if (progressEl) {
+        progressEl.style.display = 'none';
+    }
+}
+
+// Sonuçları göster
+function showMultiVariationResults() {
+    const results = state.multiVariation.results;
+    if (results.length === 0) return;
+
+    // Son üretilen görseli ana preview'e koy
+    if (results.length > 0) {
+        state.processedImage = results[results.length - 1].image;
+        const preview = document.getElementById('resultPreview');
+        if (preview) {
+            preview.src = state.processedImage;
+            preview.style.display = 'block';
+        }
+    }
+
+    // Modal ile tüm sonuçları göster
+    let resultsModal = document.getElementById('multiVariationResultsModal');
+
+    if (!resultsModal) {
+        resultsModal = document.createElement('div');
+        resultsModal.id = 'multiVariationResultsModal';
+        resultsModal.className = 'fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4';
+        document.body.appendChild(resultsModal);
+    }
+
+    resultsModal.innerHTML = `
+        <div class="bg-slate-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center">
+                <h3 class="text-lg font-bold">
+                    <i class="fa-solid fa-images mr-2 text-purple-400"></i>
+                    Üretilen Varyasyonlar (${results.length})
+                </h3>
+                <button onclick="closeMultiVariationResults()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-4 overflow-y-auto max-h-[calc(90vh-120px)]">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    ${results.map((result, idx) => `
+                        <div class="relative group">
+                            <img src="${result.image}" alt="${result.label}" class="w-full aspect-square object-cover rounded-lg">
+                            <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex flex-col items-center justify-center gap-2">
+                                <p class="text-xs font-medium">${result.label}</p>
+                                <div class="flex gap-2">
+                                    <button onclick="downloadVariation(${idx})" class="p-2 bg-emerald-600 rounded-lg hover:bg-emerald-500">
+                                        <i class="fa-solid fa-download text-xs"></i>
+                                    </button>
+                                    <button onclick="selectVariation(${idx})" class="p-2 bg-purple-600 rounded-lg hover:bg-purple-500">
+                                        <i class="fa-solid fa-check text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            <div class="p-4 border-t border-slate-700 flex justify-between">
+                <button onclick="downloadAllVariations()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-medium">
+                    <i class="fa-solid fa-download mr-2"></i>Tümünü İndir
+                </button>
+                <button onclick="closeMultiVariationResults()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm">
+                    Kapat
+                </button>
+            </div>
+        </div>
+    `;
+
+    resultsModal.style.display = 'flex';
+}
+
+function closeMultiVariationResults() {
+    const modal = document.getElementById('multiVariationResultsModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function selectVariation(index) {
+    const result = state.multiVariation.results[index];
+    if (result) {
+        state.processedImage = result.image;
+        const preview = document.getElementById('resultPreview');
+        if (preview) {
+            preview.src = result.image;
+            preview.style.display = 'block';
+        }
+        closeMultiVariationResults();
+        showToast(`Seçildi: ${result.label}`, 'success');
+    }
+}
+
+function downloadVariation(index) {
+    const result = state.multiVariation.results[index];
+    if (result) {
+        const link = document.createElement('a');
+        link.download = `trendyol-${result.label.replace(/\s+/g, '-')}-${Date.now()}.png`;
+        link.href = result.image;
+        link.click();
+        showToast('İndiriliyor...', 'success');
+    }
+}
+
+function downloadAllVariations() {
+    state.multiVariation.results.forEach((result, idx) => {
+        setTimeout(() => {
+            const link = document.createElement('a');
+            link.download = `trendyol-${result.label.replace(/\s+/g, '-')}-${Date.now()}.png`;
+            link.href = result.image;
+            link.click();
+        }, idx * 500);
+    });
+    showToast(`${state.multiVariation.results.length} görsel indiriliyor...`, 'success');
+}
+
+// Quick generate - mevcut kategoriye göre 4 varyasyon
+function quickGenerateVariations() {
+    const category = state.selectedCategory || 'necklace';
+    generateMultipleVariations(category);
+}
+
+// ============================================
 // 18. INTERACTIVE CANVAS SISTEMI
 // ============================================
 
@@ -2093,3 +2516,12 @@ window.resetAdjustments = resetAdjustments;
 window.applyAndSaveAdjustments = applyAndSaveAdjustments;
 window.showInteractivePreview = showInteractivePreview;
 window.hideInteractivePreview = hideInteractivePreview;
+// Çoklu varyasyon ve şablon fonksiyonları
+window.applyPopularTemplate = applyPopularTemplate;
+window.generateMultipleVariations = generateMultipleVariations;
+window.generateCustomVariations = generateCustomVariations;
+window.quickGenerateVariations = quickGenerateVariations;
+window.closeMultiVariationResults = closeMultiVariationResults;
+window.selectVariation = selectVariation;
+window.downloadVariation = downloadVariation;
+window.downloadAllVariations = downloadAllVariations;
