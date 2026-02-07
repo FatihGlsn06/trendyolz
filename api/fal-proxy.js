@@ -37,7 +37,8 @@ export default async function handler(req, res) {
       'fal-ai/flux-pro/v1.1',
       'fal-ai/flux-pro/v1.1-ultra',
       'fal-ai/flux-pro/v1.1/redux',
-      'fal-ai/flux-pro/v1/fill'  // Inpainting - mask ile halüsinasyon-free
+      'fal-ai/flux-pro/v1/fill',
+      'fal-ai/flux-pro/kontext'  // Kontext - ürünü koru, çevreyi değiştir
     ];
 
     if (!endpoint || !allowedEndpoints.includes(endpoint)) {

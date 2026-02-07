@@ -3409,201 +3409,71 @@ Empty surface ready for product placement.`;
             });
         }
 
-        // ========== CANVAS COMPOSITE - EN GÜVENİLİR YÖNTEM ==========
-        // 1. BiRefNet ile takıyı çıkar (orijinal korunur)
-        // 2. Flux ile TAKISIZ model üret
-        // 3. Canvas ile BiRefNet takısını model üzerine yerleştir
-        // 4. SONRA HİÇBİR AI İŞLEMİ YOK - takı kesinlikle değişmez!
+        // ========== FLUX KONTEXT - ÜRÜNÜ KORU, ÇEVREYİ DEĞİŞTİR ==========
+        // Orijinal ürün fotoğrafını alıp profesyonel stüdyo ortamına dönüştürür
+        // Ürün BİREBİR AYNI kalır, sadece çevre değişir
         async function generateWithGemini25() {
-            const geminiKey = localStorage.getItem('gemini_api_key');
             const falKey = localStorage.getItem('fal_api_key');
             const profile = modelProfiles[state.settings.modelProfile];
             const style = stylePresets[state.settings.style];
 
-            console.log('🎨 Canvas Composite Modu başlatılıyor...');
-
-            // ===== ADIM 1: BiRefNet ile takıyı çıkar =====
-            showLoader('Stüdyo Pro...', '1/3 Takı çıkarılıyor (BiRefNet)');
+            console.log('🎨 Flux Kontext - Profesyonel Stüdyo Modu başlatılıyor...');
 
             if (!falKey && !isDemoMode) {
                 throw new Error('Fal.ai API key gerekli');
             }
 
-            const birefnetData = await callFalAPI('fal-ai/birefnet', {
-                image_url: state.originalBase64,
-                model: "General Use (Light)",
-                operating_resolution: "1024x1024",
-                output_format: "png",
-                refine_foreground: true
-            }, falKey);
-
-            const transparentJewelryUrl = birefnetData.image?.url;
-            if (!transparentJewelryUrl) {
-                throw new Error('Takı çıkarılamadı');
-            }
-            console.log('✅ Takı şeffaf arka planla çıkarıldı');
-
-            const jewelryBase64 = await fetchImageAsBase64(transparentJewelryUrl);
-
-            // Takı boyut analizi
-            const jewelryBase64Data = jewelryBase64.split(',')[1];
-            let jewelryLength = 'medium';
-
-            try {
-                const analysisData = await callGeminiAPI(GEMINI_CONFIG.textModel, {
-                    contents: [{
-                        parts: [
-                            { text: 'Necklace length? Reply ONE word: choker, short, medium, long, very_long' },
-                            { inlineData: { mimeType: 'image/png', data: jewelryBase64Data } }
-                        ]
-                    }],
-                    generationConfig: { temperature: 0.1 }
-                }, geminiKey);
-                const txt = (analysisData.candidates?.[0]?.content?.parts?.[0]?.text || '').toLowerCase().trim();
-                if (['choker', 'short', 'medium', 'long', 'very_long'].includes(txt)) {
-                    jewelryLength = txt;
-                }
-                console.log('✅ Takı uzunluğu:', jewelryLength);
-            } catch (e) {
-                console.log('⚠️ Analiz atlandı');
-            }
-
-            // ===== ADIM 2: Flux ile TAKISIZ model üret =====
-            showLoader('Stüdyo Pro...', '2/3 Model oluşturuluyor (Flux)');
-            console.log('🎨 Flux ile takısız model üretiliyor...');
+            // ===== TEK ADIM: Flux Kontext ile dönüştür =====
+            showLoader('Stüdyo Pro...', 'Profesyonel stüdyo oluşturuluyor');
 
             const outfitSceneInstructions = getOutfitScenePrompt();
             const smartPromptInstructions = getSmartPromptInstructions();
 
-            // Frame ayarları
-            const frameSettings = {
-                'very_long': 'full torso visible, from chin to waist',
-                'long': 'from chin to mid-chest visible',
-                'medium': 'neck and upper chest visible',
-                'short': 'neck and collarbone visible',
-                'choker': 'neck area clearly visible'
-            };
-
-            // TAKISIZ model prompt - kesinlikle takı yok
-            const modelPrompt = `Fashion model photo, NO JEWELRY, completely bare neck.
+            // Flux Kontext prompt - ürünü koru, çevreyi değiştir
+            const kontextPrompt = `Transform this jewelry product photo into a professional e-commerce image.
+Place this EXACT necklace on a professional fashion model.
 ${profile.desc}
-Dark elegant V-neck clothing.
+Model wearing elegant dark V-neck clothing.
 ${outfitSceneInstructions}
 ${smartPromptInstructions || ''}
-Professional studio lighting, soft gray background.
-Headless crop - showing from below nose to chest.
-${frameSettings[jewelryLength] || frameSettings.medium}
+Professional studio lighting, soft shadows, gray background.
+Headless crop showing neck and upper chest area.
 ${style.prompt}
-IMPORTANT: Model must have COMPLETELY BARE neck - no necklace, no accessories.`;
 
-            const fluxData = await callFalAPI('fal-ai/flux-pro/v1.1', {
-                prompt: modelPrompt,
-                image_size: { width: 1024, height: 1024 },
-                num_inference_steps: 28,
+CRITICAL RULES:
+- Keep the necklace EXACTLY as it appears - same colors, same beads, same design
+- Do NOT modify, redraw, or change the jewelry in any way
+- Only change the background/surroundings to show it on a model
+- The jewelry must remain pixel-perfect identical to the original`;
+
+            console.log('🔄 Flux Kontext çalışıyor...');
+
+            const kontextData = await callFalAPI('fal-ai/flux-pro/kontext', {
+                image_url: state.originalBase64,
+                prompt: kontextPrompt,
                 guidance_scale: 3.5,
-                num_images: 1
+                num_inference_steps: 28,
+                output_format: "jpeg"
             }, falKey);
 
-            let modelBase64 = null;
-            if (fluxData.images?.[0]?.url) {
-                const imgResponse = await fetch(fluxData.images[0].url);
+            let resultBase64 = null;
+
+            if (kontextData.images?.[0]?.url) {
+                const imgResponse = await fetch(kontextData.images[0].url);
                 const imgBlob = await imgResponse.blob();
-                modelBase64 = await new Promise(resolve => {
+                resultBase64 = await new Promise(resolve => {
                     const reader = new FileReader();
                     reader.onload = () => resolve(reader.result);
                     reader.readAsDataURL(imgBlob);
                 });
             }
 
-            if (!modelBase64) {
-                throw new Error('Model görseli oluşturulamadı');
+            if (!resultBase64) {
+                throw new Error('Görsel oluşturulamadı');
             }
-            console.log('✅ Takısız model oluşturuldu');
 
-            // ===== ADIM 3: Canvas Composite - BiRefNet takısını yerleştir =====
-            // ⚠️ BU ADIMDAN SONRA HİÇBİR AI İŞLEMİ YOK!
-            showLoader('Stüdyo Pro...', '3/3 Takı yerleştiriliyor (Canvas)');
-            console.log('💎 Canvas composite ile orijinal takı yerleştiriliyor...');
-
-            const result = await simpleCanvasComposite(jewelryBase64, modelBase64, jewelryLength);
-
-            console.log('✅ Canvas Composite tamamlandı - Orijinal takı korundu!');
-            return result;
-        }
-
-        // ========== BASİT CANVAS COMPOSITE ==========
-        // BiRefNet takısını model üzerine yerleştirir - AI işlemi YOK
-        async function simpleCanvasComposite(jewelryBase64, modelBase64, jewelryLength) {
-            return new Promise((resolve, reject) => {
-                const modelImg = new Image();
-                const jewelryImg = new Image();
-                let loaded = 0;
-
-                const onBothLoaded = () => {
-                    loaded++;
-                    if (loaded < 2) return;
-
-                    const canvas = document.createElement('canvas');
-                    canvas.width = modelImg.width;
-                    canvas.height = modelImg.height;
-                    const ctx = canvas.getContext('2d');
-
-                    // Model arka plan
-                    ctx.drawImage(modelImg, 0, 0);
-
-                    // Takı boyutu
-                    const sizeMap = {
-                        'very_long': 0.60,
-                        'long': 0.50,
-                        'medium': 0.42,
-                        'short': 0.35,
-                        'choker': 0.30
-                    };
-                    const scale = sizeMap[jewelryLength] || 0.42;
-
-                    // Boyutlar
-                    const aspectRatio = jewelryImg.height / jewelryImg.width;
-                    let targetWidth = modelImg.width * scale;
-                    let targetHeight = targetWidth * aspectRatio;
-
-                    // Sınırlar
-                    if (targetWidth > modelImg.width * 0.85) {
-                        targetWidth = modelImg.width * 0.85;
-                        targetHeight = targetWidth * aspectRatio;
-                    }
-                    if (targetHeight > modelImg.height * 0.70) {
-                        const ratio = (modelImg.height * 0.70) / targetHeight;
-                        targetHeight = modelImg.height * 0.70;
-                        targetWidth *= ratio;
-                    }
-
-                    // Pozisyon - merkez, boyun hizası
-                    const x = (modelImg.width - targetWidth) / 2;
-                    const y = modelImg.height * 0.18;
-
-                    console.log(`📐 Takı: ${targetWidth.toFixed(0)}x${targetHeight.toFixed(0)}px`);
-
-                    // Hafif gölge
-                    ctx.save();
-                    ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
-                    ctx.shadowBlur = 15;
-                    ctx.shadowOffsetY = 5;
-
-                    // BiRefNet takısını çiz - ORİJİNAL, DEĞİŞTİRİLMEMİŞ
-                    ctx.drawImage(jewelryImg, x, y, targetWidth, targetHeight);
-                    ctx.restore();
-
-                    resolve(canvas.toDataURL('image/jpeg', 0.95));
-                };
-
-                modelImg.onload = onBothLoaded;
-                jewelryImg.onload = onBothLoaded;
-                modelImg.onerror = () => reject(new Error('Model yüklenemedi'));
-                jewelryImg.onerror = () => reject(new Error('Takı yüklenemedi'));
-
-                modelImg.src = modelBase64;
-                jewelryImg.src = jewelryBase64;
-            });
+            console.log('✅ Flux Kontext tamamlandı - Ürün korundu, çevre profesyonelleştirildi!');
+            return resultBase64;
         }
 
         // ========== CANVAS COMPOSITE (Yedek) ==========
