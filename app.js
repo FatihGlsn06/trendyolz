@@ -606,64 +606,68 @@ function selectModelProfile(profileId) {
 function selectStyle(styleId) {
     state.selectedStyle = styleId;
 
-    document.querySelectorAll('.style-btn').forEach(btn => {
-        btn.classList.remove('active');
+    // Hem .style-btn hem .style-card class'larini destekle
+    document.querySelectorAll('.style-btn, .style-card').forEach(btn => {
+        btn.classList.remove('active', 'selected');
         if (btn.dataset.style === styleId) {
-            btn.classList.add('active');
+            btn.classList.add('active', 'selected');
         }
     });
 
     const style = stylePresets[styleId];
     if (style) {
-        showToast(`Style: ${style.name}`, 'info');
+        showToast(`Stil: ${style.name}`, 'info');
     }
 }
 
 function selectPose(poseId) {
     state.selectedPose = poseId;
 
-    document.querySelectorAll('.pose-btn').forEach(btn => {
-        btn.classList.remove('active');
+    // Hem .pose-btn hem .pose-card class'larini destekle
+    document.querySelectorAll('.pose-btn, .pose-card').forEach(btn => {
+        btn.classList.remove('active', 'selected');
         if (btn.dataset.pose === poseId) {
-            btn.classList.add('active');
+            btn.classList.add('active', 'selected');
         }
     });
 
     const pose = posePresets[poseId];
     if (pose) {
-        showToast(`Pose: ${pose.name}`, 'info');
+        showToast(`Çekim Açısı: ${pose.name}`, 'info');
     }
 }
 
 function selectOutfit(outfitId) {
     state.selectedOutfit = outfitId;
 
-    document.querySelectorAll('.outfit-btn').forEach(btn => {
-        btn.classList.remove('active');
+    // Hem .outfit-btn hem .outfit-card class'larini destekle
+    document.querySelectorAll('.outfit-btn, .outfit-card').forEach(btn => {
+        btn.classList.remove('active', 'selected');
         if (btn.dataset.outfit === outfitId) {
-            btn.classList.add('active');
+            btn.classList.add('active', 'selected');
         }
     });
 
     const outfit = outfitPresets[outfitId];
     if (outfit) {
-        showToast(`Outfit: ${outfit.name}`, 'info');
+        showToast(`Kıyafet: ${outfit.name}`, 'info');
     }
 }
 
 function selectScene(sceneId) {
     state.selectedScene = sceneId;
 
-    document.querySelectorAll('.scene-btn').forEach(btn => {
-        btn.classList.remove('active');
+    // Hem .scene-btn hem .scene-card class'larini destekle
+    document.querySelectorAll('.scene-btn, .scene-card').forEach(btn => {
+        btn.classList.remove('active', 'selected');
         if (btn.dataset.scene === sceneId) {
-            btn.classList.add('active');
+            btn.classList.add('active', 'selected');
         }
     });
 
     const scene = scenePresets[sceneId];
     if (scene) {
-        showToast(`Scene: ${scene.name}`, 'info');
+        showToast(`Sahne: ${scene.name}`, 'info');
     }
 }
 
@@ -783,9 +787,22 @@ async function generateImage() {
     showLoader('Generating professional product photo...');
 
     try {
+        // Secili ayarlari al
+        const selectedOutfit = outfitPresets[state.selectedOutfit] || outfitPresets.black_vneck;
+        const selectedPose = posePresets[state.selectedPose] || posePresets.front;
+        const selectedScene = scenePresets[state.selectedScene] || scenePresets.studio_clean;
+        const selectedStyle = stylePresets[state.selectedStyle] || stylePresets.studio;
+
+        // Sahne aciklamasi olustur
+        const sceneDescription = buildSceneDescription(selectedOutfit, selectedPose, selectedScene, selectedStyle);
+
+        console.log('Scene Description:', sceneDescription);
+
         // Product Photography API kullan - EN ONEMLI OZELLIK!
         const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
-            product_image_url: state.originalBase64
+            product_image_url: state.originalBase64,
+            scene_description: sceneDescription,
+            optimize_description: true
         }, falKey);
 
         if (productPhotoData && productPhotoData.images && productPhotoData.images.length > 0) {
@@ -803,8 +820,9 @@ async function generateImage() {
                 resultPreview.style.display = 'block';
             }
 
-            // Galeriye ekle
-            addToGallery(resultBase64, 'Product Photography');
+            // Galeriye ekle - secili ayarlari etiketle
+            const label = `${selectedPose.name} - ${selectedOutfit.name}`;
+            addToGallery(resultBase64, label);
 
             hideLoader();
             showToast('Professional product photo generated successfully!', 'success');
@@ -817,6 +835,45 @@ async function generateImage() {
         hideLoader();
         showToast('Error generating product photo: ' + error.message, 'error');
     }
+}
+
+// Sahne aciklamasi olustur
+function buildSceneDescription(outfit, pose, scene, style) {
+    const parts = [];
+
+    // Kiyafet/Model
+    if (outfit && outfit.prompt && outfit.id !== 'none') {
+        parts.push(outfit.prompt);
+    }
+
+    // Cekim acisi
+    if (pose && pose.prompt) {
+        parts.push(pose.prompt);
+    }
+
+    // Sahne/Arka plan
+    if (scene) {
+        parts.push(`${scene.background}, ${scene.lighting}`);
+        if (scene.props && scene.props !== 'None') {
+            parts.push(`with ${scene.props}`);
+        }
+    }
+
+    // Stil
+    if (style) {
+        parts.push(`${style.lighting} lighting, ${style.mood} atmosphere`);
+    }
+
+    // Genel kalite parametreleri
+    parts.push('professional jewelry photography, high-end commercial quality, sharp focus on jewelry details, beautiful lighting');
+
+    // Custom prompt varsa ekle
+    const customPrompt = document.getElementById('customPrompt')?.value?.trim();
+    if (customPrompt) {
+        parts.push(customPrompt);
+    }
+
+    return parts.join(', ');
 }
 
 async function previewJewelryPlacement() {
@@ -1315,59 +1372,83 @@ const stylePresets = {
 const outfitPresets = {
     black_vneck: {
         id: 'black_vneck',
-        name: 'Black V-Neck',
+        name: 'Siyah V-Yaka',
         color: '#000000',
         style: 'V-neck top',
-        description: 'Classic black V-neck for elegant contrast'
+        description: 'Classic black V-neck for elegant contrast',
+        prompt: 'model wearing elegant black V-neck top, deep neckline showing decollete, perfect for necklace display'
     },
     white_off: {
         id: 'white_off',
-        name: 'White Off-Shoulder',
+        name: 'Beyaz Omuz Açık',
         color: '#FFFFFF',
         style: 'Off-shoulder',
-        description: 'White off-shoulder for delicate pieces'
+        description: 'White off-shoulder for delicate pieces',
+        prompt: 'model wearing white off-shoulder blouse, bare shoulders, elegant and romantic style'
     },
     cream_silk: {
         id: 'cream_silk',
-        name: 'Cream Silk',
+        name: 'Krem İpek',
         color: '#FFF8DC',
         style: 'Silk blouse',
-        description: 'Luxurious cream silk for premium look'
+        description: 'Luxurious cream silk for premium look',
+        prompt: 'model wearing luxurious cream silk blouse, soft satin texture, premium elegant appearance'
     },
     burgundy: {
         id: 'burgundy',
-        name: 'Burgundy',
+        name: 'Bordo',
         color: '#800020',
         style: 'V-neck',
-        description: 'Rich burgundy for gold jewelry'
+        description: 'Rich burgundy for gold jewelry',
+        prompt: 'model wearing rich burgundy wine-colored top, deep V-neck, perfect contrast for gold jewelry'
     },
     navy: {
         id: 'navy',
-        name: 'Navy Blue',
+        name: 'Lacivert',
         color: '#000080',
         style: 'Classic top',
-        description: 'Navy blue for silver/pearl jewelry'
+        description: 'Navy blue for silver/pearl jewelry',
+        prompt: 'model wearing navy blue classic top, sophisticated dark blue, ideal for silver and pearl jewelry'
     },
     nude: {
         id: 'nude',
-        name: 'Nude/Beige',
+        name: 'Ten Rengi',
         color: '#E8D4C4',
         style: 'Simple top',
-        description: 'Neutral nude for versatile styling'
+        description: 'Neutral nude for versatile styling',
+        prompt: 'model wearing nude beige simple top, neutral skin-tone color, minimal distraction from jewelry'
     },
     forest: {
         id: 'forest',
-        name: 'Forest Green',
+        name: 'Orman Yeşili',
         color: '#228B22',
         style: 'Elegant top',
-        description: 'Forest green for gold contrast'
+        description: 'Forest green for gold contrast',
+        prompt: 'model wearing forest green elegant top, rich emerald green, beautiful contrast for gold jewelry'
+    },
+    black_turtleneck: {
+        id: 'black_turtleneck',
+        name: 'Siyah Balıkçı',
+        color: '#000000',
+        style: 'Turtleneck',
+        description: 'Black turtleneck for statement pieces',
+        prompt: 'model wearing black turtleneck sweater, high neck, perfect backdrop for statement earrings'
+    },
+    strapless: {
+        id: 'strapless',
+        name: 'Straplez',
+        color: '#000000',
+        style: 'Strapless',
+        description: 'Strapless for maximum jewelry visibility',
+        prompt: 'model wearing black strapless top, bare shoulders and neck, maximum visibility for necklace'
     },
     none: {
         id: 'none',
-        name: 'No Outfit',
+        name: 'Kıyafetsiz',
         color: 'transparent',
         style: 'Skin only',
-        description: 'Direct skin/model presentation'
+        description: 'Direct skin/model presentation',
+        prompt: 'bare skin, no clothing visible, focus entirely on jewelry piece, clean minimal presentation'
     }
 };
 
@@ -1433,39 +1514,73 @@ const scenePresets = {
 const posePresets = {
     front: {
         id: 'front',
-        name: 'Front View',
+        name: 'Önden Görünüm',
         angle: 0,
-        description: 'Direct front facing'
+        description: 'Direct front facing',
+        prompt: 'front view, straight on camera angle, model facing camera directly, symmetrical composition'
     },
     right: {
         id: 'right',
-        name: 'Right Profile',
+        name: 'Sağ Profil',
         angle: 90,
-        description: 'Right side profile'
+        description: 'Right side profile',
+        prompt: 'right side profile view, 90 degree angle from right, showing earring or side of necklace clearly'
     },
     left: {
         id: 'left',
-        name: 'Left Profile',
+        name: 'Sol Profil',
         angle: -90,
-        description: 'Left side profile'
+        description: 'Left side profile',
+        prompt: 'left side profile view, 90 degree angle from left, elegant profile shot'
+    },
+    three_quarter: {
+        id: 'three_quarter',
+        name: '3/4 Açı',
+        angle: 45,
+        description: '45 degree angle view',
+        prompt: 'three quarter view, 45 degree angle, slight turn showing depth and dimension of jewelry'
     },
     down: {
         id: 'down',
-        name: 'Looking Down',
+        name: 'Üstten Açı',
         angle: 0,
-        description: 'Head tilted down'
+        description: 'Camera looking down',
+        prompt: 'high angle shot, camera looking down at 30 degrees, elegant downward perspective'
+    },
+    up: {
+        id: 'up',
+        name: 'Alttan Açı',
+        angle: 0,
+        description: 'Camera looking up',
+        prompt: 'low angle shot, camera looking up slightly, dramatic upward perspective, powerful composition'
     },
     closeup: {
         id: 'closeup',
-        name: 'Close-Up',
+        name: 'Yakın Çekim',
         angle: 0,
-        description: 'Tight crop on jewelry'
+        description: 'Tight macro shot',
+        prompt: 'extreme close-up, macro shot, tight crop focusing on jewelry details, showing texture and craftsmanship'
+    },
+    detail: {
+        id: 'detail',
+        name: 'Detay Çekim',
+        angle: 0,
+        description: 'Detail focus shot',
+        prompt: 'detail shot, focus on jewelry clasp or unique feature, shallow depth of field, artistic detail focus'
     },
     surface: {
         id: 'surface',
-        name: 'Flat Surface',
+        name: 'Düz Yüzey',
         angle: 0,
-        description: 'Jewelry on flat surface'
+        description: 'Flat lay on surface',
+        prompt: 'flat lay photography, jewelry placed on elegant surface, top-down view, styled product shot'
+    },
+    lifestyle: {
+        id: 'lifestyle',
+        name: 'Yaşam Tarzı',
+        angle: 0,
+        description: 'Lifestyle candid shot',
+        prompt: 'lifestyle photography, natural candid moment, model wearing jewelry in real-life setting'
     }
 };
 

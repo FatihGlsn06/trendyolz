@@ -337,25 +337,47 @@
 
                                     <!-- Poz Seçimi -->
                                     <div>
-                                        <label class="text-[10px] text-slate-400 mb-2 block">Poz / Açı</label>
-                                        <div class="grid grid-cols-6 gap-1" id="posePresets">
-                                            <div onclick="selectPose('front')" class="pose-card selected p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-pose="front">
+                                        <label class="text-[10px] text-slate-400 mb-2 block">Çekim Açısı</label>
+                                        <div class="grid grid-cols-5 gap-1" id="posePresets">
+                                            <div onclick="selectPose('front')" class="pose-card selected p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-pose="front" title="Önden Görünüm">
                                                 <i class="fa-solid fa-user text-xs text-slate-400"></i>
+                                                <span class="block text-[8px] text-slate-500 mt-0.5">Önden</span>
                                             </div>
-                                            <div onclick="selectPose('right')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-pose="right">
+                                            <div onclick="selectPose('three_quarter')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-pose="three_quarter" title="3/4 Açı - 45 derece">
+                                                <i class="fa-solid fa-rotate-right text-xs text-slate-400"></i>
+                                                <span class="block text-[8px] text-slate-500 mt-0.5">3/4</span>
+                                            </div>
+                                            <div onclick="selectPose('right')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-pose="right" title="Sağ Profil - 90 derece">
                                                 <i class="fa-solid fa-arrow-right text-xs text-slate-400"></i>
+                                                <span class="block text-[8px] text-slate-500 mt-0.5">Sağ</span>
                                             </div>
-                                            <div onclick="selectPose('left')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-pose="left">
+                                            <div onclick="selectPose('left')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-pose="left" title="Sol Profil - 90 derece">
                                                 <i class="fa-solid fa-arrow-left text-xs text-slate-400"></i>
+                                                <span class="block text-[8px] text-slate-500 mt-0.5">Sol</span>
                                             </div>
-                                            <div onclick="selectPose('down')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-pose="down">
+                                            <div onclick="selectPose('down')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-pose="down" title="Üstten Açı - Yukarıdan bakış">
                                                 <i class="fa-solid fa-arrow-down text-xs text-slate-400"></i>
+                                                <span class="block text-[8px] text-slate-500 mt-0.5">Üst</span>
                                             </div>
-                                            <div onclick="selectPose('closeup')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-pose="closeup">
+                                            <div onclick="selectPose('up')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-pose="up" title="Alttan Açı - Aşağıdan bakış">
+                                                <i class="fa-solid fa-arrow-up text-xs text-slate-400"></i>
+                                                <span class="block text-[8px] text-slate-500 mt-0.5">Alt</span>
+                                            </div>
+                                            <div onclick="selectPose('closeup')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-pose="closeup" title="Yakın Çekim - Makro">
                                                 <i class="fa-solid fa-magnifying-glass-plus text-xs text-slate-400"></i>
+                                                <span class="block text-[8px] text-slate-500 mt-0.5">Yakın</span>
                                             </div>
-                                            <div onclick="selectPose('surface')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-pose="surface">
+                                            <div onclick="selectPose('detail')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-pose="detail" title="Detay Çekim - Özellik odaklı">
+                                                <i class="fa-solid fa-gem text-xs text-slate-400"></i>
+                                                <span class="block text-[8px] text-slate-500 mt-0.5">Detay</span>
+                                            </div>
+                                            <div onclick="selectPose('surface')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-pose="surface" title="Düz Yüzey - Flat lay">
                                                 <i class="fa-solid fa-square text-xs text-slate-400"></i>
+                                                <span class="block text-[8px] text-slate-500 mt-0.5">Düz</span>
+                                            </div>
+                                            <div onclick="selectPose('lifestyle')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-pose="lifestyle" title="Yaşam Tarzı - Doğal çekim">
+                                                <i class="fa-solid fa-camera text-xs text-slate-400"></i>
+                                                <span class="block text-[8px] text-slate-500 mt-0.5">Yaşam</span>
                                             </div>
                                         </div>
                                     </div>
@@ -394,37 +416,49 @@
                                     <div id="manualOutfitSection">
                                         <!-- Kıyafet -->
                                         <div class="mb-3">
-                                            <label class="text-[10px] text-slate-400 mb-1.5 block">Kıyafet</label>
-                                            <div class="grid grid-cols-4 gap-1" id="outfitPresets">
-                                                <div onclick="selectOutfit('black_vneck')" class="outfit-card selected p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-outfit="black_vneck">
+                                            <label class="text-[10px] text-slate-400 mb-1.5 block">Kıyafet Stili</label>
+                                            <div class="grid grid-cols-5 gap-1" id="outfitPresets">
+                                                <div onclick="selectOutfit('black_vneck')" class="outfit-card selected p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-outfit="black_vneck" title="Siyah V-Yaka - Kolye için ideal">
                                                     <div class="w-full h-5 bg-gradient-to-b from-slate-900 to-black rounded mb-0.5"></div>
-                                                    <p class="text-[8px]">Siyah</p>
+                                                    <p class="text-[8px]">V-Yaka</p>
                                                 </div>
-                                                <div onclick="selectOutfit('white_off')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-outfit="white_off">
+                                                <div onclick="selectOutfit('strapless')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-outfit="strapless" title="Straplez - Maksimum görünürlük">
+                                                    <div class="w-full h-5 bg-gradient-to-b from-slate-800 to-slate-900 rounded mb-0.5 flex items-end justify-center">
+                                                        <div class="w-3/4 h-2 bg-black rounded-t"></div>
+                                                    </div>
+                                                    <p class="text-[8px]">Straplez</p>
+                                                </div>
+                                                <div onclick="selectOutfit('white_off')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-outfit="white_off" title="Beyaz Omuz Açık - Zarif görünüm">
                                                     <div class="w-full h-5 bg-gradient-to-b from-white to-slate-100 rounded mb-0.5"></div>
-                                                    <p class="text-[8px]">Beyaz</p>
+                                                    <p class="text-[8px]">Omuz Açık</p>
                                                 </div>
-                                                <div onclick="selectOutfit('cream_silk')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-outfit="cream_silk">
+                                                <div onclick="selectOutfit('black_turtleneck')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-outfit="black_turtleneck" title="Siyah Balıkçı - Küpe için ideal">
+                                                    <div class="w-full h-5 bg-gradient-to-b from-slate-800 to-black rounded mb-0.5 flex items-start justify-center">
+                                                        <div class="w-2/3 h-2 bg-slate-900 rounded-b"></div>
+                                                    </div>
+                                                    <p class="text-[8px]">Balıkçı</p>
+                                                </div>
+                                                <div onclick="selectOutfit('cream_silk')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-outfit="cream_silk" title="Krem İpek - Lüks görünüm">
                                                     <div class="w-full h-5 bg-gradient-to-b from-amber-50 to-amber-100 rounded mb-0.5"></div>
                                                     <p class="text-[8px]">Krem</p>
                                                 </div>
-                                                <div onclick="selectOutfit('burgundy')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-outfit="burgundy">
+                                                <div onclick="selectOutfit('burgundy')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-outfit="burgundy" title="Bordo - Altın takı için ideal">
                                                     <div class="w-full h-5 bg-gradient-to-b from-rose-900 to-rose-950 rounded mb-0.5"></div>
                                                     <p class="text-[8px]">Bordo</p>
                                                 </div>
-                                                <div onclick="selectOutfit('navy')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-outfit="navy">
+                                                <div onclick="selectOutfit('navy')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-outfit="navy" title="Lacivert - Gümüş/inci için ideal">
                                                     <div class="w-full h-5 bg-gradient-to-b from-blue-900 to-blue-950 rounded mb-0.5"></div>
                                                     <p class="text-[8px]">Lacivert</p>
                                                 </div>
-                                                <div onclick="selectOutfit('nude')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-outfit="nude">
-                                                    <div class="w-full h-5 bg-gradient-to-b from-orange-100 to-orange-200 rounded mb-0.5"></div>
-                                                    <p class="text-[8px]">Ten</p>
-                                                </div>
-                                                <div onclick="selectOutfit('forest')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-outfit="forest">
+                                                <div onclick="selectOutfit('forest')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-outfit="forest" title="Orman Yeşili - Altın kontrast">
                                                     <div class="w-full h-5 bg-gradient-to-b from-emerald-800 to-emerald-900 rounded mb-0.5"></div>
                                                     <p class="text-[8px]">Yeşil</p>
                                                 </div>
-                                                <div onclick="selectOutfit('none')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-outfit="none">
+                                                <div onclick="selectOutfit('nude')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-outfit="nude" title="Ten Rengi - Nötr arka plan">
+                                                    <div class="w-full h-5 bg-gradient-to-b from-orange-100 to-orange-200 rounded mb-0.5"></div>
+                                                    <p class="text-[8px]">Ten</p>
+                                                </div>
+                                                <div onclick="selectOutfit('none')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-outfit="none" title="Kıyafetsiz - Sadece takı">
                                                     <div class="w-full h-5 bg-gradient-to-b from-rose-200 to-rose-300 rounded mb-0.5 flex items-center justify-center">
                                                         <i class="fa-solid fa-xmark text-rose-600 text-[8px]"></i>
                                                     </div>
