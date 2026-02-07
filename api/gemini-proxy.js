@@ -1,5 +1,5 @@
 // Vercel Serverless Function - Gemini API Proxy
-// SEO ve analiz için Gemini API proxy
+// SEO ve analiz için Gemini API proxy (görsel analiz destekli)
 
 export default async function handler(req, res) {
     // CORS headers
@@ -16,11 +16,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { model, requestBody } = req.body;
-
-        if (!model || !requestBody) {
-            return res.status(400).json({ error: 'Model and requestBody are required' });
-        }
+        const { prompt, model, image, requestBody } = req.body;
 
         // Gemini API key from environment
         const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -29,16 +25,49 @@ export default async function handler(req, res) {
         }
 
         const baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
-        const url = `${baseUrl}/${model}:generateContent?key=${GEMINI_API_KEY}`;
+        const modelName = model || 'gemini-2.0-flash';
+        const url = `${baseUrl}/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
 
-        console.log(`[Gemini Proxy] Calling model: ${model}`);
+        console.log(`[Gemini Proxy] Calling model: ${modelName}`);
+
+        let body;
+
+        // Eski format: requestBody doğrudan gönderilir
+        if (requestBody) {
+            body = requestBody;
+        }
+        // Yeni format: prompt ve opsiyonel image
+        else if (prompt) {
+            const parts = [{ text: prompt }];
+
+            // Görsel varsa ekle (base64 formatında)
+            if (image) {
+                parts.push({
+                    inlineData: {
+                        mimeType: 'image/jpeg',
+                        data: image
+                    }
+                });
+            }
+
+            body = {
+                contents: [{
+                    parts: parts
+                }],
+                generationConfig: {
+                    temperature: 0.3
+                }
+            };
+        } else {
+            return res.status(400).json({ error: 'Either prompt or requestBody is required' });
+        }
 
         const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(requestBody)
+            body: JSON.stringify(body)
         });
 
         const responseText = await response.text();
@@ -60,7 +89,7 @@ export default async function handler(req, res) {
             // Model not found - return 404 for fallback handling
             if (response.status === 404) {
                 return res.status(404).json({
-                    error: `Model ${model} not found`,
+                    error: `Model ${modelName} not found`,
                     details: data
                 });
             }

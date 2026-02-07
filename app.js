@@ -932,69 +932,264 @@ async function previewJewelryPlacement() {
 
 async function generateSEO() {
     if (!state.processedImage && !state.originalImage) {
-        showToast('Please generate or upload an image first!', 'error');
+        showToast('Önce bir görsel yükleyin!', 'error');
         return;
     }
 
     const geminiKey = state.settings.geminiApiKey;
     if (!geminiKey && !isDemoMode) {
-        showToast('Please configure your Gemini API key or enable Demo Mode', 'error');
+        showToast('Gemini API key gerekli veya Demo Mode açın', 'error');
         openSettings();
         return;
     }
 
-    showLoader('Generating SEO content with AI...');
+    showLoader('SEO Pro+ oluşturuluyor... AI görsel analizi yapılıyor');
 
     try {
-        const category = state.selectedCategory || 'jewelry';
-        const style = stylePresets[state.selectedStyle]?.name || 'Studio';
+        // Kullanıcının girdiği ek özellikler
+        const productFeatures = document.getElementById('seoProductFeatures')?.value?.trim() || '';
+        const userInputSection = productFeatures
+            ? `\n\n===== KULLANICININ GİRDİĞİ ÜRÜN ÖZELLİKLERİ =====\n${productFeatures}\n\nBu özellikleri SEO içeriğinde MUTLAKA kullan ve vurgula!`
+            : '';
 
-        const prompt = `You are an expert e-commerce SEO specialist for jewelry products on Trendyol marketplace.
+        const seoPrompt = `SEN BİR TRENDYOL SEO UZMANSIN.
 
-Generate SEO-optimized content for a ${category} product in ${style} style.
+===== TRENDYOL ÜRÜN YAPISI =====
+1️⃣ BAŞLIK (99 karakter) → SADECE ARAMA KELİMELERİ
+2️⃣ AÇIKLAMA → Detaylı bilgi ve hikaye
+3️⃣ BARKOD → 8680 ile başlayan 13 haneli kod
+4️⃣ MODEL KODU → KLY-RG-001 formatında
 
-Provide the following in Turkish:
-1. TITLE: A compelling product title (max 100 chars) with key search terms
-2. DESCRIPTION: A detailed product description (150-300 words) highlighting features, materials, and benefits
-3. KEYWORDS: 10 relevant keywords separated by commas
-4. TAGS: 5 hashtags for social media
+===== BAŞLIK FORMÜLÜ =====
+[Cinsiyet] + [Malzeme] + [Ürün Tipi] + [Taş] + [Tasarım] + [Stil kelimeleri]
 
-Format your response as:
-TITLE: [title here]
-DESCRIPTION: [description here]
-KEYWORDS: [keywords here]
-TAGS: [tags here]`;
+===== GÖRSEL ANALİZ REHBERİ =====
+🎨 RENK: Metal rengi, taş renkleri, genel ton
+💎 TASARIM: Şekil/Motif, doku, stil
+📏 YAPI: Zincir tipi, pendant, boyut
+🔍 MALZEME TAHMİNİ: Görünüme göre
 
-        const response = await callGeminiAPI(prompt, geminiKey);
+${userInputSection}
 
-        // Yaniti parse et
-        const titleMatch = response.match(/TITLE:\s*(.+?)(?=DESCRIPTION:|$)/s);
-        const descMatch = response.match(/DESCRIPTION:\s*(.+?)(?=KEYWORDS:|$)/s);
-        const keywordsMatch = response.match(/KEYWORDS:\s*(.+?)(?=TAGS:|$)/s);
-        const tagsMatch = response.match(/TAGS:\s*(.+?)$/s);
+===== JSON ÇIKTISI =====
+{
+    "visualAnalysis": {
+        "productType": "Kolye/Yüzük/Bileklik/Küpe/Set",
+        "metalColor": "Altın/Gümüş/Rose Gold/Antik",
+        "stoneType": "Zirkon/İnci/Doğal Taş/Yok",
+        "stoneColor": "Şeffaf/Mavi/Yeşil/Siyah vb.",
+        "designMotif": "Çiçek/Kalp/Yaprak/Geometrik vb.",
+        "style": "Minimal/Bohem/Vintage/Statement",
+        "chainType": "İnce zincir/Boncuklu/Örgü vb."
+    },
+    "barcode": "8680XXXXXXXXX",
+    "modelCode": "KLY-RG-001",
+    "title": "99 karakterlik SEO başlık",
+    "altTitles": ["3 alternatif başlık"],
+    "category": "Takı > Alt Kategori",
+    "description": "Teknik açıklama",
+    "storyDescription": "Duygusal hikaye açıklaması",
+    "keywords": ["15 anahtar kelime"],
+    "longTail": ["5 uzun kuyruk arama"],
+    "hashtags": "#trendyol #kolye #takı"
+}
 
-        state.seo.title = titleMatch ? titleMatch[1].trim() : '';
-        state.seo.description = descMatch ? descMatch[1].trim() : '';
-        state.seo.keywords = keywordsMatch ? keywordsMatch[1].trim() : '';
-        state.seo.tags = tagsMatch ? tagsMatch[1].trim() : '';
+MODEL KODU: KLY (Kolye), YZK (Yüzük), BLK (Bileklik), KPE (Küpe), SET, HLH (Halhal)
+RENK: RG (Rose Gold), GMS (Gümüş), ALT (Altın), ANT (Antik)
 
-        // UI'yi guncelle
-        document.getElementById('seoTitle').textContent = state.seo.title;
-        document.getElementById('seoDescription').textContent = state.seo.description;
-        document.getElementById('seoKeywords').textContent = state.seo.keywords;
-        document.getElementById('seoTags').textContent = state.seo.tags;
+SADECE JSON döndür!`;
 
-        // SEO panelini goster
-        const seoPanel = document.getElementById('seoPanel');
-        if (seoPanel) seoPanel.style.display = 'block';
+        let seoData;
+        const imageBase64 = state.processedImage || state.originalImage;
+
+        if (isDemoMode) {
+            // Demo modunda proxy kullan
+            const result = await callGeminiAPIProxy({
+                prompt: seoPrompt,
+                model: 'gemini-2.0-flash',
+                image: imageBase64 ? imageBase64.split(',')[1] : null
+            });
+
+            const text = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            seoData = parseSEOJson(text);
+        } else {
+            // Görsel analiz için Gemini Vision API kullan
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`;
+
+            const requestBody = {
+                contents: [{
+                    parts: [
+                        { text: seoPrompt },
+                        ...(imageBase64 ? [{
+                            inlineData: {
+                                mimeType: 'image/jpeg',
+                                data: imageBase64.split(',')[1]
+                            }
+                        }] : [])
+                    ]
+                }],
+                generationConfig: { temperature: 0.3 }
+            };
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) throw new Error('SEO oluşturulamadı');
+
+            const data = await response.json();
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            seoData = parseSEOJson(text);
+        }
+
+        if (!seoData) {
+            throw new Error('SEO verisi parse edilemedi');
+        }
+
+        // State'e kaydet
+        state.seo = seoData;
+
+        // === UI GÜNCELLE ===
+        updateSEOUI(seoData);
+
+        // SEO sonuçlarını göster
+        const seoResults = document.getElementById('seoResults');
+        if (seoResults) seoResults.classList.remove('hidden');
 
         hideLoader();
-        showToast('SEO content generated successfully!', 'success');
+        showToast('SEO Pro+ başarıyla oluşturuldu!', 'success');
 
     } catch (error) {
         console.error('SEO generation error:', error);
         hideLoader();
-        showToast('Error generating SEO content: ' + error.message, 'error');
+        showToast('SEO hatası: ' + error.message, 'error');
+    }
+}
+
+// JSON parse helper
+function parseSEOJson(text) {
+    try {
+        let jsonStr = text;
+        // Markdown code block varsa çıkar
+        const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (codeBlockMatch) {
+            jsonStr = codeBlockMatch[1].trim();
+        }
+        const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            return JSON.parse(jsonMatch[0]);
+        }
+    } catch (e) {
+        console.error('JSON parse error:', e);
+    }
+    return null;
+}
+
+// SEO UI güncelleme
+function updateSEOUI(seoData) {
+    // 1. Görsel Analiz Sonuçları
+    const vaContainer = document.getElementById('visualAnalysisContent');
+    if (vaContainer && seoData.visualAnalysis) {
+        vaContainer.innerHTML = '';
+        const va = seoData.visualAnalysis;
+        const analysisLabels = {
+            productType: '📦 Ürün Tipi',
+            metalColor: '🎨 Metal Rengi',
+            stoneType: '💎 Taş Tipi',
+            stoneColor: '🔮 Taş Rengi',
+            designMotif: '✨ Tasarım',
+            style: '🏷️ Stil',
+            chainType: '⛓️ Zincir'
+        };
+        Object.entries(va).forEach(([key, value]) => {
+            if (value && value !== 'Yok' && value !== '-') {
+                const div = document.createElement('div');
+                div.className = 'bg-purple-500/10 rounded px-2 py-1';
+                div.innerHTML = `<span class="text-purple-300">${analysisLabels[key] || key}:</span> <span class="text-white">${value}</span>`;
+                vaContainer.appendChild(div);
+            }
+        });
+    }
+
+    // 2. Barkod ve Model Kodu
+    const barcodeEl = document.getElementById('seoBarcode');
+    const modelCodeEl = document.getElementById('seoModelCode');
+    if (barcodeEl) barcodeEl.value = seoData.barcode || '';
+    if (modelCodeEl) modelCodeEl.value = seoData.modelCode || '';
+
+    // 3. Ana Başlık
+    const titleEl = document.getElementById('seoTitle');
+    if (titleEl) {
+        titleEl.value = seoData.title || '';
+        updateCharCount('title');
+    }
+
+    // 4. Alternatif Başlıklar
+    const altTitlesContainer = document.getElementById('altTitles');
+    if (altTitlesContainer && seoData.altTitles) {
+        altTitlesContainer.innerHTML = '';
+        seoData.altTitles.forEach((title, idx) => {
+            const div = document.createElement('div');
+            div.className = 'flex items-center gap-2 bg-slate-800/50 rounded-lg px-3 py-2';
+            div.innerHTML = `
+                <span class="text-slate-500 text-xs">${idx + 1}.</span>
+                <span class="flex-1 text-xs">${title}</span>
+                <button onclick="copyText('${title.replace(/'/g, "\\'")}')" class="text-emerald-400 hover:text-emerald-300">
+                    <i class="fa-solid fa-copy text-xs"></i>
+                </button>
+            `;
+            altTitlesContainer.appendChild(div);
+        });
+    }
+
+    // 5. Kategori
+    const categoryEl = document.getElementById('seoCategory');
+    if (categoryEl) categoryEl.value = seoData.category || '';
+
+    // 6. Teknik Açıklama
+    const descEl = document.getElementById('seoDescription');
+    if (descEl) {
+        descEl.value = seoData.description || '';
+        updateCharCount('desc');
+    }
+
+    // 7. Hikayeleştirilmiş Açıklama
+    const storyEl = document.getElementById('seoStoryDescription');
+    if (storyEl) storyEl.textContent = seoData.storyDescription || '';
+
+    // 8. Anahtar Kelimeler (tag olarak)
+    const keywordsContainer = document.getElementById('seoKeywords');
+    if (keywordsContainer && seoData.keywords) {
+        keywordsContainer.innerHTML = '';
+        const keywords = Array.isArray(seoData.keywords) ? seoData.keywords : seoData.keywords.split(',');
+        keywords.forEach(keyword => {
+            const span = document.createElement('span');
+            span.className = 'px-2 py-1 bg-emerald-600/20 text-emerald-400 rounded text-xs cursor-pointer hover:bg-emerald-600/40';
+            span.textContent = keyword.trim();
+            span.onclick = () => copyText(keyword.trim());
+            keywordsContainer.appendChild(span);
+        });
+    }
+
+    // 9. Long-tail Keywords
+    const longTailContainer = document.getElementById('seoLongTail');
+    if (longTailContainer && seoData.longTail) {
+        longTailContainer.innerHTML = '';
+        seoData.longTail.forEach(term => {
+            const span = document.createElement('span');
+            span.className = 'px-2 py-1 bg-blue-600/20 text-blue-400 rounded text-xs cursor-pointer hover:bg-blue-600/40';
+            span.textContent = term;
+            span.onclick = () => copyText(term);
+            longTailContainer.appendChild(span);
+        });
+    }
+
+    // 10. Hashtags
+    const hashtagsEl = document.getElementById('seoHashtags');
+    if (hashtagsEl) {
+        hashtagsEl.textContent = seoData.hashtags || '';
     }
 }
 
@@ -1157,33 +1352,103 @@ function downloadImage() {
 // 13. SEO FONKSIYONLARI
 // ============================================
 
-function updateCharCount(inputId, counterId, maxChars) {
-    const input = document.getElementById(inputId);
-    const counter = document.getElementById(counterId);
-
-    if (input && counter) {
-        const length = input.value.length;
-        counter.textContent = `${length}/${maxChars}`;
-        counter.style.color = length > maxChars ? '#ff4444' : '#888';
+function updateCharCount(type) {
+    if (type === 'title') {
+        const input = document.getElementById('seoTitle');
+        const counter = document.getElementById('titleCharCount');
+        if (input && counter) {
+            const length = input.value.length;
+            counter.textContent = `${length}/99`;
+            counter.style.color = length > 99 ? '#ff4444' : length > 90 ? '#ffaa00' : '#10b981';
+        }
+    } else if (type === 'desc') {
+        const input = document.getElementById('seoDescription');
+        const counter = document.getElementById('descCharCount');
+        if (input && counter) {
+            const length = input.value.length;
+            counter.textContent = `${length}/500`;
+            counter.style.color = length > 500 ? '#ff4444' : length > 450 ? '#ffaa00' : '#10b981';
+        }
     }
 }
 
 function copyText(text) {
     navigator.clipboard.writeText(text).then(() => {
-        showToast('Copied to clipboard!', 'success');
+        showToast('Kopyalandı!', 'success');
     }).catch(err => {
         console.error('Copy failed:', err);
-        showToast('Failed to copy', 'error');
+        showToast('Kopyalama başarısız', 'error');
     });
 }
 
 function copySEO(field) {
-    const text = state.seo[field] || '';
-    copyText(text);
+    let text = '';
+
+    switch (field) {
+        case 'barcode':
+            text = document.getElementById('seoBarcode')?.value || '';
+            break;
+        case 'modelCode':
+            text = document.getElementById('seoModelCode')?.value || '';
+            break;
+        case 'title':
+            text = document.getElementById('seoTitle')?.value || '';
+            break;
+        case 'category':
+            text = document.getElementById('seoCategory')?.value || '';
+            break;
+        case 'description':
+            text = document.getElementById('seoDescription')?.value || '';
+            break;
+        case 'story':
+            text = document.getElementById('seoStoryDescription')?.textContent || '';
+            break;
+        case 'hashtags':
+            text = document.getElementById('seoHashtags')?.textContent || '';
+            break;
+        default:
+            text = state.seo[field] || '';
+    }
+
+    if (text) {
+        copyText(text);
+    } else {
+        showToast('Kopyalanacak içerik yok', 'warning');
+    }
 }
 
 function copyAllSEO() {
-    const allSEO = `Title: ${state.seo.title}\n\nDescription: ${state.seo.description}\n\nKeywords: ${state.seo.keywords}\n\nTags: ${state.seo.tags}`;
+    const seo = state.seo || {};
+    const barcode = document.getElementById('seoBarcode')?.value || seo.barcode || '';
+    const modelCode = document.getElementById('seoModelCode')?.value || seo.modelCode || '';
+    const title = document.getElementById('seoTitle')?.value || seo.title || '';
+    const category = document.getElementById('seoCategory')?.value || seo.category || '';
+    const description = document.getElementById('seoDescription')?.value || seo.description || '';
+    const story = document.getElementById('seoStoryDescription')?.textContent || seo.storyDescription || '';
+    const keywords = Array.isArray(seo.keywords) ? seo.keywords.join(', ') : (seo.keywords || '');
+    const hashtags = document.getElementById('seoHashtags')?.textContent || seo.hashtags || '';
+
+    const allSEO = `📦 BARKOD: ${barcode}
+🏷️ MODEL KODU: ${modelCode}
+
+📝 BAŞLIK:
+${title}
+
+📁 KATEGORİ:
+${category}
+
+📋 TEKNİK AÇIKLAMA:
+${description}
+
+💝 HİKAYE AÇIKLAMA:
+${story}
+
+🔑 ANAHTAR KELİMELER:
+${keywords}
+
+#️⃣ HASHTAGS:
+${hashtags}`;
+
     copyText(allSEO);
 }
 
