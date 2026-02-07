@@ -3677,7 +3677,10 @@ AI DOES NOT:
 □ Asymmetry preserved (if present)
 □ Center bead position maintained
 
-${style.prompt}
+=== SCENARIO SETTINGS (User Selected) ===
+Model Type: ${profile?.info || 'Kolye Modeli'}
+Model Description: ${profile?.desc || ''}
+Style: ${style?.prompt || 'Studio lighting'}
 ${outfitSceneInstructions}`;
 
             console.log('🔄 Flux Kontext çalışıyor...');
@@ -4057,6 +4060,11 @@ ${outfitSceneInstructions}`;
             try {
                 console.log('🎨 Flux Fill Inpainting başlatılıyor...');
 
+                // Senaryo ayarlarını al
+                const profile = modelProfiles[state.settings.modelProfile] || modelProfiles['neck_model'];
+                const style = stylePresets[state.settings.style] || stylePresets['studio'];
+                const pose = posePresets[state.settings.pose];
+
                 // ADIM 1: Önce canvas ile geçici composite oluştur (pozisyon belirleme)
                 const tempComposite = await createCanvasComposite(jewelryBase64, modelBase64, jewelryAnalysis);
 
@@ -4070,7 +4078,16 @@ ${outfitSceneInstructions}`;
                 console.log('🔄 Flux Fill çalışıyor...');
                 showLoader('Flux Fill...', 'Takı boyuna monte ediliyor');
 
+                // Senaryo bazlı prompt oluştur
+                const scenarioInstructions = `
+SCENARIO SETTINGS:
+- Model Type: ${profile.info || 'Kolye Modeli'}
+- Style: ${style.prompt || 'Studio lighting'}
+- Pose: ${pose?.prompt || 'Front facing'}
+`;
+
                 const fillPrompt = `Seamlessly blend and integrate the jewelry onto the model's neck.
+${scenarioInstructions}
 
 CRITICAL PRESERVATION RULES:
 - The jewelry pixels are ALREADY in the image from BiRefNet extraction
@@ -4229,6 +4246,7 @@ OUTPUT: Same jewelry, but with professional edge blending as if photographed in 
         }
 
         // BiRefNet çıktısını Flux Fill sonucunun üzerine yapıştır (BEAD SEQUENCE LOCK)
+        // ÖNEMLİ: Takı TAM BOYUTUYLA overlay edilir - AI değişikliği tamamen override edilir
         async function overlayOriginalJewelry(blendedBase64, jewelryBase64, bounds) {
             return new Promise((resolve, reject) => {
                 const canvas = document.createElement('canvas');
@@ -4244,19 +4262,13 @@ OUTPUT: Same jewelry, but with professional edge blending as if photographed in 
                     canvas.width = blendedImg.width;
                     canvas.height = blendedImg.height;
 
-                    // 1. Flux Fill sonucunu çiz (blend edilmiş kenarlar)
+                    // 1. Flux Fill sonucunu çiz (sadece arka plan/model kısmı kullanılacak)
                     ctx.drawImage(blendedImg, 0, 0);
 
-                    // 2. Orijinal BiRefNet takısını TAM ÜSTÜNE yapıştır
-                    // Bu sayede AI ne yapmış olursa olsun, takı orijinal kalır
-                    // Hafif içe çekerek sadece kenarları Flux'tan al
-                    const shrinkFactor = 0.96; // %4 küçült - kenarlar Flux'tan
-                    const shrunkWidth = bounds.width * shrinkFactor;
-                    const shrunkHeight = bounds.height * shrinkFactor;
-                    const shrunkX = bounds.x + (bounds.width - shrunkWidth) / 2;
-                    const shrunkY = bounds.y + (bounds.height - shrunkHeight) / 2;
-
-                    ctx.drawImage(jewelryImg, shrunkX, shrunkY, shrunkWidth, shrunkHeight);
+                    // 2. Orijinal BiRefNet takısını TAM BOYUTUYLA üzerine yapıştır
+                    // BEAD SEQUENCE LOCK: Shrink YOK - takı pikselleri %100 korunur
+                    // AI ne yapmış olursa olsun, orijinal takı tamamen üzerine yazılır
+                    ctx.drawImage(jewelryImg, bounds.x, bounds.y, bounds.width, bounds.height);
 
                     resolve(canvas.toDataURL('image/jpeg', 0.95));
                 };
