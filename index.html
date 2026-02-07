@@ -3067,83 +3067,18 @@ The jewelry must remain EXACTLY as provided - do not modify the jewelry in any w
             // Takıyı base64'e çevir
             const jewelryBase64 = await fetchImageAsBase64(transparentJewelryUrl);
 
-            // ========== ŞABLON MODU: Canvas Composite (Hallucination YOK) ==========
+            // ========== ŞABLON MODU: Pure Canvas Composite (%100 Bead Sequence Lock) ==========
             // BiRefNet çıktısı aynen kullanılıyor - AI ürüne DOKUNMUYOR
-            // Şablon modunda kullanıcı pozisyonu manuel ayarladığı için Canvas Composite kullanılıyor
+            // ⚠️ FLUX FILL DEVRE DIŞI: AI takıyı değiştiriyor, güvenilir değil
             if (state.templateBase64) {
-                console.log('📐 ŞABLON MODU: Canvas composite başlatılıyor...');
-                showLoader('Şablon Modu...', '2/3 Takı yerleştiriliyor');
+                console.log('📐 ŞABLON MODU: Pure Canvas Composite (AI yok, %100 güvenli)');
+                showLoader('Şablon Modu...', '2/2 Takı yerleştiriliyor');
 
-                // Canvas ile takıyı şablona yerleştir (kullanıcı pozisyonu kontrol ediyor)
-                const tempComposite = await compositeJewelryOnTemplate(jewelryBase64, state.templateBase64);
+                // Canvas ile takıyı şablona yerleştir - BiRefNet pikselleri %100 korunur
+                const compositeResult = await compositeJewelryOnTemplate(jewelryBase64, state.templateBase64);
 
-                // Flux Fill ile edge blend (opsiyonel iyileştirme)
-                const falKey = localStorage.getItem('fal_api_key');
-                if (falKey && !isDemoMode) {
-                    try {
-                        console.log('🎨 Şablon: Flux Fill edge blend...');
-                        showLoader('Şablon Modu...', '3/3 Kenar blend ediliyor');
-
-                        // Pozisyon bilgisinden bounds hesapla
-                        const pos = state.position;
-                        const templateImg = new Image();
-                        await new Promise((resolve) => {
-                            templateImg.onload = resolve;
-                            templateImg.src = state.templateBase64;
-                        });
-                        const jewelryImg = new Image();
-                        await new Promise((resolve) => {
-                            jewelryImg.onload = resolve;
-                            jewelryImg.src = jewelryBase64;
-                        });
-
-                        const jewelryWidth = templateImg.width * (pos.scale / 100);
-                        const jewelryHeight = (jewelryImg.height / jewelryImg.width) * jewelryWidth;
-                        const x = (templateImg.width * (pos.x / 100)) - (jewelryWidth / 2);
-                        const y = (templateImg.height * (pos.y / 100)) - (jewelryHeight / 2);
-
-                        const bounds = {
-                            x, y,
-                            width: jewelryWidth,
-                            height: jewelryHeight,
-                            canvasWidth: templateImg.width,
-                            canvasHeight: templateImg.height
-                        };
-
-                        // Edge mask oluştur
-                        const edgeMask = await createNeckAreaMask(state.templateBase64, bounds);
-
-                        // Flux Fill ile edge blend
-                        const fillData = await callFalAPI('fal-ai/flux-pro/v1/fill', {
-                            image_url: tempComposite,
-                            mask_url: edgeMask,
-                            prompt: 'Seamlessly blend jewelry edges with skin. Natural shadow, realistic light interaction. Preserve all jewelry details.',
-                            num_inference_steps: 28,
-                            guidance_scale: 3.0,
-                            output_format: "jpeg"
-                        }, falKey);
-
-                        if (fillData.images?.[0]?.url) {
-                            const imgResponse = await fetch(fillData.images[0].url);
-                            const imgBlob = await imgResponse.blob();
-                            const blendedResult = await new Promise(resolve => {
-                                const reader = new FileReader();
-                                reader.onload = () => resolve(reader.result);
-                                reader.readAsDataURL(imgBlob);
-                            });
-
-                            // BiRefNet çıktısını tekrar overlay et (BEAD SEQUENCE LOCK)
-                            const finalResult = await overlayOriginalJewelry(blendedResult, jewelryBase64, bounds);
-                            console.log('✅ Şablon modu tamamlandı (Flux Fill Edge Blend)!');
-                            return finalResult;
-                        }
-                    } catch (error) {
-                        console.warn('⚠️ Flux Fill edge blend başarısız, canvas composite kullanılıyor');
-                    }
-                }
-
-                console.log('✅ Şablon modu tamamlandı (Canvas Composite)!');
-                return tempComposite;
+                console.log('✅ Şablon modu tamamlandı (Pure Canvas - Bead Sequence Lock)!');
+                return compositeResult;
             }
 
             // ========== ŞABLON YOK: Yeni Güvenli Mod ==========
@@ -4042,107 +3977,22 @@ ${outfitSceneInstructions}`;
             });
         }
 
-        // ========== FLUX FILL INPAINTING - BiRefNet REFERANSLI MONTAJ ==========
-        // Canvas composite yerine Flux Fill ile profesyonel yerleştirme
-        // BiRefNet çıktısı referans alınarak takı boyuna monte edilir
+        // ========== PURE CANVAS COMPOSITE - %100 BEAD SEQUENCE LOCK ==========
+        // ⚠️ FLUX FILL DEVRE DIŞI: AI modelleri takıyı değiştiriyor, GÜVENİLİR DEĞİL
+        // Bunun yerine sadece Canvas Composite kullanılıyor - BiRefNet pikselleri %100 korunur
         //
-        // BEAD SEQUENCE LOCK GARANTİSİ:
-        // - Takı merkezi Flux Fill sonrası tekrar yapıştırılır (BiRefNet pikselleri)
-        // - Sadece kenarlar AI tarafından blend edilir
-        // - Soldan sağa boncuk sırası değişmez
+        // NEDEN AI KULLANILMIYOR:
+        // - Flux Fill, Kontext, vb. modeller obje detaylarını koruyamıyor
+        // - Prompt'ta "koru" demek işe yaramıyor - model pixel-level anlamıyor
+        // - Test sonucu: Boncuk sırası, renkleri, sayısı değişiyor
+        //
+        // CANVAS COMPOSITE GARANTİSİ:
+        // - BiRefNet çıktısı piksel-piksel korunur
+        // - Soldan sağa boncuk sırası KESİNLİKLE değişmez
+        // - AI müdahalesi SIFIR
         async function fluxFillComposite(jewelryBase64, modelBase64, jewelryAnalysis) {
-            const falKey = localStorage.getItem('fal_api_key');
-            if (!falKey && !isDemoMode) {
-                console.warn('⚠️ Fal.ai key yok, canvas composite kullanılıyor');
-                return await createCanvasComposite(jewelryBase64, modelBase64, jewelryAnalysis);
-            }
-
-            try {
-                console.log('🎨 Flux Fill Inpainting başlatılıyor...');
-
-                // Senaryo ayarlarını al
-                const profile = modelProfiles[state.settings.modelProfile] || modelProfiles['neck_model'];
-                const style = stylePresets[state.settings.style] || stylePresets['studio'];
-                const pose = posePresets[state.settings.pose];
-
-                // ADIM 1: Önce canvas ile geçici composite oluştur (pozisyon belirleme)
-                const tempComposite = await createCanvasComposite(jewelryBase64, modelBase64, jewelryAnalysis);
-
-                // ADIM 2: Takı boyutu ve pozisyonunu hesapla
-                const jewelryBounds = await calculateJewelryBounds(jewelryBase64, modelBase64, jewelryAnalysis);
-
-                // ADIM 3: Boyun bölgesi mask oluştur (takının yerleştirileceği alan)
-                const neckMask = await createNeckAreaMask(modelBase64, jewelryBounds);
-
-                // ADIM 4: Flux Fill ile boyun bölgesine takıyı entegre et
-                console.log('🔄 Flux Fill çalışıyor...');
-                showLoader('Flux Fill...', 'Takı boyuna monte ediliyor');
-
-                // Senaryo bazlı prompt oluştur
-                const scenarioInstructions = `
-SCENARIO SETTINGS:
-- Model Type: ${profile.info || 'Kolye Modeli'}
-- Style: ${style.prompt || 'Studio lighting'}
-- Pose: ${pose?.prompt || 'Front facing'}
-`;
-
-                const fillPrompt = `Seamlessly blend and integrate the jewelry onto the model's neck.
-${scenarioInstructions}
-
-CRITICAL PRESERVATION RULES:
-- The jewelry pixels are ALREADY in the image from BiRefNet extraction
-- DO NOT regenerate or modify the jewelry itself
-- ONLY blend the EDGES where jewelry meets skin
-- Create natural shadow underneath the jewelry
-- Make the transition between jewelry and skin photorealistic
-- The jewelry must look naturally worn, not pasted
-
-EDGE BLENDING ONLY:
-- Smooth the hard edges between jewelry and skin
-- Add subtle skin texture around jewelry edges
-- Create realistic light interaction at boundaries
-- Preserve ALL jewelry details - every bead, every metal part
-
-OUTPUT: Same jewelry, but with professional edge blending as if photographed in studio.`;
-
-                const fillData = await callFalAPI('fal-ai/flux-pro/v1/fill', {
-                    image_url: tempComposite,
-                    mask_url: neckMask,
-                    prompt: fillPrompt,
-                    num_inference_steps: 28,
-                    guidance_scale: 3.0,
-                    output_format: "jpeg"
-                }, falKey);
-
-                let blendedResult = null;
-                if (fillData.images?.[0]?.url) {
-                    const imgResponse = await fetch(fillData.images[0].url);
-                    const imgBlob = await imgResponse.blob();
-                    blendedResult = await new Promise(resolve => {
-                        const reader = new FileReader();
-                        reader.onload = () => resolve(reader.result);
-                        reader.readAsDataURL(imgBlob);
-                    });
-                }
-
-                if (!blendedResult) {
-                    console.warn('⚠️ Flux Fill başarısız, canvas composite kullanılıyor');
-                    return tempComposite;
-                }
-
-                // ADIM 5: BEAD SEQUENCE LOCK - BiRefNet çıktısını tekrar üzerine yapıştır
-                // Bu sayede AI takıyı değiştirmiş olsa bile orijinal korunur
-                console.log('🔒 Bead Sequence Lock uygulanıyor...');
-                const finalResult = await overlayOriginalJewelry(blendedResult, jewelryBase64, jewelryBounds);
-
-                console.log('✅ Flux Fill Composite tamamlandı!');
-                return finalResult;
-
-            } catch (error) {
-                console.error('❌ Flux Fill hatası:', error);
-                console.warn('⚠️ Canvas composite fallback kullanılıyor');
-                return await createCanvasComposite(jewelryBase64, modelBase64, jewelryAnalysis);
-            }
+            console.log('🔒 BEAD SEQUENCE LOCK: Pure Canvas Composite (AI yok, %100 güvenli)');
+            return await createCanvasComposite(jewelryBase64, modelBase64, jewelryAnalysis);
         }
 
         // Takı boyutu ve pozisyonunu hesapla
