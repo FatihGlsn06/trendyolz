@@ -3429,22 +3429,33 @@ Empty surface ready for product placement.`;
             const outfitSceneInstructions = getOutfitScenePrompt();
             const smartPromptInstructions = getSmartPromptInstructions();
 
-            // Flux Kontext prompt - ürünü koru, çevreyi değiştir
-            const kontextPrompt = `Transform this jewelry product photo into a professional e-commerce image.
-Place this EXACT necklace on a professional fashion model.
-${profile.desc}
-Model wearing elegant dark V-neck clothing.
-${outfitSceneInstructions}
-${smartPromptInstructions || ''}
-Professional studio lighting, soft shadows, gray background.
-Headless crop showing neck and upper chest area.
-${style.prompt}
+            // Flux Kontext prompt - Tiffany tarzı, ürün odaklı, e-ticaret uygun
+            const kontextPrompt = `Transform this jewelry into a premium Tiffany-style e-commerce product shot.
 
-CRITICAL RULES:
-- Keep the necklace EXACTLY as it appears - same colors, same beads, same design
-- Do NOT modify, redraw, or change the jewelry in any way
-- Only change the background/surroundings to show it on a model
-- The jewelry must remain pixel-perfect identical to the original`;
+JEWELRY PRESERVATION (CRITICAL):
+- Keep this EXACT jewelry piece - identical colors, beads, stones, design
+- Do NOT modify, redraw, or alter the jewelry in ANY way
+- The jewelry must remain pixel-perfect identical
+
+ANONYMOUS MODEL:
+- HEADLESS: Crop from chin/jawline down, NO face visible
+- Model identity completely anonymous
+- Clean, elegant neck and collarbone area
+
+CONSERVATIVE E-COMMERCE STYLE:
+- NO cleavage, NO low-cut, NO revealing clothing
+- High neckline or modest round neck
+- Simple dark clothing (black or charcoal)
+- Family-friendly, professional
+
+TIFFANY AESTHETIC:
+- Minimalist luxury studio look
+- Soft professional lighting
+- Clean neutral gray background
+- Jewelry is the ONLY focus
+${smartPromptInstructions || ''}
+${outfitSceneInstructions}
+${style.prompt}`;
 
             console.log('🔄 Flux Kontext çalışıyor...');
 
