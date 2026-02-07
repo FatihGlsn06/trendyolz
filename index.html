@@ -3013,14 +3013,81 @@ The jewelry must remain EXACTLY as provided - do not modify the jewelry in any w
 
             // ========== ŞABLON MODU: Canvas Composite (Hallucination YOK) ==========
             // BiRefNet çıktısı aynen kullanılıyor - AI ürüne DOKUNMUYOR
+            // Şablon modunda kullanıcı pozisyonu manuel ayarladığı için Canvas Composite kullanılıyor
             if (state.templateBase64) {
                 console.log('📐 ŞABLON MODU: Canvas composite başlatılıyor...');
-                showLoader('Şablon Modu...', '2/2 Takı yerleştiriliyor');
+                showLoader('Şablon Modu...', '2/3 Takı yerleştiriliyor');
 
-                // Canvas ile takıyı şablona yerleştir (client-side, AI yok)
-                const compositeResult = await compositeJewelryOnTemplate(jewelryBase64, state.templateBase64);
-                console.log('✅ Şablon modu tamamlandı (Canvas Composite - Halüsinasyon Yok)!');
-                return compositeResult;
+                // Canvas ile takıyı şablona yerleştir (kullanıcı pozisyonu kontrol ediyor)
+                const tempComposite = await compositeJewelryOnTemplate(jewelryBase64, state.templateBase64);
+
+                // Flux Fill ile edge blend (opsiyonel iyileştirme)
+                const falKey = localStorage.getItem('fal_api_key');
+                if (falKey && !isDemoMode) {
+                    try {
+                        console.log('🎨 Şablon: Flux Fill edge blend...');
+                        showLoader('Şablon Modu...', '3/3 Kenar blend ediliyor');
+
+                        // Pozisyon bilgisinden bounds hesapla
+                        const pos = state.position;
+                        const templateImg = new Image();
+                        await new Promise((resolve) => {
+                            templateImg.onload = resolve;
+                            templateImg.src = state.templateBase64;
+                        });
+                        const jewelryImg = new Image();
+                        await new Promise((resolve) => {
+                            jewelryImg.onload = resolve;
+                            jewelryImg.src = jewelryBase64;
+                        });
+
+                        const jewelryWidth = templateImg.width * (pos.scale / 100);
+                        const jewelryHeight = (jewelryImg.height / jewelryImg.width) * jewelryWidth;
+                        const x = (templateImg.width * (pos.x / 100)) - (jewelryWidth / 2);
+                        const y = (templateImg.height * (pos.y / 100)) - (jewelryHeight / 2);
+
+                        const bounds = {
+                            x, y,
+                            width: jewelryWidth,
+                            height: jewelryHeight,
+                            canvasWidth: templateImg.width,
+                            canvasHeight: templateImg.height
+                        };
+
+                        // Edge mask oluştur
+                        const edgeMask = await createNeckAreaMask(state.templateBase64, bounds);
+
+                        // Flux Fill ile edge blend
+                        const fillData = await callFalAPI('fal-ai/flux-pro/v1/fill', {
+                            image_url: tempComposite,
+                            mask_url: edgeMask,
+                            prompt: 'Seamlessly blend jewelry edges with skin. Natural shadow, realistic light interaction. Preserve all jewelry details.',
+                            num_inference_steps: 28,
+                            guidance_scale: 3.0,
+                            output_format: "jpeg"
+                        }, falKey);
+
+                        if (fillData.images?.[0]?.url) {
+                            const imgResponse = await fetch(fillData.images[0].url);
+                            const imgBlob = await imgResponse.blob();
+                            const blendedResult = await new Promise(resolve => {
+                                const reader = new FileReader();
+                                reader.onload = () => resolve(reader.result);
+                                reader.readAsDataURL(imgBlob);
+                            });
+
+                            // BiRefNet çıktısını tekrar overlay et (BEAD SEQUENCE LOCK)
+                            const finalResult = await overlayOriginalJewelry(blendedResult, jewelryBase64, bounds);
+                            console.log('✅ Şablon modu tamamlandı (Flux Fill Edge Blend)!');
+                            return finalResult;
+                        }
+                    } catch (error) {
+                        console.warn('⚠️ Flux Fill edge blend başarısız, canvas composite kullanılıyor');
+                    }
+                }
+
+                console.log('✅ Şablon modu tamamlandı (Canvas Composite)!');
+                return tempComposite;
             }
 
             // ========== ŞABLON YOK: Yeni Güvenli Mod ==========
@@ -3112,10 +3179,10 @@ OUTPUT: Professional model photo with COMPLETELY BARE neck, ready for jewelry ov
             modelImageBase64 = await studioEnhance(modelImageBase64);
             console.log('✅ Model enhance tamamlandı');
 
-            // ADIM 2b: Canvas Composite ile orijinal takıyı model üzerine yerleştir
-            // ⚠️ HALÜSİNASYON KORUMASI: AI takıyı yeniden çizmiyor, orijinal BiRefNet çıktısı kullanılıyor!
-            console.log('💎 ADIM 2b: Canvas composite ile takı yerleştiriliyor (halüsinasyon yok)...');
-            showLoader('Düz Zemin Modu...', '4/4 Takı yerleştiriliyor');
+            // ADIM 2b: Flux Fill ile orijinal takıyı model üzerine profesyonelce yerleştir
+            // ⚠️ BEAD SEQUENCE LOCK: BiRefNet çıktısı korunuyor, sadece kenarlar blend ediliyor
+            console.log('💎 ADIM 2b: Flux Fill ile takı monte ediliyor...');
+            showLoader('Düz Zemin Modu...', '4/4 Takı monte ediliyor (Flux Fill)');
 
             // Otomatik tespit edilen özellikleri kullan
             const jewelryAnalysis = state.detectedProperties || {
@@ -3123,10 +3190,11 @@ OUTPUT: Professional model photo with COMPLETELY BARE neck, ready for jewelry ov
                 size: state.settings.jewelrySize
             };
 
-            // Canvas composite - orijinal BiRefNet çıktısını model üzerine yerleştir
-            const compositeResult = await createCanvasComposite(jewelryBase64, modelImageBase64, jewelryAnalysis);
+            // Flux Fill inpainting - BiRefNet çıktısını profesyonelce monte et
+            // Canvas fallback otomatik çalışır (API hatası durumunda)
+            const compositeResult = await fluxFillComposite(jewelryBase64, modelImageBase64, jewelryAnalysis);
 
-            console.log('✅ Flatlay modu tamamlandı (Canvas Composite - Halüsinasyon Yok)!');
+            console.log('✅ Flatlay modu tamamlandı (Flux Fill Inpainting)!');
             return compositeResult;
 
             throw new Error('Görsel üretilemedi');
@@ -3911,6 +3979,238 @@ ${outfitSceneInstructions}`;
                 modelImg.onload = onLoad;
                 jewelryImg.onload = onLoad;
                 modelImg.src = modelBase64;
+                jewelryImg.src = jewelryBase64;
+            });
+        }
+
+        // ========== FLUX FILL INPAINTING - BiRefNet REFERANSLI MONTAJ ==========
+        // Canvas composite yerine Flux Fill ile profesyonel yerleştirme
+        // BiRefNet çıktısı referans alınarak takı boyuna monte edilir
+        //
+        // BEAD SEQUENCE LOCK GARANTİSİ:
+        // - Takı merkezi Flux Fill sonrası tekrar yapıştırılır (BiRefNet pikselleri)
+        // - Sadece kenarlar AI tarafından blend edilir
+        // - Soldan sağa boncuk sırası değişmez
+        async function fluxFillComposite(jewelryBase64, modelBase64, jewelryAnalysis) {
+            const falKey = localStorage.getItem('fal_api_key');
+            if (!falKey && !isDemoMode) {
+                console.warn('⚠️ Fal.ai key yok, canvas composite kullanılıyor');
+                return await createCanvasComposite(jewelryBase64, modelBase64, jewelryAnalysis);
+            }
+
+            try {
+                console.log('🎨 Flux Fill Inpainting başlatılıyor...');
+
+                // ADIM 1: Önce canvas ile geçici composite oluştur (pozisyon belirleme)
+                const tempComposite = await createCanvasComposite(jewelryBase64, modelBase64, jewelryAnalysis);
+
+                // ADIM 2: Takı boyutu ve pozisyonunu hesapla
+                const jewelryBounds = await calculateJewelryBounds(jewelryBase64, modelBase64, jewelryAnalysis);
+
+                // ADIM 3: Boyun bölgesi mask oluştur (takının yerleştirileceği alan)
+                const neckMask = await createNeckAreaMask(modelBase64, jewelryBounds);
+
+                // ADIM 4: Flux Fill ile boyun bölgesine takıyı entegre et
+                console.log('🔄 Flux Fill çalışıyor...');
+                showLoader('Flux Fill...', 'Takı boyuna monte ediliyor');
+
+                const fillPrompt = `Seamlessly blend and integrate the jewelry onto the model's neck.
+
+CRITICAL PRESERVATION RULES:
+- The jewelry pixels are ALREADY in the image from BiRefNet extraction
+- DO NOT regenerate or modify the jewelry itself
+- ONLY blend the EDGES where jewelry meets skin
+- Create natural shadow underneath the jewelry
+- Make the transition between jewelry and skin photorealistic
+- The jewelry must look naturally worn, not pasted
+
+EDGE BLENDING ONLY:
+- Smooth the hard edges between jewelry and skin
+- Add subtle skin texture around jewelry edges
+- Create realistic light interaction at boundaries
+- Preserve ALL jewelry details - every bead, every metal part
+
+OUTPUT: Same jewelry, but with professional edge blending as if photographed in studio.`;
+
+                const fillData = await callFalAPI('fal-ai/flux-pro/v1/fill', {
+                    image_url: tempComposite,
+                    mask_url: neckMask,
+                    prompt: fillPrompt,
+                    num_inference_steps: 28,
+                    guidance_scale: 3.0,
+                    output_format: "jpeg"
+                }, falKey);
+
+                let blendedResult = null;
+                if (fillData.images?.[0]?.url) {
+                    const imgResponse = await fetch(fillData.images[0].url);
+                    const imgBlob = await imgResponse.blob();
+                    blendedResult = await new Promise(resolve => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.readAsDataURL(imgBlob);
+                    });
+                }
+
+                if (!blendedResult) {
+                    console.warn('⚠️ Flux Fill başarısız, canvas composite kullanılıyor');
+                    return tempComposite;
+                }
+
+                // ADIM 5: BEAD SEQUENCE LOCK - BiRefNet çıktısını tekrar üzerine yapıştır
+                // Bu sayede AI takıyı değiştirmiş olsa bile orijinal korunur
+                console.log('🔒 Bead Sequence Lock uygulanıyor...');
+                const finalResult = await overlayOriginalJewelry(blendedResult, jewelryBase64, jewelryBounds);
+
+                console.log('✅ Flux Fill Composite tamamlandı!');
+                return finalResult;
+
+            } catch (error) {
+                console.error('❌ Flux Fill hatası:', error);
+                console.warn('⚠️ Canvas composite fallback kullanılıyor');
+                return await createCanvasComposite(jewelryBase64, modelBase64, jewelryAnalysis);
+            }
+        }
+
+        // Takı boyutu ve pozisyonunu hesapla
+        async function calculateJewelryBounds(jewelryBase64, modelBase64, jewelryAnalysis) {
+            return new Promise((resolve) => {
+                const modelImg = new Image();
+                const jewelryImg = new Image();
+                let loaded = 0;
+
+                const onLoad = () => {
+                    loaded++;
+                    if (loaded < 2) return;
+
+                    // Takı boyutu - uzunluğa göre ayarla
+                    const sizeMap = {
+                        'very_long': 0.65,
+                        'long': 0.55,
+                        'medium': 0.45,
+                        'short': 0.35,
+                        'choker': 0.30
+                    };
+                    let scale = sizeMap[jewelryAnalysis?.length] || 0.50;
+
+                    const jewelryAspectRatio = jewelryImg.width / jewelryImg.height;
+
+                    // Geniş takılar için scale ayarla
+                    if (jewelryAspectRatio > 1.2) {
+                        const maxWidthRatio = 0.85;
+                        const currentWidth = modelImg.width * scale;
+                        if (currentWidth > modelImg.width * maxWidthRatio) {
+                            scale = maxWidthRatio / jewelryAspectRatio;
+                        }
+                    }
+
+                    const targetWidth = modelImg.width * scale;
+                    const targetHeight = targetWidth / jewelryAspectRatio;
+                    const x = (modelImg.width - targetWidth) / 2;
+
+                    // Yükseklik bazlı pozisyon (üstten %18-25)
+                    const yRatio = jewelryAspectRatio > 1.5 ? 0.20 : 0.18;
+                    const y = modelImg.height * yRatio;
+
+                    resolve({
+                        x: x,
+                        y: y,
+                        width: targetWidth,
+                        height: targetHeight,
+                        canvasWidth: modelImg.width,
+                        canvasHeight: modelImg.height
+                    });
+                };
+
+                modelImg.onload = onLoad;
+                jewelryImg.onload = onLoad;
+                modelImg.src = modelBase64;
+                jewelryImg.src = jewelryBase64;
+            });
+        }
+
+        // Boyun bölgesi mask oluştur (inpaint edilecek alan)
+        // Beyaz = inpaint edilecek, Siyah = korunacak
+        async function createNeckAreaMask(modelBase64, bounds) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+
+                    // Tüm canvas siyah (korunacak)
+                    ctx.fillStyle = 'black';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    // Takı kenarları için feather mask (sadece kenarlar beyaz)
+                    // İç alan siyah kalacak (takı korunacak)
+                    const edgeWidth = Math.max(20, bounds.width * 0.08); // %8 kenar veya min 20px
+
+                    // Dış dikdörtgen (beyaz - blend edilecek)
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(
+                        bounds.x - edgeWidth,
+                        bounds.y - edgeWidth,
+                        bounds.width + edgeWidth * 2,
+                        bounds.height + edgeWidth * 2
+                    );
+
+                    // İç dikdörtgen (siyah - korunacak)
+                    ctx.fillStyle = 'black';
+                    ctx.fillRect(
+                        bounds.x + edgeWidth,
+                        bounds.y + edgeWidth,
+                        bounds.width - edgeWidth * 2,
+                        bounds.height - edgeWidth * 2
+                    );
+
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.src = modelBase64;
+            });
+        }
+
+        // BiRefNet çıktısını Flux Fill sonucunun üzerine yapıştır (BEAD SEQUENCE LOCK)
+        async function overlayOriginalJewelry(blendedBase64, jewelryBase64, bounds) {
+            return new Promise((resolve, reject) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const blendedImg = new Image();
+                const jewelryImg = new Image();
+                let loaded = 0;
+
+                const onLoad = () => {
+                    loaded++;
+                    if (loaded < 2) return;
+
+                    canvas.width = blendedImg.width;
+                    canvas.height = blendedImg.height;
+
+                    // 1. Flux Fill sonucunu çiz (blend edilmiş kenarlar)
+                    ctx.drawImage(blendedImg, 0, 0);
+
+                    // 2. Orijinal BiRefNet takısını TAM ÜSTÜNE yapıştır
+                    // Bu sayede AI ne yapmış olursa olsun, takı orijinal kalır
+                    // Hafif içe çekerek sadece kenarları Flux'tan al
+                    const shrinkFactor = 0.96; // %4 küçült - kenarlar Flux'tan
+                    const shrunkWidth = bounds.width * shrinkFactor;
+                    const shrunkHeight = bounds.height * shrinkFactor;
+                    const shrunkX = bounds.x + (bounds.width - shrunkWidth) / 2;
+                    const shrunkY = bounds.y + (bounds.height - shrunkHeight) / 2;
+
+                    ctx.drawImage(jewelryImg, shrunkX, shrunkY, shrunkWidth, shrunkHeight);
+
+                    resolve(canvas.toDataURL('image/jpeg', 0.95));
+                };
+
+                blendedImg.onload = onLoad;
+                jewelryImg.onload = onLoad;
+                blendedImg.onerror = () => reject(new Error('Blended görsel yüklenemedi'));
+                jewelryImg.onerror = () => reject(new Error('Takı yüklenemedi'));
+
+                blendedImg.src = blendedBase64;
                 jewelryImg.src = jewelryBase64;
             });
         }
