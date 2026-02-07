@@ -3999,24 +3999,27 @@ ${outfitSceneInstructions}`;
                 showLoader('Product Photography...', 'Profesyonel sahne oluşturuluyor');
 
                 // BiRefNet çıktısını (şeffaf arka planlı ürün) API'ye gönder
+                console.log('🔗 Fal.ai endpoint: fal-ai/image-apps-v2/product-photography');
                 const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
                     product_image_url: jewelryBase64
                 }, falKey);
+                console.log('📦 API Response:', productPhotoData);
 
                 let resultBase64 = null;
-                if (productPhotoData.image?.url) {
-                    const imgResponse = await fetch(productPhotoData.image.url);
+                // Response yapısı: image.url veya images[0].url olabilir
+                const imageUrl = productPhotoData.image?.url || productPhotoData.images?.[0]?.url;
+                if (imageUrl) {
+                    const imgResponse = await fetch(imageUrl);
                     const imgBlob = await imgResponse.blob();
                     resultBase64 = await new Promise(resolve => {
                         const reader = new FileReader();
                         reader.onload = () => resolve(reader.result);
                         reader.readAsDataURL(imgBlob);
                     });
-                }
-
-                if (resultBase64) {
                     console.log('✅ Product Photography tamamlandı!');
                     return resultBase64;
+                } else {
+                    console.warn('⚠️ Product Photography response boş:', productPhotoData);
                 }
 
                 // Başarısız olursa canvas fallback
