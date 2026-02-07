@@ -3409,102 +3409,100 @@ Empty surface ready for product placement.`;
             });
         }
 
-        // ========== CANVAS COMPOSITE - TAKİYA HİÇ DOKUNMA ==========
-        // 1. Takısız manken oluştur (Flux Pro)
-        // 2. BiRefNet ile orijinal takıyı çıkar
-        // 3. Orijinal pozisyonu koruyarak composite yap
-        // 4. Feathering + gölge ile doğal görünüm
+        // ========== FLUX KONTEXT - PRO STUDIO UPGRADE ==========
+        // Detaylı prompt ile ürünü koruyarak stüdyo kalitesine yükselt
         async function generateWithGemini25() {
             const falKey = localStorage.getItem('fal_api_key');
             const profile = modelProfiles[state.settings.modelProfile];
             const style = stylePresets[state.settings.style];
 
-            console.log('🎨 Safe Composite başlatılıyor - AI takıya dokunmayacak...');
+            console.log('🎨 Flux Kontext Pro Studio başlatılıyor...');
 
             if (!falKey && !isDemoMode) {
                 throw new Error('Fal.ai API key gerekli');
             }
 
-            // ===== ADIM 1: Orijinal görselden takı pozisyonunu analiz et =====
-            showLoader('Analiz...', 'Takı pozisyonu belirleniyor');
-            const jewelryBounds = await analyzeJewelryPosition(state.originalBase64);
-            console.log('📐 Takı pozisyonu:', jewelryBounds);
-
-            // ===== ADIM 2: BiRefNet ile takıyı çıkar =====
-            showLoader('Takı Çıkarılıyor...', 'BiRefNet ile arka plan temizleniyor');
-
-            const birefnetData = await callFalAPI('fal-ai/birefnet', {
-                image_url: state.originalBase64,
-                model: 'General Use (Light)',
-                operating_resolution: '1024x1024',
-                output_format: 'png'
-            }, falKey);
-
-            const transparentJewelryUrl = birefnetData.image?.url;
-            if (!transparentJewelryUrl) {
-                throw new Error('BiRefNet başarısız');
-            }
-
-            // Takıyı indir
-            const jewelryResponse = await fetch(transparentJewelryUrl);
-            const jewelryBlob = await jewelryResponse.blob();
-            const jewelryBase64 = await new Promise(resolve => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.readAsDataURL(jewelryBlob);
-            });
-
-            console.log('✅ Takı çıkarıldı');
-
-            // ===== ADIM 3: Takısız manken oluştur =====
-            showLoader('Manken Oluşturuluyor...', 'Takısız profesyonel model');
+            showLoader('Pro Studio...', 'Ürün korunarak stüdyo kalitesine yükseltiliyor');
 
             const outfitSceneInstructions = getOutfitScenePrompt();
 
-            // Takısız manken prompt'u - takı pozisyonuna uygun
-            const modelPrompt = `Professional e-commerce product photography.
-Anonymous female model, cropped from chin down, NO face visible.
-Simple black round-neck top, conservative modest clothing.
-Clean elegant neck and collarbone area - NO JEWELRY, NO NECKLACE.
-The neck area must be completely bare and empty.
-Soft studio lighting, clean neutral gray background.
-Tiffany-style minimalist aesthetic.
-Centered composition, neck area in upper-center of frame.
+            // Detaylı Trendyol Pro Studio prompt
+            const proStudioPrompt = `ROLE: Professional e-commerce product photographer.
+Task: Re-photograph this EXACT necklace in a professional studio - NOT redesign it.
+
+ABSOLUTE PRODUCT LOCK (CRITICAL - ANY VIOLATION = INVALID OUTPUT):
+- Keep the EXACT same bead colors (green and coral/orange)
+- Keep the EXACT same bead sizes
+- Keep the EXACT same bead order and spacing
+- Keep the EXACT same gold metal parts and twisted separators
+- Keep the EXACT same proportions
+- DO NOT add any beads
+- DO NOT remove any beads
+- DO NOT add any chain
+- DO NOT add a second necklace
+- DO NOT redesign or idealize
+- DO NOT change colors
+- The necklace must be IDENTICAL to input - pixel-level fidelity
+
+FORBIDDEN - NEVER DO THESE:
+- Adding gold chain
+- Adding second necklace
+- Adding earrings
+- Changing bead arrangement
+- "Completing" or "fixing" the necklace
+- Any jewelry that wasn't in the original
+
+HUMAN MODEL:
+- Keep natural realistic appearance
+- Anonymous - crop from chin down, minimal face
+- Simple black V-neck or round-neck top
+- Natural skin texture, no plastic/mannequin look
+- Human is just a holder, not the focus
+
+STUDIO TRANSFORMATION (REQUIRED):
+- Professional jewelry studio lighting
+- Soft key light + controlled fill
+- Clean neutral gray background
+- Commercial-grade photography look
+- Higher clarity on the necklace
+- Sharper edges, improved micro-contrast
+
+COMPOSITION:
+- This must look like "the same necklace photographed again in a studio"
+- NOT "the same image enhanced"
+- NOT "a similar necklace recreated"
+
 ${style.prompt}
 ${outfitSceneInstructions}`;
 
-            const modelData = await callFalAPI('fal-ai/flux-pro/v1.1', {
-                prompt: modelPrompt,
-                image_size: "square_hd",
+            console.log('🔄 Flux Kontext çalışıyor...');
+
+            const kontextData = await callFalAPI('fal-ai/flux-pro/kontext', {
+                image_url: state.originalBase64,
+                prompt: proStudioPrompt,
+                guidance_scale: 2.5,  // Düşük = orijinale daha sadık
                 num_inference_steps: 28,
-                guidance_scale: 3.5,
                 output_format: "jpeg"
             }, falKey);
 
-            let modelBase64 = null;
-            if (modelData.images?.[0]?.url) {
-                const imgResponse = await fetch(modelData.images[0].url);
+            let resultBase64 = null;
+
+            if (kontextData.images?.[0]?.url) {
+                const imgResponse = await fetch(kontextData.images[0].url);
                 const imgBlob = await imgResponse.blob();
-                modelBase64 = await new Promise(resolve => {
+                resultBase64 = await new Promise(resolve => {
                     const reader = new FileReader();
                     reader.onload = () => resolve(reader.result);
                     reader.readAsDataURL(imgBlob);
                 });
             }
 
-            if (!modelBase64) {
-                throw new Error('Manken oluşturulamadı');
+            if (!resultBase64) {
+                throw new Error('Görsel oluşturulamadı');
             }
 
-            console.log('✅ Takısız manken oluşturuldu');
-
-            // ===== ADIM 4: Akıllı composite =====
-            showLoader('Birleştiriliyor...', 'Takı yerleştiriliyor + gölge ekleniyor');
-
-            const finalResult = await smartComposite(jewelryBase64, modelBase64, jewelryBounds);
-
-            console.log('✅ Composite tamamlandı - Orijinal takı pikselleri %100 korundu!');
-            return finalResult;
+            console.log('✅ Pro Studio tamamlandı!');
+            return resultBase64;
         }
 
         // Orijinal görselden takının pozisyonunu ve boyutunu analiz et
