@@ -3977,22 +3977,57 @@ ${outfitSceneInstructions}`;
             });
         }
 
-        // ========== PURE CANVAS COMPOSITE - %100 BEAD SEQUENCE LOCK ==========
-        // ⚠️ FLUX FILL DEVRE DIŞI: AI modelleri takıyı değiştiriyor, GÜVENİLİR DEĞİL
-        // Bunun yerine sadece Canvas Composite kullanılıyor - BiRefNet pikselleri %100 korunur
+        // ========== PRODUCT PHOTOGRAPHY API - Ürün Koruyarak Profesyonel Sahne ==========
+        // fal.ai Product Photography API kullanılıyor
+        // Bu API ürünü koruyarak profesyonel e-ticaret sahnesine dönüştürüyor
         //
-        // NEDEN AI KULLANILMIYOR:
-        // - Flux Fill, Kontext, vb. modeller obje detaylarını koruyamıyor
-        // - Prompt'ta "koru" demek işe yaramıyor - model pixel-level anlamıyor
-        // - Test sonucu: Boncuk sırası, renkleri, sayısı değişiyor
-        //
-        // CANVAS COMPOSITE GARANTİSİ:
-        // - BiRefNet çıktısı piksel-piksel korunur
-        // - Soldan sağa boncuk sırası KESİNLİKLE değişmez
-        // - AI müdahalesi SIFIR
+        // AVANTAJLAR:
+        // - Ürün fotoğrafçılığı için özel tasarlanmış
+        // - Orijinal ürün detayları korunuyor
+        // - Profesyonel aydınlatma ve arka plan otomatik
         async function fluxFillComposite(jewelryBase64, modelBase64, jewelryAnalysis) {
-            console.log('🔒 BEAD SEQUENCE LOCK: Pure Canvas Composite (AI yok, %100 güvenli)');
-            return await createCanvasComposite(jewelryBase64, modelBase64, jewelryAnalysis);
+            const falKey = localStorage.getItem('fal_api_key');
+
+            // API key yoksa canvas fallback
+            if (!falKey && !isDemoMode) {
+                console.warn('⚠️ Fal.ai key yok, canvas composite kullanılıyor');
+                return await createCanvasComposite(jewelryBase64, modelBase64, jewelryAnalysis);
+            }
+
+            try {
+                console.log('📸 Product Photography API başlatılıyor...');
+                showLoader('Product Photography...', 'Profesyonel sahne oluşturuluyor');
+
+                // BiRefNet çıktısını (şeffaf arka planlı ürün) API'ye gönder
+                const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
+                    product_image_url: jewelryBase64
+                }, falKey);
+
+                let resultBase64 = null;
+                if (productPhotoData.image?.url) {
+                    const imgResponse = await fetch(productPhotoData.image.url);
+                    const imgBlob = await imgResponse.blob();
+                    resultBase64 = await new Promise(resolve => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.readAsDataURL(imgBlob);
+                    });
+                }
+
+                if (resultBase64) {
+                    console.log('✅ Product Photography tamamlandı!');
+                    return resultBase64;
+                }
+
+                // Başarısız olursa canvas fallback
+                console.warn('⚠️ Product Photography başarısız, canvas composite kullanılıyor');
+                return await createCanvasComposite(jewelryBase64, modelBase64, jewelryAnalysis);
+
+            } catch (error) {
+                console.error('❌ Product Photography hatası:', error);
+                console.warn('⚠️ Canvas composite fallback kullanılıyor');
+                return await createCanvasComposite(jewelryBase64, modelBase64, jewelryAnalysis);
+            }
         }
 
         // Takı boyutu ve pozisyonunu hesapla
