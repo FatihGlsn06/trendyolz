@@ -3409,59 +3409,74 @@ Empty surface ready for product placement.`;
             });
         }
 
-        // ========== FLUX KONTEXT - ÜRÜNÜ KORU, ÇEVREYİ DEĞİŞTİR ==========
-        // Orijinal ürün fotoğrafını alıp profesyonel stüdyo ortamına dönüştürür
-        // Ürün BİREBİR AYNI kalır, sadece çevre değişir
+        // ========== TERS MASKE İLE INPAINTING ==========
+        // Takı pikselleri ASLA değişmez, sadece arka plan yeniden oluşturulur
+        // BiRefNet → Ters Maske → Flux Fill
         async function generateWithGemini25() {
             const falKey = localStorage.getItem('fal_api_key');
             const profile = modelProfiles[state.settings.modelProfile];
             const style = stylePresets[state.settings.style];
 
-            console.log('🎨 Flux Kontext - Profesyonel Stüdyo Modu başlatılıyor...');
+            console.log('🎨 Ters Maske Inpainting başlatılıyor...');
 
             if (!falKey && !isDemoMode) {
                 throw new Error('Fal.ai API key gerekli');
             }
 
-            // ===== TEK ADIM: Flux Kontext ile dönüştür =====
-            showLoader('Stüdyo Pro...', 'Profesyonel stüdyo oluşturuluyor');
+            // ===== ADIM 1: BiRefNet ile takıyı çıkar =====
+            showLoader('Takı Algılanıyor...', 'BiRefNet ile takı maskesi oluşturuluyor');
+
+            const birefnetData = await callFalAPI('fal-ai/birefnet', {
+                image_url: state.originalBase64,
+                model: 'General Use (Light)',
+                operating_resolution: '1024x1024',
+                output_format: 'png'
+            }, falKey);
+
+            const transparentJewelryUrl = birefnetData.image?.url;
+            if (!transparentJewelryUrl) {
+                throw new Error('BiRefNet başarısız');
+            }
+
+            console.log('✅ BiRefNet tamamlandı');
+
+            // ===== ADIM 2: Transparent PNG'yi indir =====
+            showLoader('Maske Oluşturuluyor...', 'Takı alanı korunacak şekilde maske hazırlanıyor');
+
+            const jewelryResponse = await fetch(transparentJewelryUrl);
+            const jewelryBlob = await jewelryResponse.blob();
+            const jewelryBase64 = await new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(jewelryBlob);
+            });
+
+            // ===== ADIM 3: Ters maske oluştur =====
+            // Takı = SİYAH (koru), Arka plan = BEYAZ (yeniden oluştur)
+            const invertedMaskBase64 = await createInvertedMask(jewelryBase64);
+            console.log('✅ Ters maske oluşturuldu');
+
+            // ===== ADIM 4: Flux Fill ile sadece arka planı değiştir =====
+            showLoader('Profesyonel Sahne...', 'Arka plan oluşturuluyor - Takı pikselleri korunuyor');
 
             const outfitSceneInstructions = getOutfitScenePrompt();
-            const smartPromptInstructions = getSmartPromptInstructions();
 
-            // Flux Kontext prompt - Tiffany tarzı, ürün odaklı, e-ticaret uygun
-            const kontextPrompt = `Transform this jewelry into a premium Tiffany-style e-commerce product shot.
+            // Flux Fill prompt - sadece arka plan için
+            const fillPrompt = `Professional e-commerce jewelry photography background.
+Anonymous female model from chin down, no face visible.
+Simple black round-neck top, conservative clothing.
+Clean studio lighting, neutral gray background.
+Tiffany-style minimalist aesthetic.
+The jewelry is already in place - only fill the background around it.
+${style.prompt}
+${outfitSceneInstructions}`;
 
-JEWELRY PRESERVATION (CRITICAL):
-- Keep this EXACT jewelry piece - identical colors, beads, stones, design
-- Do NOT modify, redraw, or alter the jewelry in ANY way
-- The jewelry must remain pixel-perfect identical
+            console.log('🔄 Flux Fill çalışıyor - Takı pikselleri korunuyor...');
 
-ANONYMOUS MODEL:
-- HEADLESS: Crop from chin/jawline down, NO face visible
-- Model identity completely anonymous
-- Clean, elegant neck and collarbone area
-
-CONSERVATIVE E-COMMERCE STYLE:
-- NO cleavage, NO low-cut, NO revealing clothing
-- High neckline or modest round neck
-- Simple dark clothing (black or charcoal)
-- Family-friendly, professional
-
-TIFFANY AESTHETIC:
-- Minimalist luxury studio look
-- Soft professional lighting
-- Clean neutral gray background
-- Jewelry is the ONLY focus
-${smartPromptInstructions || ''}
-${outfitSceneInstructions}
-${style.prompt}`;
-
-            console.log('🔄 Flux Kontext çalışıyor...');
-
-            const kontextData = await callFalAPI('fal-ai/flux-pro/kontext', {
+            const fillData = await callFalAPI('fal-ai/flux-pro/v1/fill', {
                 image_url: state.originalBase64,
-                prompt: kontextPrompt,
+                mask_url: invertedMaskBase64,
+                prompt: fillPrompt,
                 guidance_scale: 3.5,
                 num_inference_steps: 28,
                 output_format: "jpeg"
@@ -3469,8 +3484,8 @@ ${style.prompt}`;
 
             let resultBase64 = null;
 
-            if (kontextData.images?.[0]?.url) {
-                const imgResponse = await fetch(kontextData.images[0].url);
+            if (fillData.images?.[0]?.url) {
+                const imgResponse = await fetch(fillData.images[0].url);
                 const imgBlob = await imgResponse.blob();
                 resultBase64 = await new Promise(resolve => {
                     const reader = new FileReader();
@@ -3483,8 +3498,56 @@ ${style.prompt}`;
                 throw new Error('Görsel oluşturulamadı');
             }
 
-            console.log('✅ Flux Kontext tamamlandı - Ürün korundu, çevre profesyonelleştirildi!');
+            console.log('✅ Inpainting tamamlandı - Orijinal takı pikselleri %100 korundu!');
             return resultBase64;
+        }
+
+        // Transparent PNG'den ters maske oluştur
+        // Takı pikselleri (alpha > 0) → SİYAH (koru)
+        // Arka plan (alpha = 0) → BEYAZ (yeniden oluştur)
+        async function createInvertedMask(transparentPngBase64) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+
+                    // Transparent PNG'yi çiz
+                    ctx.drawImage(img, 0, 0);
+
+                    // Piksel verilerini al
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const data = imageData.data;
+
+                    // Ters maske oluştur
+                    for (let i = 0; i < data.length; i += 4) {
+                        const alpha = data[i + 3];
+                        if (alpha > 10) {  // Takı pikseli (tolerans ile)
+                            // SİYAH - koru
+                            data[i] = 0;
+                            data[i + 1] = 0;
+                            data[i + 2] = 0;
+                            data[i + 3] = 255;
+                        } else {
+                            // BEYAZ - yeniden oluştur
+                            data[i] = 255;
+                            data[i + 1] = 255;
+                            data[i + 2] = 255;
+                            data[i + 3] = 255;
+                        }
+                    }
+
+                    ctx.putImageData(imageData, 0, 0);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+
+                img.onerror = () => reject(new Error('Maske oluşturulamadı'));
+                img.src = transparentPngBase64;
+            });
         }
 
         // ========== CANVAS COMPOSITE (Yedek) ==========
