@@ -3036,11 +3036,27 @@ The jewelry must remain EXACTLY as provided - do not modify the jewelry in any w
             const hasAngleInstruction = smartPromptInstructions.includes('CAMERA ANGLE:');
 
             // Takısız model oluşturma prompt'u - KESINLIKLE TAKISIZ
+            // BiRefNet çıktısı referans alınacak, AI sadece model oluşturacak
             const modelOnlyPrompt = `Professional model photo for jewelry product photography.
 
-ABSOLUTELY NO JEWELRY - The model must have completely bare neck and chest area.
-No necklaces, no earrings, no bracelets, no rings.
-The jewelry will be added later via digital editing.
+=== CRITICAL: AI ROLE DEFINITION ===
+You are ONLY creating a human model backdrop.
+The actual jewelry will be composited SEPARATELY using BiRefNet output.
+You must NOT generate, imagine, or render ANY jewelry.
+
+=== ABSOLUTE PROHIBITION ===
+- NO necklaces of any kind
+- NO earrings
+- NO bracelets
+- NO rings
+- NO pendants
+- NO chains
+- NO beads
+- The neck and chest area must be COMPLETELY BARE
+
+The jewelry will be digitally overlaid via canvas composite.
+BiRefNet has already extracted the original product with pixel-perfect accuracy.
+Your job is ONLY to create the human canvas.
 
 ${smartPromptInstructions ? `USER CUSTOM INSTRUCTIONS: ${smartPromptInstructions}` : ''}
 
@@ -3056,6 +3072,7 @@ RULES:
 - Natural headless crop from above eyebrows
 - Show enough chest/body area for necklace placement
 - Clear, unobstructed neck area
+- Skin texture must be natural and realistic
 
 OUTPUT: Professional model photo with COMPLETELY BARE neck, ready for jewelry overlay.`;
 
@@ -3355,8 +3372,20 @@ Empty surface ready for product placement.`;
             });
         }
 
-        // ========== CANVAS COMPOSITE - TAKILAYI ŞABLONA YERLEŞTİR ==========
+        // ========== CANVAS COMPOSITE - TAKIYI ŞABLONA YERLEŞTİR ==========
         // Client-side işlem, AI yok, hallucination yok
+        //
+        // BiRefNet REFERANS PROTOKOLÜ:
+        // jewelryBase64 = BiRefNet tarafından çıkarılan ORIJINAL ürün
+        // Bu pikseller DEĞİŞTİRİLMEDEN şablon üzerine yerleştirilir
+        //
+        // BEAD SEQUENCE LOCK GARANTİSİ:
+        // - Soldan sağa boncuk sırası: KORUNUR
+        // - Asimetrik dizilim: KORUNUR (aynalama YOK)
+        // - Merkez boncuk pozisyonu: KORUNUR
+        // - Boncuk renkleri/boyutları: KORUNUR
+        // - Bu bir PASTE işlemi, AI müdahalesi YOK
+        //
         async function compositeJewelryOnTemplate(jewelryBase64, templateBase64) {
             return new Promise((resolve, reject) => {
                 const canvas = document.createElement('canvas');
@@ -3427,50 +3456,102 @@ Empty surface ready for product placement.`;
             const outfitSceneInstructions = getOutfitScenePrompt();
 
             // Detaylı Trendyol Pro Studio prompt
+            // BiRefNet çıktısı referans - ürün DEĞİŞTİRİLMEDEN boyuna monte edilecek
             const proStudioPrompt = `ROLE: Professional e-commerce product photographer.
-Task: Re-photograph this EXACT necklace in a professional studio - NOT redesign it.
+TASK: Mount the EXACT jewelry from the BiRefNet-extracted reference onto a model's neck.
 
-ABSOLUTE PRODUCT LOCK (CRITICAL - ANY VIOLATION = INVALID OUTPUT):
-- Keep the EXACT same bead colors (green and coral/orange)
-- Keep the EXACT same bead sizes
-- Keep the EXACT same bead order and spacing
-- Keep the EXACT same gold metal parts and twisted separators
-- Keep the EXACT same proportions
-- DO NOT add any beads
-- DO NOT remove any beads
-- DO NOT add any chain
-- DO NOT add a second necklace
-- DO NOT redesign or idealize
-- DO NOT change colors
-- The necklace must be IDENTICAL to input - pixel-level fidelity
+=== BIREFNET REFERENCE PROTOCOL ===
+The input image contains the ORIGINAL product extracted via BiRefNet segmentation.
+This is your IMMUTABLE REFERENCE - treat it as a sacred artifact.
+Your job is to PLACE this exact product on a neck, NOT to recreate or reinterpret it.
 
-FORBIDDEN - NEVER DO THESE:
-- Adding gold chain
-- Adding second necklace
-- Adding earrings
-- Changing bead arrangement
-- "Completing" or "fixing" the necklace
-- Any jewelry that wasn't in the original
+=== BEAD SEQUENCE LOCK (CRITICAL - ZERO TOLERANCE) ===
+The jewelry has a FIXED, IMMUTABLE bead sequence. This is NOT a pattern, it is a SPECIFIC ARRANGEMENT:
 
-HUMAN MODEL:
-- Keep natural realistic appearance
-- Anonymous - crop from chin down, minimal face
+1. LEFT-TO-RIGHT ORDER: The exact sequence of beads from left to right MUST remain unchanged.
+   - If the original has: green-coral-gold-green-coral, the output MUST have: green-coral-gold-green-coral
+   - Any reordering = INVALID OUTPUT
+
+2. ASYMMETRY PRESERVATION: The necklace may be intentionally asymmetric.
+   - DO NOT mirror the left side to the right
+   - DO NOT balance or symmetrize
+   - DO NOT "correct" perceived imperfections
+   - Asymmetry is a FEATURE, not a defect
+
+3. CENTER BEAD LOCK: The center bead (if identifiable) must remain at the EXACT center position.
+   - This is the anchor point for the entire sequence
+   - The bead at center in input = bead at center in output
+
+4. SPACING LOCK: The gaps between beads are FIXED.
+   - DO NOT adjust spacing for "better composition"
+   - DO NOT compress or expand bead groups
+   - Each gap is intentional and must be preserved
+
+5. QUANTITY LOCK: The EXACT number of each bead type must remain constant.
+   - Count the beads in input: that count is the ONLY valid count
+   - Adding beads = INVALID
+   - Removing beads = INVALID
+   - "Completing" an open design = INVALID
+
+=== PIXEL-LEVEL FIDELITY REQUIREMENTS ===
+- Bead COLORS: Exact RGB values from BiRefNet reference
+- Bead SIZES: Exact proportional sizes - no normalization
+- Bead TEXTURES: Exact surface patterns (matte/glossy/faceted)
+- Metal PARTS: Exact gold/silver tone, exact twisted/smooth pattern
+- Clasp POSITION: If visible, must be in same relative position
+- Surface REFLECTIONS: Match the lighting characteristics of original
+
+=== WHAT AI DOES vs WHAT AI DOES NOT DO ===
+AI DOES:
+✓ Mount the BiRefNet-extracted product onto model's neck
+✓ Add natural draping physics (gravity, fabric interaction)
+✓ Create realistic shadow under the jewelry
+✓ Blend edges seamlessly with skin
+✓ Apply studio lighting that complements the product
+
+AI DOES NOT:
+✗ Regenerate or redraw the jewelry
+✗ Add missing beads or "complete" the design
+✗ Mirror or symmetrize the arrangement
+✗ Add chains, pendants, or extensions
+✗ Add matching earrings or other jewelry
+✗ "Improve" or "idealize" the design
+✗ Correct perceived manufacturing defects
+✗ Interpolate between beads
+
+=== COMPOSITE MOUNTING INSTRUCTIONS ===
+1. The BiRefNet output provides the EXACT pixels of the jewelry
+2. These pixels must appear UNCHANGED in the final output
+3. Only the BACKGROUND (neck, skin, clothing) is AI-generated
+4. The jewelry itself is a PASTE operation, not a GENERATION operation
+5. Think of this as Photoshop layer placement, not image synthesis
+
+=== HUMAN MODEL REQUIREMENTS ===
+- Natural realistic appearance
+- Anonymous - minimal face visibility
 - Simple black V-neck or round-neck top
 - Natural skin texture, no plastic/mannequin look
-- Human is just a holder, not the focus
+- The human is a BACKDROP, the product is the FOCUS
+- Neck curvature must accommodate the exact jewelry shape
 
-STUDIO TRANSFORMATION (REQUIRED):
+=== STUDIO QUALITY ENHANCEMENT ===
 - Professional jewelry studio lighting
 - Soft key light + controlled fill
 - Clean neutral gray background
-- Commercial-grade photography look
-- Higher clarity on the necklace
-- Sharper edges, improved micro-contrast
+- Commercial-grade photography aesthetic
+- Higher clarity on the jewelry (sharpen the BiRefNet pixels)
+- Subtle depth-of-field (product sharp, background slightly soft)
 
-COMPOSITION:
-- This must look like "the same necklace photographed again in a studio"
-- NOT "the same image enhanced"
-- NOT "a similar necklace recreated"
+=== VALIDATION CHECKLIST (Output must pass ALL) ===
+□ Bead count matches input exactly
+□ Bead order matches input exactly (left-to-right)
+□ Bead colors match input exactly
+□ Bead sizes match input exactly
+□ Metal parts match input exactly
+□ No additional jewelry added
+□ No beads removed or hidden
+□ Asymmetry preserved (if present)
+□ Center bead position maintained
 
 ${style.prompt}
 ${outfitSceneInstructions}`;
@@ -3531,7 +3612,15 @@ ${outfitSceneInstructions}`;
             });
         }
 
-        // Akıllı composite - feathering + gölge ile doğal görünüm
+        // ========== SMART COMPOSITE - BiRefNet PİKSELLERİ %100 KORUNUR ==========
+        // BiRefNet çıktısı referans alınarak ürün boyuna monte edilir
+        //
+        // BEAD SEQUENCE LOCK:
+        // - jewelryBase64 = BiRefNet'ten gelen orijinal ürün pikselleri
+        // - Bu pikseller HİÇ DEĞİŞTİRİLMEDEN canvas'a yerleştirilir
+        // - AI bu işleme KARIŞMAZ - pure client-side composite
+        //
+        // Feathering + gölge ile doğal görünüm
         async function smartComposite(jewelryBase64, modelBase64, bounds) {
             return new Promise((resolve, reject) => {
                 const canvas = document.createElement('canvas');
@@ -3588,7 +3677,18 @@ ${outfitSceneInstructions}`;
             });
         }
 
-        // ========== CANVAS COMPOSITE (Yedek) ==========
+        // ========== CANVAS COMPOSITE - BiRefNet REFERANSLI MONTAJ ==========
+        // Bu fonksiyon BiRefNet çıktısını AYNEN kullanır - AI ürüne DOKUNMAZ
+        //
+        // BEAD SEQUENCE LOCK GARANTİSİ:
+        // - BiRefNet çıktısı piksel-piksel korunur
+        // - Soldan sağa boncuk sırası değişmez
+        // - Asimetri korunur (aynalama YOK)
+        // - Merkez boncuk pozisyonu sabit kalır
+        // - Bu bir PASTE işlemi, GENERATION değil
+        //
+        // AI'ın rolü: Sadece model görseli oluşturmak
+        // Canvas'ın rolü: BiRefNet çıktısını model üzerine yerleştirmek
         async function createCanvasComposite(jewelryBase64, modelBase64, jewelryAnalysis) {
             return new Promise((resolve, reject) => {
                 const canvas = document.createElement('canvas');
