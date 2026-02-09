@@ -16,11 +16,16 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { endpoint, payload } = req.body;
+        const { endpoint, payload, ...restParams } = req.body;
 
         if (!endpoint) {
             return res.status(400).json({ error: 'Endpoint is required' });
         }
+
+        // Support both formats:
+        // Old: { endpoint, payload: { ... } }
+        // New: { endpoint, image_url: "...", model: "...", ... }
+        const actualPayload = payload || (Object.keys(restParams).length > 0 ? restParams : {});
 
         // Fal.ai API key from environment
         const FAL_API_KEY = process.env.FAL_API_KEY;
@@ -37,7 +42,7 @@ export default async function handler(req, res) {
                 'Content-Type': 'application/json',
                 'Authorization': `Key ${FAL_API_KEY}`
             },
-            body: JSON.stringify(payload || {})
+            body: JSON.stringify(actualPayload)
         });
 
         if (!queueResponse.ok) {
