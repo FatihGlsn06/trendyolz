@@ -84,15 +84,18 @@ async function callGeminiAPIProxy(payload) {
     return await response.json();
 }
 
-// Unified Fal API wrapper
+// Unified Fal API wrapper (Queue-based)
 async function callFalAPI(endpoint, payload, apiKey) {
     // Demo modunda proxy kullan
     if (isDemoMode) {
         return await callFalAPIProxy(endpoint, payload);
     }
 
-    // Normal modda direkt API cagrisi
-    const response = await fetch(`https://fal.run/${endpoint}`, {
+    // Normal modda direkt queue-based API cagrisi
+    console.log(`[FAL] Calling ${endpoint} with queue API...`);
+
+    // 1. Queue'ya submit et
+    const submitResponse = await fetch(`https://queue.fal.run/${endpoint}`, {
         method: 'POST',
         headers: {
             'Authorization': `Key ${apiKey}`,
@@ -101,12 +104,61 @@ async function callFalAPI(endpoint, payload, apiKey) {
         body: JSON.stringify(payload)
     });
 
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || errorData.message || `Fal API error: ${response.status}`);
+    if (!submitResponse.ok) {
+        const errorData = await submitResponse.json().catch(() => ({}));
+        throw new Error(errorData.detail || errorData.message || `Fal API submit error: ${submitResponse.status}`);
     }
 
-    return await response.json();
+    const submitData = await submitResponse.json();
+    const requestId = submitData.request_id;
+
+    if (!requestId) {
+        throw new Error('No request_id received from Fal API');
+    }
+
+    console.log(`[FAL] Request submitted, ID: ${requestId}`);
+
+    // 2. Sonucu bekle (polling)
+    const maxAttempts = 120; // 2 dakika max
+    const pollInterval = 1000; // 1 saniye
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+
+        const statusResponse = await fetch(`https://queue.fal.run/${endpoint}/requests/${requestId}/status`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Key ${apiKey}`
+            }
+        });
+
+        const statusData = await statusResponse.json().catch(() => ({}));
+        console.log(`[FAL] Status check ${attempt + 1}: ${statusData.status || 'unknown'}`);
+
+        if (statusData.status === 'COMPLETED') {
+            // Sonucu al
+            const resultResponse = await fetch(`https://queue.fal.run/${endpoint}/requests/${requestId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Key ${apiKey}`
+                }
+            });
+
+            if (!resultResponse.ok) {
+                throw new Error(`Fal API result error: ${resultResponse.status}`);
+            }
+
+            const resultData = await resultResponse.json();
+            console.log(`[FAL] Success!`);
+            return resultData;
+        }
+
+        if (statusData.status === 'FAILED') {
+            throw new Error('Fal API processing failed: ' + (statusData.error || 'Unknown error'));
+        }
+    }
+
+    throw new Error('Timeout waiting for Fal API result');
 }
 
 // Unified Gemini API wrapper (retry mekanizmali)
