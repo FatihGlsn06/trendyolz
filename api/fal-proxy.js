@@ -1,4 +1,4 @@
-// Vercel Serverless Function - Fal.ai Proxy
+// Vercel Serverless Function - Fal.ai Proxy (Queue-based)
 
 export default async function handler(req, res) {
     // CORS headers
@@ -29,8 +29,8 @@ export default async function handler(req, res) {
         console.log(`[FAL Proxy] Endpoint: ${endpoint}`);
         console.log(`[FAL Proxy] Payload keys: ${Object.keys(payload || {}).join(', ')}`);
 
-        // Direkt fal.run çağrısı (eski çalışan yöntem)
-        const response = await fetch(`https://fal.run/${endpoint}`, {
+        // 1. Queue'ya submit et
+        const submitResponse = await fetch(`https://queue.fal.run/${endpoint}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -39,28 +39,96 @@ export default async function handler(req, res) {
             body: JSON.stringify(payload || {})
         });
 
-        const responseText = await response.text();
-        console.log(`[FAL Proxy] Response status: ${response.status}`);
-        console.log(`[FAL Proxy] Response preview: ${responseText.substring(0, 300)}`);
+        const submitText = await submitResponse.text();
+        console.log(`[FAL Proxy] Submit status: ${submitResponse.status}`);
+        console.log(`[FAL Proxy] Submit response: ${submitText.substring(0, 300)}`);
 
-        let data;
+        let submitData;
         try {
-            data = JSON.parse(responseText);
+            submitData = JSON.parse(submitText);
         } catch (e) {
             return res.status(500).json({
-                error: 'Invalid JSON response',
-                raw: responseText.substring(0, 500)
+                error: 'Invalid JSON from queue submit',
+                raw: submitText.substring(0, 500)
             });
         }
 
-        if (!response.ok) {
-            return res.status(response.status).json({
-                error: data.detail || data.message || 'Fal.ai error',
-                details: data
+        if (!submitResponse.ok) {
+            return res.status(submitResponse.status).json({
+                error: submitData.detail || submitData.message || 'Fal.ai queue submit error',
+                details: submitData
             });
         }
 
-        return res.status(200).json(data);
+        const requestId = submitData.request_id;
+        if (!requestId) {
+            return res.status(500).json({
+                error: 'No request_id received from queue',
+                details: submitData
+            });
+        }
+
+        console.log(`[FAL Proxy] Request ID: ${requestId}`);
+
+        // 2. Sonucu bekle (polling)
+        const maxAttempts = 60; // 60 saniye max
+        const pollInterval = 1000; // 1 saniye
+
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            await new Promise(resolve => setTimeout(resolve, pollInterval));
+
+            const statusResponse = await fetch(`https://queue.fal.run/${endpoint}/requests/${requestId}/status`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Key ${FAL_API_KEY}`
+                }
+            });
+
+            const statusText = await statusResponse.text();
+            let statusData;
+            try {
+                statusData = JSON.parse(statusText);
+            } catch (e) {
+                continue; // Retry on parse error
+            }
+
+            console.log(`[FAL Proxy] Status check ${attempt + 1}: ${statusData.status}`);
+
+            if (statusData.status === 'COMPLETED') {
+                // Sonucu al
+                const resultResponse = await fetch(`https://queue.fal.run/${endpoint}/requests/${requestId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Key ${FAL_API_KEY}`
+                    }
+                });
+
+                const resultText = await resultResponse.text();
+                let resultData;
+                try {
+                    resultData = JSON.parse(resultText);
+                } catch (e) {
+                    return res.status(500).json({
+                        error: 'Invalid JSON from result',
+                        raw: resultText.substring(0, 500)
+                    });
+                }
+
+                console.log(`[FAL Proxy] Success! Result keys: ${Object.keys(resultData).join(', ')}`);
+                return res.status(200).json(resultData);
+            }
+
+            if (statusData.status === 'FAILED') {
+                return res.status(500).json({
+                    error: 'Fal.ai processing failed',
+                    details: statusData
+                });
+            }
+
+            // IN_QUEUE veya IN_PROGRESS - devam et
+        }
+
+        return res.status(504).json({ error: 'Timeout waiting for Fal.ai result' });
 
     } catch (error) {
         console.error('[FAL Proxy] Error:', error);
