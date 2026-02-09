@@ -23,9 +23,5 @@
       "src": "/(.*)",
       "dest": "/$1"
     }
-  ],
-  "env": {
-    "FAL_API_KEY": "@fal-api-key",
-    "GEMINI_API_KEY": "@gemini-api-key"
-  }
+  ]
 }
