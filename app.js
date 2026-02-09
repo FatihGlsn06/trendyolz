@@ -1007,7 +1007,7 @@ SADECE JSON döndür!`;
             // Demo modunda proxy kullan
             const result = await callGeminiAPIProxy({
                 prompt: seoPrompt,
-                model: 'gemini-2.0-flash',
+                model: geminiConfig.textModel,
                 image: imageBase64 ? imageBase64.split(',')[1] : null
             });
 
@@ -1015,7 +1015,7 @@ SADECE JSON döndür!`;
             seoData = parseSEOJson(text);
         } else {
             // Görsel analiz için Gemini Vision API kullan
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`;
+            const url = `${geminiConfig.baseUrl}/${geminiConfig.textModel}:generateContent?key=${geminiKey}`;
 
             const requestBody = {
                 contents: [{
