@@ -45,78 +45,6 @@ function loadDemoMode() {
 // 2. API CAGRI FONKSIYONLARI
 // ============================================
 
-// TEST FONKSIYONU - Konsoldan çağır: testFalAPI('YOUR_API_KEY')
-window.testFalAPI = async function(apiKey) {
-    console.log('=== FAL.AI API TEST ===');
-    console.log('API Key:', apiKey ? apiKey.substring(0, 10) + '...' : 'MISSING');
-
-    const testImageUrl = 'https://storage.googleapis.com/falserverless/bria/bria_product_fg.jpg';
-    const endpoint = 'fal-ai/bria/product-shot';
-
-    console.log('Testing endpoint:', endpoint);
-    console.log('Test image:', testImageUrl);
-
-    try {
-        // Step 1: Submit to queue
-        console.log('Step 1: Submitting to queue...');
-        const submitUrl = `https://queue.fal.run/${endpoint}`;
-        console.log('Submit URL:', submitUrl);
-
-        const submitResponse = await fetch(submitUrl, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Key ${apiKey}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                image_url: testImageUrl,
-                scene_description: 'professional studio lighting, white background',
-                num_results: 1
-            })
-        });
-
-        console.log('Submit response status:', submitResponse.status);
-        const submitText = await submitResponse.text();
-        console.log('Submit response:', submitText);
-
-        if (!submitResponse.ok) {
-            console.error('SUBMIT FAILED!');
-            return { error: submitText, status: submitResponse.status };
-        }
-
-        const submitData = JSON.parse(submitText);
-        console.log('Request ID:', submitData.request_id);
-
-        // Step 2: Poll for result (aynı URL hem status hem result döndürür)
-        console.log('Step 2: Polling for result...');
-        for (let i = 0; i < 30; i++) {
-            await new Promise(r => setTimeout(r, 2000));
-
-            const statusUrl = `https://queue.fal.run/${endpoint}/requests/${submitData.request_id}`;
-            const statusResponse = await fetch(statusUrl, {
-                headers: { 'Authorization': `Key ${apiKey}` }
-            });
-            const statusData = await statusResponse.json();
-            console.log(`Poll ${i+1}: ${statusData.status}`);
-
-            if (statusData.status === 'COMPLETED') {
-                console.log('SUCCESS! Result:', statusData);
-                return statusData;
-            }
-
-            if (statusData.status === 'FAILED') {
-                console.error('PROCESSING FAILED:', statusData);
-                return { error: 'Processing failed', details: statusData };
-            }
-        }
-
-        return { error: 'Timeout' };
-    } catch (err) {
-        console.error('ERROR:', err);
-        return { error: err.message };
-    }
-};
-
 // Demo modunda Fal.ai proxy cagrisi
 async function callFalAPIProxy(endpoint, payload) {
     const response = await fetch('/api/fal-proxy', {
@@ -156,18 +84,15 @@ async function callGeminiAPIProxy(payload) {
     return await response.json();
 }
 
-// Unified Fal API wrapper (Queue-based)
+// Unified Fal API wrapper
 async function callFalAPI(endpoint, payload, apiKey) {
     // Demo modunda proxy kullan
     if (isDemoMode) {
         return await callFalAPIProxy(endpoint, payload);
     }
 
-    // Normal modda direkt queue-based API cagrisi
-    console.log(`[FAL] Calling ${endpoint} with queue API...`);
-
-    // 1. Queue'ya submit et
-    const submitResponse = await fetch(`https://queue.fal.run/${endpoint}`, {
+    // Normal modda direkt API cagrisi
+    const response = await fetch(`https://fal.run/${endpoint}`, {
         method: 'POST',
         headers: {
             'Authorization': `Key ${apiKey}`,
@@ -176,48 +101,12 @@ async function callFalAPI(endpoint, payload, apiKey) {
         body: JSON.stringify(payload)
     });
 
-    if (!submitResponse.ok) {
-        const errorData = await submitResponse.json().catch(() => ({}));
-        throw new Error(errorData.detail || errorData.message || `Fal API submit error: ${submitResponse.status}`);
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || errorData.message || `Fal API error: ${response.status}`);
     }
 
-    const submitData = await submitResponse.json();
-    const requestId = submitData.request_id;
-
-    if (!requestId) {
-        throw new Error('No request_id received from Fal API');
-    }
-
-    console.log(`[FAL] Request submitted, ID: ${requestId}`);
-
-    // 2. Sonucu bekle (polling - aynı URL hem status hem result döndürür)
-    const maxAttempts = 120; // 2 dakika max
-    const pollInterval = 1000; // 1 saniye
-
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        await new Promise(resolve => setTimeout(resolve, pollInterval));
-
-        const statusResponse = await fetch(`https://queue.fal.run/${endpoint}/requests/${requestId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Key ${apiKey}`
-            }
-        });
-
-        const statusData = await statusResponse.json().catch(() => ({}));
-        console.log(`[FAL] Status check ${attempt + 1}: ${statusData.status || 'unknown'}`);
-
-        if (statusData.status === 'COMPLETED') {
-            console.log(`[FAL] Success!`);
-            return statusData;
-        }
-
-        if (statusData.status === 'FAILED') {
-            throw new Error('Fal API processing failed: ' + (statusData.error || 'Unknown error'));
-        }
-    }
-
-    throw new Error('Timeout waiting for Fal API result');
+    return await response.json();
 }
 
 // Unified Gemini API wrapper (retry mekanizmali)
@@ -910,12 +799,11 @@ async function generateImage() {
 
         console.log('Scene Description:', sceneDescription);
 
-        // Bria Product Shot API kullan - EN ONEMLI OZELLIK!
-        const productPhotoData = await callFalAPI('fal-ai/bria/product-shot', {
-            image_url: state.originalBase64,
+        // Product Photography API kullan - EN ONEMLI OZELLIK!
+        const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
+            product_image_url: state.originalBase64,
             scene_description: sceneDescription,
-            optimize_description: true,
-            num_results: 1
+            optimize_description: true
         }, falKey);
 
         if (productPhotoData && productPhotoData.images && productPhotoData.images.length > 0) {
@@ -2098,12 +1986,11 @@ async function generateMultipleVariations(category = null) {
 
             const sceneDescription = buildSceneDescription(selectedOutfit, selectedPose, selectedScene, selectedStyle);
 
-            // API çağrısı - Bria Product Shot
-            const productPhotoData = await callFalAPI('fal-ai/bria/product-shot', {
-                image_url: state.originalBase64,
+            // API çağrısı
+            const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
+                product_image_url: state.originalBase64,
                 scene_description: sceneDescription,
-                optimize_description: true,
-                num_results: 1
+                optimize_description: true
             }, falKey);
 
             if (productPhotoData?.images?.[0]?.url) {
@@ -2178,11 +2065,10 @@ async function generateCustomVariations(variations) {
 
             const sceneDescription = buildSceneDescription(selectedOutfit, selectedPose, selectedScene, selectedStyle);
 
-            const productPhotoData = await callFalAPI('fal-ai/bria/product-shot', {
-                image_url: state.originalBase64,
+            const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
+                product_image_url: state.originalBase64,
                 scene_description: sceneDescription,
-                optimize_description: true,
-                num_results: 1
+                optimize_description: true
             }, falKey);
 
             if (productPhotoData?.images?.[0]?.url) {
