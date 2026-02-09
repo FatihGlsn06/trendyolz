@@ -87,12 +87,12 @@ window.testFalAPI = async function(apiKey) {
         const submitData = JSON.parse(submitText);
         console.log('Request ID:', submitData.request_id);
 
-        // Step 2: Poll for result
+        // Step 2: Poll for result (aynı URL hem status hem result döndürür)
         console.log('Step 2: Polling for result...');
         for (let i = 0; i < 30; i++) {
             await new Promise(r => setTimeout(r, 2000));
 
-            const statusUrl = `https://queue.fal.run/${endpoint}/requests/${submitData.request_id}/status`;
+            const statusUrl = `https://queue.fal.run/${endpoint}/requests/${submitData.request_id}`;
             const statusResponse = await fetch(statusUrl, {
                 headers: { 'Authorization': `Key ${apiKey}` }
             });
@@ -100,13 +100,8 @@ window.testFalAPI = async function(apiKey) {
             console.log(`Poll ${i+1}: ${statusData.status}`);
 
             if (statusData.status === 'COMPLETED') {
-                const resultUrl = `https://queue.fal.run/${endpoint}/requests/${submitData.request_id}`;
-                const resultResponse = await fetch(resultUrl, {
-                    headers: { 'Authorization': `Key ${apiKey}` }
-                });
-                const resultData = await resultResponse.json();
-                console.log('SUCCESS! Result:', resultData);
-                return resultData;
+                console.log('SUCCESS! Result:', statusData);
+                return statusData;
             }
 
             if (statusData.status === 'FAILED') {
@@ -195,14 +190,14 @@ async function callFalAPI(endpoint, payload, apiKey) {
 
     console.log(`[FAL] Request submitted, ID: ${requestId}`);
 
-    // 2. Sonucu bekle (polling)
+    // 2. Sonucu bekle (polling - aynı URL hem status hem result döndürür)
     const maxAttempts = 120; // 2 dakika max
     const pollInterval = 1000; // 1 saniye
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
         await new Promise(resolve => setTimeout(resolve, pollInterval));
 
-        const statusResponse = await fetch(`https://queue.fal.run/${endpoint}/requests/${requestId}/status`, {
+        const statusResponse = await fetch(`https://queue.fal.run/${endpoint}/requests/${requestId}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Key ${apiKey}`
@@ -213,21 +208,8 @@ async function callFalAPI(endpoint, payload, apiKey) {
         console.log(`[FAL] Status check ${attempt + 1}: ${statusData.status || 'unknown'}`);
 
         if (statusData.status === 'COMPLETED') {
-            // Sonucu al
-            const resultResponse = await fetch(`https://queue.fal.run/${endpoint}/requests/${requestId}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Key ${apiKey}`
-                }
-            });
-
-            if (!resultResponse.ok) {
-                throw new Error(`Fal API result error: ${resultResponse.status}`);
-            }
-
-            const resultData = await resultResponse.json();
             console.log(`[FAL] Success!`);
-            return resultData;
+            return statusData;
         }
 
         if (statusData.status === 'FAILED') {

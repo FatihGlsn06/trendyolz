@@ -70,14 +70,14 @@ export default async function handler(req, res) {
 
         console.log(`[FAL Proxy] Request ID: ${requestId}`);
 
-        // 2. Sonucu bekle (polling)
+        // 2. Sonucu bekle (polling - aynı URL hem status hem result döndürür)
         const maxAttempts = 60; // 60 saniye max
         const pollInterval = 1000; // 1 saniye
 
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
             await new Promise(resolve => setTimeout(resolve, pollInterval));
 
-            const statusResponse = await fetch(`https://queue.fal.run/${endpoint}/requests/${requestId}/status`, {
+            const statusResponse = await fetch(`https://queue.fal.run/${endpoint}/requests/${requestId}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Key ${FAL_API_KEY}`
@@ -95,27 +95,8 @@ export default async function handler(req, res) {
             console.log(`[FAL Proxy] Status check ${attempt + 1}: ${statusData.status}`);
 
             if (statusData.status === 'COMPLETED') {
-                // Sonucu al
-                const resultResponse = await fetch(`https://queue.fal.run/${endpoint}/requests/${requestId}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Key ${FAL_API_KEY}`
-                    }
-                });
-
-                const resultText = await resultResponse.text();
-                let resultData;
-                try {
-                    resultData = JSON.parse(resultText);
-                } catch (e) {
-                    return res.status(500).json({
-                        error: 'Invalid JSON from result',
-                        raw: resultText.substring(0, 500)
-                    });
-                }
-
-                console.log(`[FAL Proxy] Success! Result keys: ${Object.keys(resultData).join(', ')}`);
-                return res.status(200).json(resultData);
+                console.log(`[FAL Proxy] Success! Result keys: ${Object.keys(statusData).join(', ')}`);
+                return res.status(200).json(statusData);
             }
 
             if (statusData.status === 'FAILED') {
