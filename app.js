@@ -1,6 +1,7 @@
 /**
- * Trendyol Pro Studio v19.0
+ * Trendyol Pro Studio v19.1
  * Professional Jewelry Photography & AI Enhancement Platform
+ * + Çoklu Varyasyon & Popüler Şablonlar
  */
 
 // ============================================
@@ -2525,3 +2526,4 @@ window.closeMultiVariationResults = closeMultiVariationResults;
 window.selectVariation = selectVariation;
 window.downloadVariation = downloadVariation;
 window.downloadAllVariations = downloadAllVariations;
+// Deploy trigger 1770671322
