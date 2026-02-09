@@ -801,9 +801,9 @@ async function generateImage() {
 
         // Product Photography API kullan - EN ONEMLI OZELLIK!
         const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
-            product_image_url: state.originalBase64,
-            scene_description: sceneDescription,
-            optimize_description: true
+            productImageUrl: state.originalBase64,
+            sceneDescription: sceneDescription,
+            optimizeDescription: true
         }, falKey);
 
         if (productPhotoData && productPhotoData.images && productPhotoData.images.length > 0) {
@@ -895,10 +895,10 @@ async function previewJewelryPlacement() {
     try {
         // BiRefNet ile arka plan kaldirma
         const birefnetData = await callFalAPI('fal-ai/birefnet', {
-            image_url: state.originalBase64,
+            imageUrl: state.originalBase64,
             model: 'General',
-            operating_resolution: '1024x1024',
-            output_format: 'png'
+            operatingResolution: '1024x1024',
+            outputFormat: 'png'
         }, falKey);
 
         if (birefnetData && birefnetData.image && birefnetData.image.url) {
@@ -1988,9 +1988,9 @@ async function generateMultipleVariations(category = null) {
 
             // API çağrısı
             const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
-                product_image_url: state.originalBase64,
-                scene_description: sceneDescription,
-                optimize_description: true
+                productImageUrl: state.originalBase64,
+                sceneDescription: sceneDescription,
+                optimizeDescription: true
             }, falKey);
 
             if (productPhotoData?.images?.[0]?.url) {
@@ -2066,9 +2066,9 @@ async function generateCustomVariations(variations) {
             const sceneDescription = buildSceneDescription(selectedOutfit, selectedPose, selectedScene, selectedStyle);
 
             const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
-                product_image_url: state.originalBase64,
-                scene_description: sceneDescription,
-                optimize_description: true
+                productImageUrl: state.originalBase64,
+                sceneDescription: sceneDescription,
+                optimizeDescription: true
             }, falKey);
 
             if (productPhotoData?.images?.[0]?.url) {
