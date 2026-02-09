@@ -799,11 +799,12 @@ async function generateImage() {
 
         console.log('Scene Description:', sceneDescription);
 
-        // Product Photography API kullan - EN ONEMLI OZELLIK!
-        const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
-            productImageUrl: state.originalBase64,
-            sceneDescription: sceneDescription,
-            optimizeDescription: true
+        // Bria Product Shot API kullan - EN ONEMLI OZELLIK!
+        const productPhotoData = await callFalAPI('fal-ai/bria/product-shot', {
+            image_url: state.originalBase64,
+            scene_description: sceneDescription,
+            optimize_description: true,
+            num_results: 1
         }, falKey);
 
         if (productPhotoData && productPhotoData.images && productPhotoData.images.length > 0) {
@@ -895,10 +896,10 @@ async function previewJewelryPlacement() {
     try {
         // BiRefNet ile arka plan kaldirma
         const birefnetData = await callFalAPI('fal-ai/birefnet', {
-            imageUrl: state.originalBase64,
+            image_url: state.originalBase64,
             model: 'General',
-            operatingResolution: '1024x1024',
-            outputFormat: 'png'
+            operating_resolution: '1024x1024',
+            output_format: 'png'
         }, falKey);
 
         if (birefnetData && birefnetData.image && birefnetData.image.url) {
@@ -1986,11 +1987,12 @@ async function generateMultipleVariations(category = null) {
 
             const sceneDescription = buildSceneDescription(selectedOutfit, selectedPose, selectedScene, selectedStyle);
 
-            // API çağrısı
-            const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
-                productImageUrl: state.originalBase64,
-                sceneDescription: sceneDescription,
-                optimizeDescription: true
+            // API çağrısı - Bria Product Shot
+            const productPhotoData = await callFalAPI('fal-ai/bria/product-shot', {
+                image_url: state.originalBase64,
+                scene_description: sceneDescription,
+                optimize_description: true,
+                num_results: 1
             }, falKey);
 
             if (productPhotoData?.images?.[0]?.url) {
@@ -2065,10 +2067,11 @@ async function generateCustomVariations(variations) {
 
             const sceneDescription = buildSceneDescription(selectedOutfit, selectedPose, selectedScene, selectedStyle);
 
-            const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
-                productImageUrl: state.originalBase64,
-                sceneDescription: sceneDescription,
-                optimizeDescription: true
+            const productPhotoData = await callFalAPI('fal-ai/bria/product-shot', {
+                image_url: state.originalBase64,
+                scene_description: sceneDescription,
+                optimize_description: true,
+                num_results: 1
             }, falKey);
 
             if (productPhotoData?.images?.[0]?.url) {
