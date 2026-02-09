@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { endpoint, ...params } = req.body;
+        const { endpoint, payload } = req.body;
 
         if (!endpoint) {
             return res.status(400).json({ error: 'Endpoint is required' });
@@ -29,6 +29,7 @@ export default async function handler(req, res) {
         }
 
         console.log(`[FAL Proxy] Calling endpoint: ${endpoint}`);
+        console.log(`[FAL Proxy] Payload:`, JSON.stringify(payload).substring(0, 200));
 
         const response = await fetch(`https://fal.run/${endpoint}`, {
             method: 'POST',
@@ -36,7 +37,7 @@ export default async function handler(req, res) {
                 'Content-Type': 'application/json',
                 'Authorization': `Key ${FAL_API_KEY}`
             },
-            body: JSON.stringify(params)
+            body: JSON.stringify(payload || {})
         });
 
         const responseText = await response.text();
