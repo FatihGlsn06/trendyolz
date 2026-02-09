@@ -45,6 +45,83 @@ function loadDemoMode() {
 // 2. API CAGRI FONKSIYONLARI
 // ============================================
 
+// TEST FONKSIYONU - Konsoldan çağır: testFalAPI('YOUR_API_KEY')
+window.testFalAPI = async function(apiKey) {
+    console.log('=== FAL.AI API TEST ===');
+    console.log('API Key:', apiKey ? apiKey.substring(0, 10) + '...' : 'MISSING');
+
+    const testImageUrl = 'https://storage.googleapis.com/falserverless/bria/bria_product_fg.jpg';
+    const endpoint = 'fal-ai/bria/product-shot';
+
+    console.log('Testing endpoint:', endpoint);
+    console.log('Test image:', testImageUrl);
+
+    try {
+        // Step 1: Submit to queue
+        console.log('Step 1: Submitting to queue...');
+        const submitUrl = `https://queue.fal.run/${endpoint}`;
+        console.log('Submit URL:', submitUrl);
+
+        const submitResponse = await fetch(submitUrl, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Key ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                image_url: testImageUrl,
+                scene_description: 'professional studio lighting, white background',
+                num_results: 1
+            })
+        });
+
+        console.log('Submit response status:', submitResponse.status);
+        const submitText = await submitResponse.text();
+        console.log('Submit response:', submitText);
+
+        if (!submitResponse.ok) {
+            console.error('SUBMIT FAILED!');
+            return { error: submitText, status: submitResponse.status };
+        }
+
+        const submitData = JSON.parse(submitText);
+        console.log('Request ID:', submitData.request_id);
+
+        // Step 2: Poll for result
+        console.log('Step 2: Polling for result...');
+        for (let i = 0; i < 30; i++) {
+            await new Promise(r => setTimeout(r, 2000));
+
+            const statusUrl = `https://queue.fal.run/${endpoint}/requests/${submitData.request_id}/status`;
+            const statusResponse = await fetch(statusUrl, {
+                headers: { 'Authorization': `Key ${apiKey}` }
+            });
+            const statusData = await statusResponse.json();
+            console.log(`Poll ${i+1}: ${statusData.status}`);
+
+            if (statusData.status === 'COMPLETED') {
+                const resultUrl = `https://queue.fal.run/${endpoint}/requests/${submitData.request_id}`;
+                const resultResponse = await fetch(resultUrl, {
+                    headers: { 'Authorization': `Key ${apiKey}` }
+                });
+                const resultData = await resultResponse.json();
+                console.log('SUCCESS! Result:', resultData);
+                return resultData;
+            }
+
+            if (statusData.status === 'FAILED') {
+                console.error('PROCESSING FAILED:', statusData);
+                return { error: 'Processing failed', details: statusData };
+            }
+        }
+
+        return { error: 'Timeout' };
+    } catch (err) {
+        console.error('ERROR:', err);
+        return { error: err.message };
+    }
+};
+
 // Demo modunda Fal.ai proxy cagrisi
 async function callFalAPIProxy(endpoint, payload) {
     const response = await fetch('/api/fal-proxy', {
