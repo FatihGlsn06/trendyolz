@@ -1,170 +1,15 @@
 /**
- * Trendyol Pro Studio v19.1
+ * Trendyol Pro Studio v19.2
  * Professional Jewelry Photography & AI Enhancement Platform
- * + Çoklu Varyasyon & Popüler Şablonlar
+ * + Çoklu Varyasyon & Popüler Şablonlar & Marka Modeli & Video
  */
 
 // ============================================
-// 1. DEMO MODE SISTEMI
+// 1. API CAGRI FONKSIYONLARI
 // ============================================
 
-let isDemoMode = false;
-
-function toggleDemoMode() {
-    isDemoMode = !isDemoMode;
-    const demoBtn = document.getElementById('demoModeBtn');
-    const demoStatus = document.getElementById('demoStatus');
-
-    if (demoBtn) {
-        demoBtn.classList.toggle('active', isDemoMode);
-        demoBtn.textContent = isDemoMode ? 'Demo Mode: ON' : 'Demo Mode: OFF';
-    }
-
-    if (demoStatus) {
-        demoStatus.textContent = isDemoMode ? 'Demo Mode Active' : '';
-        demoStatus.style.display = isDemoMode ? 'block' : 'none';
-    }
-
-    localStorage.setItem('demoMode', isDemoMode);
-    showToast(isDemoMode ? 'Demo Mode activated - Using Vercel API Proxy' : 'Demo Mode deactivated - Using direct API calls', 'info');
-}
-
-function loadDemoMode() {
-    const savedDemoMode = localStorage.getItem('demoMode');
-    if (savedDemoMode === 'true') {
-        isDemoMode = true;
-        const demoBtn = document.getElementById('demoModeBtn');
-        if (demoBtn) {
-            demoBtn.classList.add('active');
-            demoBtn.textContent = 'Demo Mode: ON';
-        }
-    }
-}
-
-// ============================================
-// 2. API CAGRI FONKSIYONLARI
-// ============================================
-
-// Demo modunda Fal.ai proxy cagrisi (senkron - hızlı işlemler için)
-async function callFalAPIProxy(endpoint, payload) {
-    const response = await fetch('/api/fal-proxy', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            endpoint: endpoint,
-            payload: payload
-        })
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Fal API Proxy error: ${response.status}`);
-    }
-
-    return await response.json();
-}
-
-// Demo modunda Fal.ai proxy cagrisi (queue - video gibi uzun işlemler için)
-async function callFalAPIProxyQueue(endpoint, payload) {
-    // Step 1: Queue'ya gönder
-    const submitResponse = await fetch('/api/fal-proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            endpoint: endpoint,
-            payload: payload,
-            action: 'submit'
-        })
-    });
-
-    if (!submitResponse.ok) {
-        const errorData = await submitResponse.json().catch(() => ({}));
-        throw new Error(errorData.error || `Queue submit error: ${submitResponse.status}`);
-    }
-
-    const { request_id } = await submitResponse.json();
-    console.log(`[Queue] Submitted, ID: ${request_id}`);
-
-    // Step 2: Client-side polling
-    const maxAttempts = 120; // 2 dakika max
-    for (let i = 0; i < maxAttempts; i++) {
-        await new Promise(resolve => setTimeout(resolve, 2000)); // 2sn bekle
-
-        const statusResponse = await fetch('/api/fal-proxy', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                endpoint: endpoint,
-                action: 'status',
-                requestId: request_id
-            })
-        });
-
-        if (!statusResponse.ok) continue;
-
-        const statusData = await statusResponse.json();
-        console.log(`[Queue] Status: ${statusData.status}`);
-
-        if (statusData.status === 'COMPLETED') {
-            // Step 3: Sonucu al
-            const resultResponse = await fetch('/api/fal-proxy', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    endpoint: endpoint,
-                    action: 'result',
-                    requestId: request_id
-                })
-            });
-
-            if (!resultResponse.ok) {
-                throw new Error('Failed to fetch queue result');
-            }
-
-            return await resultResponse.json();
-        }
-
-        if (statusData.status === 'FAILED') {
-            throw new Error('Queue processing failed');
-        }
-    }
-
-    throw new Error('Queue timed out after 2 minutes');
-}
-
-// Demo modunda Gemini proxy cagrisi
-async function callGeminiAPIProxy(payload) {
-    const response = await fetch('/api/gemini-proxy', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Gemini API Proxy error: ${response.status}`);
-    }
-
-    return await response.json();
-}
-
-// Unified Fal API wrapper
-async function callFalAPI(endpoint, payload, apiKey, options = {}) {
-    const useQueue = options.queue || false;
-
-    // Demo modunda proxy kullan
-    if (isDemoMode) {
-        if (useQueue) {
-            return await callFalAPIProxyQueue(endpoint, payload);
-        }
-        return await callFalAPIProxy(endpoint, payload);
-    }
-
-    // Normal modda direkt API cagrisi
+// Fal.ai API cagrisi (direkt)
+async function callFalAPI(endpoint, payload, apiKey) {
     const response = await fetch(`https://fal.run/${endpoint}`, {
         method: 'POST',
         headers: {
@@ -191,43 +36,32 @@ async function callGeminiAPI(prompt, apiKey, options = {}) {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-            let result;
+            const url = `${geminiConfig.baseUrl}/${currentModel}:generateContent?key=${apiKey}`;
 
-            if (isDemoMode) {
-                // Demo modunda proxy kullan
-                result = await callGeminiAPIProxy({
-                    prompt: prompt,
-                    model: currentModel
-                });
-            } else {
-                // Normal modda direkt API cagrisi
-                const url = `${geminiConfig.baseUrl}/${currentModel}:generateContent?key=${apiKey}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{
+                            text: prompt
+                        }]
+                    }],
+                    generationConfig: {
+                        temperature: options.temperature || 0.7,
+                        maxOutputTokens: options.maxTokens || 2048
+                    }
+                })
+            });
 
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [{
-                                text: prompt
-                            }]
-                        }],
-                        generationConfig: {
-                            temperature: options.temperature || 0.7,
-                            maxOutputTokens: options.maxTokens || 2048
-                        }
-                    })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.error?.message || `Gemini API error: ${response.status}`);
-                }
-
-                result = await response.json();
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error?.message || `Gemini API error: ${response.status}`);
             }
+
+            const result = await response.json();
 
             // Basarili sonuc
             if (result.candidates && result.candidates[0]?.content?.parts[0]?.text) {
@@ -371,8 +205,8 @@ function openSettings() {
     if (modal) {
         modal.style.display = 'flex';
         // API anahtarlarini inputlara yukle
-        document.getElementById('falApiKeyInput').value = state.settings.falApiKey || '';
-        document.getElementById('geminiApiKeyInput').value = state.settings.geminiApiKey || '';
+        document.getElementById('falKeyInput').value = state.settings.falApiKey || '';
+        document.getElementById('geminiKeyInput').value = state.settings.geminiApiKey || '';
     }
 }
 
@@ -384,8 +218,8 @@ function closeSettings() {
 }
 
 function saveSettings() {
-    const falKey = document.getElementById('falApiKeyInput')?.value?.trim() || '';
-    const geminiKey = document.getElementById('geminiApiKeyInput')?.value?.trim() || '';
+    const falKey = document.getElementById('falKeyInput')?.value?.trim() || '';
+    const geminiKey = document.getElementById('geminiKeyInput')?.value?.trim() || '';
 
     state.settings.falApiKey = falKey;
     state.settings.geminiApiKey = geminiKey;
@@ -408,40 +242,26 @@ function loadSettings() {
     state.settings.outputQuality = localStorage.getItem('outputQuality') || 'high';
     state.settings.outputFormat = localStorage.getItem('outputFormat') || 'png';
 
-    // Demo mode'u yukle
-    loadDemoMode();
-
     // API durumunu guncelle
     updateApiStatus();
 }
 
 function updateApiStatus() {
-    const falStatus = document.getElementById('falApiStatus');
-    const geminiStatus = document.getElementById('geminiApiStatus');
+    const apiStatusEl = document.getElementById('apiStatus');
 
-    if (falStatus) {
-        if (isDemoMode) {
-            falStatus.innerHTML = '<span class="status-dot demo"></span> Demo Mode';
-            falStatus.className = 'api-status demo';
-        } else if (state.settings.falApiKey) {
-            falStatus.innerHTML = '<span class="status-dot connected"></span> Connected';
-            falStatus.className = 'api-status connected';
-        } else {
-            falStatus.innerHTML = '<span class="status-dot disconnected"></span> Not Connected';
-            falStatus.className = 'api-status disconnected';
-        }
-    }
+    if (apiStatusEl) {
+        const hasFal = !!state.settings.falApiKey;
+        const hasGemini = !!state.settings.geminiApiKey;
 
-    if (geminiStatus) {
-        if (isDemoMode) {
-            geminiStatus.innerHTML = '<span class="status-dot demo"></span> Demo Mode';
-            geminiStatus.className = 'api-status demo';
-        } else if (state.settings.geminiApiKey) {
-            geminiStatus.innerHTML = '<span class="status-dot connected"></span> Connected';
-            geminiStatus.className = 'api-status connected';
+        if (hasFal && hasGemini) {
+            apiStatusEl.innerHTML = '<span style="color:#10b981">●</span> API Bağlı';
+            apiStatusEl.style.color = '#10b981';
+        } else if (hasFal || hasGemini) {
+            apiStatusEl.innerHTML = '<span style="color:#f59e0b">●</span> Kısmi Bağlantı';
+            apiStatusEl.style.color = '#f59e0b';
         } else {
-            geminiStatus.innerHTML = '<span class="status-dot disconnected"></span> Not Connected';
-            geminiStatus.className = 'api-status disconnected';
+            apiStatusEl.innerHTML = '<span style="color:#ef4444">●</span> API Bağlantısı Yok';
+            apiStatusEl.style.color = '#ef4444';
         }
     }
 }
@@ -870,8 +690,8 @@ async function generateImage() {
 
     // API key kontrolu
     const falKey = state.settings.falApiKey;
-    if (!falKey && !isDemoMode) {
-        showToast('Please configure your Fal.ai API key or enable Demo Mode', 'error');
+    if (!falKey) {
+        showToast('Lütfen Fal.ai API key girin (Ayarlar'dan)', 'error');
         openSettings();
         return;
     }
@@ -981,8 +801,8 @@ async function previewJewelryPlacement() {
     }
 
     const falKey = state.settings.falApiKey;
-    if (!falKey && !isDemoMode) {
-        showToast('Please configure your Fal.ai API key or enable Demo Mode', 'error');
+    if (!falKey) {
+        showToast('Lütfen Fal.ai API key girin (Ayarlar'dan)', 'error');
         openSettings();
         return;
     }
@@ -1035,8 +855,8 @@ async function generateSEO() {
     }
 
     const geminiKey = state.settings.geminiApiKey;
-    if (!geminiKey && !isDemoMode) {
-        showToast('Gemini API key gerekli veya Demo Mode açın', 'error');
+    if (!geminiKey) {
+        showToast('Lütfen Gemini API key girin (Ayarlar'dan)', 'error');
         openSettings();
         return;
     }
@@ -1100,47 +920,35 @@ SADECE JSON döndür!`;
         let seoData;
         const imageBase64 = state.processedImage || state.originalImage;
 
-        if (isDemoMode) {
-            // Demo modunda proxy kullan
-            const result = await callGeminiAPIProxy({
-                prompt: seoPrompt,
-                model: 'gemini-2.0-flash',
-                image: imageBase64 ? imageBase64.split(',')[1] : null
-            });
+        // Görsel analiz için Gemini Vision API kullan
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`;
 
-            const text = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            seoData = parseSEOJson(text);
-        } else {
-            // Görsel analiz için Gemini Vision API kullan
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`;
+        const requestBody = {
+            contents: [{
+                parts: [
+                    { text: seoPrompt },
+                    ...(imageBase64 ? [{
+                        inlineData: {
+                            mimeType: 'image/jpeg',
+                            data: imageBase64.split(',')[1]
+                        }
+                    }] : [])
+                ]
+            }],
+            generationConfig: { temperature: 0.3 }
+        };
 
-            const requestBody = {
-                contents: [{
-                    parts: [
-                        { text: seoPrompt },
-                        ...(imageBase64 ? [{
-                            inlineData: {
-                                mimeType: 'image/jpeg',
-                                data: imageBase64.split(',')[1]
-                            }
-                        }] : [])
-                    ]
-                }],
-                generationConfig: { temperature: 0.3 }
-            };
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
 
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(requestBody)
-            });
+        if (!response.ok) throw new Error('SEO oluşturulamadı');
 
-            if (!response.ok) throw new Error('SEO oluşturulamadı');
-
-            const data = await response.json();
-            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            seoData = parseSEOJson(text);
-        }
+        const data = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        seoData = parseSEOJson(text);
 
         if (!seoData) {
             throw new Error('SEO verisi parse edilemedi');
@@ -2041,8 +1849,8 @@ async function generateMultipleVariations(category = null) {
     }
 
     const falKey = state.settings.falApiKey;
-    if (!falKey && !isDemoMode) {
-        showToast('Fal.ai API key gerekli veya Demo Mode açın', 'error');
+    if (!falKey) {
+        showToast('Lütfen Fal.ai API key girin (Ayarlar'dan)', 'error');
         openSettings();
         return;
     }
@@ -2133,8 +1941,8 @@ async function generateCustomVariations(variations) {
     }
 
     const falKey = state.settings.falApiKey;
-    if (!falKey && !isDemoMode) {
-        showToast('Fal.ai API key gerekli veya Demo Mode açın', 'error');
+    if (!falKey) {
+        showToast('Lütfen Fal.ai API key girin (Ayarlar'dan)', 'error');
         openSettings();
         return;
     }
@@ -2715,8 +2523,8 @@ async function generateVideo() {
     }
 
     const falKey = state.settings.falApiKey;
-    if (!falKey && !isDemoMode) {
-        showToast('Fal.ai API key gerekli veya Demo Mode açın', 'error');
+    if (!falKey) {
+        showToast('Lütfen Fal.ai API key girin (Ayarlar'dan)', 'error');
         openSettings();
         return;
     }
@@ -2767,7 +2575,7 @@ async function generateVideo() {
             image_url: sourceImage,
             duration: state.video.duration,
             aspect_ratio: state.video.aspectRatio
-        }, falKey, { queue: true });
+        }, falKey);
 
         if (videoData?.video?.url) {
             state.video.result = videoData.video.url;
@@ -2857,7 +2665,6 @@ window.onload = function() {
 // ============================================
 
 // Event handlers icin global scope'a aktar
-window.toggleDemoMode = toggleDemoMode;
 window.toggleAccordion = toggleAccordion;
 window.switchTab = switchTab;
 window.openSettings = openSettings;
