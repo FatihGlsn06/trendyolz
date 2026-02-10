@@ -693,7 +693,7 @@
 
                         <div id="previewArea" class="relative rounded-xl overflow-hidden min-h-[280px] sm:min-h-[350px] md:min-h-[400px] bg-slate-800/50 flex items-center justify-center">
                             <!-- Loading Overlay -->
-                            <div id="previewLoader" class="hidden absolute inset-0 bg-black/70 flex flex-col items-center justify-center z-10">
+                            <div id="previewLoader" class="absolute inset-0 bg-black/70 flex-col items-center justify-center z-10" style="display:none">
                                 <div class="loader mb-4"></div>
                                 <p id="loaderText" class="text-sm text-slate-300">İşleniyor...</p>
                                 <p id="loaderSubtext" class="text-xs text-slate-500 mt-1">Lütfen bekleyin</p>
@@ -1015,7 +1015,7 @@
     </main>
 
     <!-- Settings Modal -->
-    <div id="settingsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4" onclick="if(event.target === this) closeSettings()">
+    <div id="settingsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 items-center justify-center p-4" style="display:none" onclick="if(event.target === this) closeSettings()">
         <div class="glass rounded-2xl w-full max-w-lg p-6 relative z-10">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="font-bold text-lg">API Ayarları</h3>
