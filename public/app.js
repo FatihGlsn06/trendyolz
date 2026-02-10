@@ -709,7 +709,7 @@ async function generateImage() {
     }
 
     if (!state.originalBase64) {
-        showToast('Please upload an image first!', 'error');
+        showToast('Lutfen once bir urun gorseli yukleyin!', 'error');
         return;
     }
 
@@ -722,7 +722,6 @@ async function generateImage() {
     }
 
     state.isGenerating = true;
-    showLoader('Generating professional product photo...');
 
     try {
         // Secili ayarlari al
@@ -731,56 +730,70 @@ async function generateImage() {
         const selectedScene = scenePresets[state.selectedScene] || scenePresets.studio_clean;
         const selectedStyle = stylePresets[state.selectedStyle] || stylePresets.studio;
 
-        // Sahne aciklamasi olustur
         const sceneDescription = buildSceneDescription(selectedOutfit, selectedPose, selectedScene, selectedStyle);
-
         console.log('Scene Description:', sceneDescription);
 
-        // Product Photography API kullan - EN ONEMLI OZELLIK!
-        const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
-            product_image_url: state.originalBase64,
-            prompt: sceneDescription
-        }, falKey);
+        let resultBase64;
 
-        if (productPhotoData && productPhotoData.images && productPhotoData.images.length > 0) {
-            const resultImageUrl = productPhotoData.images[0].url;
+        // ===== TEMPLATE MODEL + FLUX EDIT MODU =====
+        if (state.templateImage) {
+            showLoader('FLUX Edit ile taki modele yerlestiriliyor...');
 
-            // Sonucu base64'e cevir
-            let resultBase64 = await fetchImageAsBase64(resultImageUrl);
+            const fluxEditPrompt = `Professional jewelry product photography. Place the jewelry from image 2 naturally on the model from image 1. ${sceneDescription}. Photorealistic, high-end commercial quality, perfect lighting on jewelry details.`;
 
-            // Urun gorselini kaydet (canvas icin gerekli)
-            state.processedImage = resultBase64;
+            const fluxResult = await callFalAPI('fal-ai/flux-2-pro/edit', {
+                image_urls: [state.templateImage, state.originalBase64],
+                prompt: fluxEditPrompt,
+                image_size: 'auto',
+                output_format: 'jpeg'
+            }, falKey);
 
-            // Brand model aktifse yüz değiştir
-            if (state.brandModel.enabled && state.brandModel.photos.length > 0) {
-                showLoader('Marka modeli yüzü uygulanıyor...');
-                resultBase64 = await applyBrandModelFace(resultBase64);
-                state.processedImage = resultBase64;
+            if (fluxResult?.images?.[0]?.url) {
+                resultBase64 = await fetchImageAsBase64(fluxResult.images[0].url);
+            } else {
+                throw new Error('FLUX Edit sonuc dondurmed');
             }
 
-            // Sonuc preview'ini guncelle
-            showResultPreview(resultBase64);
-
-            // Template model varsa canvas'i guncelle
-            if (state.templateImage) {
-                updateInteractivePreview();
-                showInteractivePreview();
-            }
-
-            // Galeriye ekle - secili ayarlari etiketle
-            const label = `${selectedPose.name} - ${selectedOutfit.name}`;
-            addToGallery(resultBase64, label);
-
-            hideLoader();
-            showToast('Profesyonel urun gorseli olusturuldu!', 'success');
+        // ===== STANDART PRODUCT PHOTOGRAPHY MODU =====
         } else {
-            throw new Error('No image returned from Product Photography API');
+            showLoader('Profesyonel urun fotografi olusturuluyor...');
+
+            const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
+                product_image_url: state.originalBase64,
+                prompt: sceneDescription
+            }, falKey);
+
+            if (productPhotoData?.images?.[0]?.url) {
+                resultBase64 = await fetchImageAsBase64(productPhotoData.images[0].url);
+            } else {
+                throw new Error('Product Photography API sonuc dondurmed');
+            }
         }
+
+        // Urun gorselini kaydet
+        state.processedImage = resultBase64;
+
+        // Brand model face-swap (FLUX Edit sonucunda artik yuz VAR)
+        if (state.brandModel.enabled && state.brandModel.photos.length > 0) {
+            showLoader('Marka modeli yuzu uygulanıyor...');
+            resultBase64 = await applyBrandModelFace(resultBase64);
+            state.processedImage = resultBase64;
+        }
+
+        // Sonuc preview
+        showResultPreview(resultBase64);
+
+        // Galeriye ekle
+        const label = `${selectedPose.name} - ${selectedOutfit.name}`;
+        addToGallery(resultBase64, label);
+
+        hideLoader();
+        showToast('Profesyonel urun gorseli olusturuldu!', 'success');
 
     } catch (error) {
         console.error('Product Photography error:', error);
         hideLoader();
-        showToast('Error generating product photo: ' + error.message, 'error');
+        showToast('Gorsel olusturma hatasi: ' + error.message, 'error');
     } finally {
         state.isGenerating = false;
     }
@@ -1920,15 +1933,31 @@ async function generateMultipleVariations(category = null) {
 
             const sceneDescription = buildSceneDescription(selectedOutfit, selectedPose, selectedScene, selectedStyle);
 
-            // API çağrısı
-            const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
-                product_image_url: state.originalBase64,
-                prompt: sceneDescription
-            }, falKey);
+            // API cagrisi - template varsa FLUX Edit, yoksa product-photography
+            let resultBase64 = null;
 
-            if (productPhotoData?.images?.[0]?.url) {
-                const resultBase64 = await fetchImageAsBase64(productPhotoData.images[0].url);
+            if (state.templateImage) {
+                const fluxPrompt = `Professional jewelry product photography. Place the jewelry from image 2 naturally on the model from image 1. ${sceneDescription}. Photorealistic, high-end commercial quality.`;
+                const fluxResult = await callFalAPI('fal-ai/flux-2-pro/edit', {
+                    image_urls: [state.templateImage, state.originalBase64],
+                    prompt: fluxPrompt,
+                    image_size: 'auto',
+                    output_format: 'jpeg'
+                }, falKey);
+                if (fluxResult?.images?.[0]?.url) {
+                    resultBase64 = await fetchImageAsBase64(fluxResult.images[0].url);
+                }
+            } else {
+                const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
+                    product_image_url: state.originalBase64,
+                    prompt: sceneDescription
+                }, falKey);
+                if (productPhotoData?.images?.[0]?.url) {
+                    resultBase64 = await fetchImageAsBase64(productPhotoData.images[0].url);
+                }
+            }
 
+            if (resultBase64) {
                 state.multiVariation.results.push({
                     image: resultBase64,
                     label: variation.label,
@@ -1936,12 +1965,10 @@ async function generateMultipleVariations(category = null) {
                     outfit: variation.outfit,
                     scene: variation.scene
                 });
-
-                // Galeriye ekle
                 addToGallery(resultBase64, variation.label);
             }
 
-            // Küçük bekleme (rate limit için)
+            // Rate limit icin bekleme
             if (i < template.variations.length - 1) {
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
@@ -1998,14 +2025,30 @@ async function generateCustomVariations(variations) {
 
             const sceneDescription = buildSceneDescription(selectedOutfit, selectedPose, selectedScene, selectedStyle);
 
-            const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
-                product_image_url: state.originalBase64,
-                prompt: sceneDescription
-            }, falKey);
+            let resultBase64 = null;
 
-            if (productPhotoData?.images?.[0]?.url) {
-                const resultBase64 = await fetchImageAsBase64(productPhotoData.images[0].url);
+            if (state.templateImage) {
+                const fluxPrompt = `Professional jewelry product photography. Place the jewelry from image 2 naturally on the model from image 1. ${sceneDescription}. Photorealistic, high-end commercial quality.`;
+                const fluxResult = await callFalAPI('fal-ai/flux-2-pro/edit', {
+                    image_urls: [state.templateImage, state.originalBase64],
+                    prompt: fluxPrompt,
+                    image_size: 'auto',
+                    output_format: 'jpeg'
+                }, falKey);
+                if (fluxResult?.images?.[0]?.url) {
+                    resultBase64 = await fetchImageAsBase64(fluxResult.images[0].url);
+                }
+            } else {
+                const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
+                    product_image_url: state.originalBase64,
+                    prompt: sceneDescription
+                }, falKey);
+                if (productPhotoData?.images?.[0]?.url) {
+                    resultBase64 = await fetchImageAsBase64(productPhotoData.images[0].url);
+                }
+            }
 
+            if (resultBase64) {
                 state.multiVariation.results.push({
                     image: resultBase64,
                     label: variation.label || `Varyasyon ${i + 1}`,
@@ -2013,7 +2056,6 @@ async function generateCustomVariations(variations) {
                     outfit: variation.outfit,
                     scene: variation.scene
                 });
-
                 addToGallery(resultBase64, variation.label || `Var. ${i + 1}`);
             }
 
@@ -2517,8 +2559,7 @@ function loadBrandModel() {
 }
 
 // Brand model yüz uygula (face swap)
-// Face swap mantigi: template model fotosunda yuz varsa ona uygula
-// Product photography ciktisinda genelde yuz olmaz (sadece taki gorseli)
+// FLUX Edit ciktisinda model yuzu varsa, marka modelinin yuzuyle degistir
 async function applyBrandModelFace(imageBase64) {
     if (!state.brandModel.enabled || state.brandModel.photos.length === 0) {
         return imageBase64;
@@ -2527,55 +2568,22 @@ async function applyBrandModelFace(imageBase64) {
     const falKey = state.settings.falApiKey;
     try {
         console.log('[Brand Model] Applying face swap...');
-        const referencePhoto = state.brandModel.photos[0]; // Marka modelinin yuz fotosu
+        const referencePhoto = state.brandModel.photos[0];
 
-        // Template model varsa: template'e face swap yap, sonra canvas composite kullan
-        if (state.templateImage) {
-            console.log('[Brand Model] Template found - swapping face on template');
-            const faceSwapData = await callFalAPI('fal-ai/face-swap', {
-                base_image_url: state.templateImage,   // Template foto (yuz var)
-                swap_image_url: referencePhoto          // Marka modeli yuzu
-            }, falKey);
-
-            if (faceSwapData?.image?.url) {
-                // Template'i guncelle (yuz degistirilmis hali)
-                const swappedTemplate = await fetchImageAsBase64(faceSwapData.image.url);
-                state.templateImage = swappedTemplate;
-                state.templateBase64 = swappedTemplate;
-
-                // Template preview'i guncelle
-                const previewImg = document.getElementById('templateImage');
-                if (previewImg) previewImg.src = swappedTemplate;
-
-                console.log('[Brand Model] Template face swap successful');
-                updateInteractivePreview();
-
-                // Canvas composite'i dondur (template + taki)
-                const canvas = document.getElementById('interactiveCanvas');
-                if (canvas) {
-                    // Canvas renderinin tamamlanmasini bekle
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                    return canvas.toDataURL('image/png');
-                }
-            }
-        }
-
-        // Template yoksa: dogrudan product fotosuna dene (yuz varsa basarili olur)
-        console.log('[Brand Model] No template - trying face swap on generated image');
         const faceSwapData = await callFalAPI('fal-ai/face-swap', {
-            base_image_url: imageBase64,
-            swap_image_url: referencePhoto
+            base_image_url: imageBase64,     // FLUX Edit ciktisi (model yuzu VAR)
+            swap_image_url: referencePhoto    // Marka modeli yuzu
         }, falKey);
 
         if (faceSwapData?.image?.url) {
             const resultBase64 = await fetchImageAsBase64(faceSwapData.image.url);
-            console.log('[Brand Model] Direct face swap successful');
+            console.log('[Brand Model] Face swap successful');
             return resultBase64;
         }
     } catch (error) {
         console.warn('[Brand Model] Face swap failed:', error.message);
-        if (error.message.includes('no face') || error.message.includes('No face')) {
-            showToast('Yuz bulunamadi - model sablonu yukleyin (yuzlu foto)', 'warning');
+        if (error.message.includes('face')) {
+            showToast('Yuz bulunamadi - model sablonunda yuz gorunur olmali', 'warning');
         } else {
             showToast('Face swap hatasi: ' + error.message, 'warning');
         }
@@ -2621,14 +2629,33 @@ async function generateVideo() {
 
         showLoader('Ürün görseli hazırlanıyor...');
 
-        // Template model varsa canvas composite kullan
-        const canvasComposite = getCanvasComposite();
-        if (canvasComposite && state.templateImage) {
-            sourceImage = canvasComposite;
-        } else if (state.processedImage) {
+        if (state.processedImage) {
+            // Daha once olusturulmus gorsel var
             sourceImage = state.processedImage;
+        } else if (state.templateImage) {
+            // Template varsa FLUX Edit ile birlestir
+            const selectedOutfit = outfitPresets[state.selectedOutfit] || outfitPresets.black_vneck;
+            const selectedPose = posePresets[state.selectedPose] || posePresets.front;
+            const selectedScene = scenePresets[state.selectedScene] || scenePresets.studio_clean;
+            const selectedStyle = stylePresets[state.selectedStyle] || stylePresets.studio;
+            const sceneDescription = buildSceneDescription(selectedOutfit, selectedPose, selectedScene, selectedStyle);
+
+            const fluxPrompt = `Professional jewelry product photography. Place the jewelry from image 2 naturally on the model from image 1. ${sceneDescription}. Photorealistic, high-end commercial quality.`;
+            const fluxResult = await callFalAPI('fal-ai/flux-2-pro/edit', {
+                image_urls: [state.templateImage, state.originalBase64],
+                prompt: fluxPrompt,
+                image_size: 'auto',
+                output_format: 'jpeg'
+            }, falKey);
+
+            if (fluxResult?.images?.[0]?.url) {
+                sourceImage = await fetchImageAsBase64(fluxResult.images[0].url);
+                state.processedImage = sourceImage;
+            } else {
+                sourceImage = state.originalBase64;
+            }
         } else {
-            // Henüz işlenmiş görsel yoksa, product photography ile oluştur
+            // Template yok, product-photography kullan
             const selectedOutfit = outfitPresets[state.selectedOutfit] || outfitPresets.black_vneck;
             const selectedPose = posePresets[state.selectedPose] || posePresets.front;
             const selectedScene = scenePresets[state.selectedScene] || scenePresets.studio_clean;
