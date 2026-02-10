@@ -465,7 +465,7 @@ function setupTemplateUpload() {
 
 function handleTemplateFile(file) {
     if (!file.type.startsWith('image/')) {
-        showToast('Please upload an image file for template', 'error');
+        showToast('Lutfen bir gorsel dosyasi yukleyin', 'error');
         return;
     }
 
@@ -474,13 +474,16 @@ function handleTemplateFile(file) {
         state.templateImage = e.target.result;
         state.templateBase64 = e.target.result;
 
-        const preview = document.getElementById('templatePreview');
-        if (preview) {
-            preview.src = e.target.result;
-            preview.style.display = 'block';
-        }
+        const previewContainer = document.getElementById('templatePreview');
+        const previewImg = document.getElementById('templateImage');
+        const placeholder = document.getElementById('templatePlaceholder');
 
-        showToast('Template image uploaded!', 'success');
+        if (previewImg) previewImg.src = e.target.result;
+        if (previewContainer) previewContainer.classList.remove('hidden');
+        if (placeholder) placeholder.classList.add('hidden');
+
+        showToast('Model sablonu yuklendi!', 'success');
+        updateInteractivePreview();
     };
     reader.readAsDataURL(file);
 }
@@ -756,12 +759,18 @@ async function generateImage() {
             // Sonuc preview'ini guncelle
             showResultPreview(resultBase64);
 
+            // Template model varsa canvas'i guncelle
+            if (state.templateImage) {
+                updateInteractivePreview();
+                showInteractivePreview();
+            }
+
             // Galeriye ekle - secili ayarlari etiketle
             const label = `${selectedPose.name} - ${selectedOutfit.name}`;
             addToGallery(resultBase64, label);
 
             hideLoader();
-            showToast('Professional product photo generated successfully!', 'success');
+            showToast('Profesyonel urun gorseli olusturuldu!', 'success');
         } else {
             throw new Error('No image returned from Product Photography API');
         }
@@ -2255,22 +2264,42 @@ async function loadInteractiveImages() {
 }
 
 function showInteractivePreview() {
-    const container = document.getElementById('interactivePreviewContainer');
-    if (container) {
-        container.style.display = 'block';
+    const canvas = document.getElementById('interactiveCanvas');
+    const placeholder = document.getElementById('previewPlaceholder');
+    const positionControls = document.getElementById('positionControls');
+
+    if (canvas) {
+        canvas.classList.remove('hidden');
+        canvas.style.display = 'block';
+        canvas.width = 600;
+        canvas.height = 800;
         state.interactiveMode = true;
         updateInteractivePreview();
         setupCanvasDrag();
         setupKeyboardControls();
     }
+    if (placeholder) placeholder.style.display = 'none';
+    if (positionControls) positionControls.classList.remove('hidden');
 }
 
 function hideInteractivePreview() {
-    const container = document.getElementById('interactivePreviewContainer');
-    if (container) {
-        container.style.display = 'none';
+    const canvas = document.getElementById('interactiveCanvas');
+    const positionControls = document.getElementById('positionControls');
+
+    if (canvas) {
+        canvas.classList.add('hidden');
+        canvas.style.display = 'none';
         state.interactiveMode = false;
     }
+    if (positionControls) positionControls.classList.add('hidden');
+}
+
+function getCanvasComposite() {
+    const canvas = document.getElementById('interactiveCanvas');
+    if (canvas && state.templateImage) {
+        return canvas.toDataURL('image/png');
+    }
+    return null;
 }
 
 function setupCanvasDrag() {
@@ -2545,13 +2574,19 @@ async function generateVideo() {
     state.video.isGenerating = true;
 
     try {
-        // Step 1: Ürün fotoğrafı oluştur
-        let sourceImage = state.processedImage || state.originalBase64;
+        // Step 1: Kaynak gorsel belirle
+        let sourceImage = null;
 
         showLoader('Ürün görseli hazırlanıyor...');
 
-        // Eğer henüz işlenmiş görsel yoksa, product photography ile oluştur
-        if (!state.processedImage) {
+        // Template model varsa canvas composite kullan
+        const canvasComposite = getCanvasComposite();
+        if (canvasComposite && state.templateImage) {
+            sourceImage = canvasComposite;
+        } else if (state.processedImage) {
+            sourceImage = state.processedImage;
+        } else {
+            // Henüz işlenmiş görsel yoksa, product photography ile oluştur
             const selectedOutfit = outfitPresets[state.selectedOutfit] || outfitPresets.black_vneck;
             const selectedPose = posePresets[state.selectedPose] || posePresets.front;
             const selectedScene = scenePresets[state.selectedScene] || scenePresets.studio_clean;
@@ -2566,6 +2601,8 @@ async function generateVideo() {
             if (productPhotoData?.images?.[0]?.url) {
                 sourceImage = await fetchImageAsBase64(productPhotoData.images[0].url);
                 state.processedImage = sourceImage;
+            } else {
+                sourceImage = state.originalBase64;
             }
         }
 
@@ -2578,7 +2615,7 @@ async function generateVideo() {
         // Step 3: Video oluştur (MiniMax Hailuo)
         showLoader('Video oluşturuluyor... Bu işlem 1-2 dakika sürebilir');
 
-        const videoPrompt = 'Elegant jewelry product showcase, gentle rotation, soft studio lighting, professional commercial video, [Static shot]';
+        const videoPrompt = 'Elegant jewelry product showcase, gentle slow motion, soft studio lighting, professional commercial video, [Static shot]';
 
         const videoData = await callFalAPI('fal-ai/minimax/video-01/image-to-video', {
             image_url: sourceImage,
