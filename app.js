@@ -297,6 +297,22 @@ function hideLoader() {
     state.isProcessing = false;
 }
 
+function showResultPreview(imageBase64) {
+    const resultPreview = document.getElementById('resultPreview');
+    const placeholder = document.getElementById('previewPlaceholder');
+    const downloadActions = document.getElementById('downloadActions');
+    const previewVideo = document.getElementById('previewVideo');
+
+    if (resultPreview) {
+        resultPreview.src = imageBase64;
+        resultPreview.classList.remove('hidden');
+        resultPreview.style.display = 'block';
+    }
+    if (placeholder) placeholder.style.display = 'none';
+    if (downloadActions) downloadActions.classList.remove('hidden');
+    if (previewVideo) previewVideo.classList.add('hidden');
+}
+
 function showToast(message, type = 'info') {
     // Mevcut toast'lari temizle
     const existingToasts = document.querySelectorAll('.toast');
@@ -738,11 +754,7 @@ async function generateImage() {
             state.processedImage = resultBase64;
 
             // Sonuc preview'ini guncelle
-            const resultPreview = document.getElementById('resultPreview');
-            if (resultPreview) {
-                resultPreview.src = resultBase64;
-                resultPreview.style.display = 'block';
-            }
+            showResultPreview(resultBase64);
 
             // Galeriye ekle - secili ayarlari etiketle
             const label = `${selectedPose.name} - ${selectedOutfit.name}`;
@@ -834,11 +846,7 @@ async function previewJewelryPlacement() {
 
             state.processedImage = withWhiteBackground;
 
-            const resultPreview = document.getElementById('resultPreview');
-            if (resultPreview) {
-                resultPreview.src = withWhiteBackground;
-                resultPreview.style.display = 'block';
-            }
+            showResultPreview(withWhiteBackground);
 
             // Interactive preview'i goster
             showInteractivePreview();
@@ -1224,11 +1232,7 @@ function showGalleryImage(index) {
     const item = state.gallery[index];
     if (!item) return;
 
-    const resultPreview = document.getElementById('resultPreview');
-    if (resultPreview) {
-        resultPreview.src = item.image;
-        resultPreview.style.display = 'block';
-    }
+    showResultPreview(item.image);
 
     state.processedImage = item.image;
     showToast(`Showing: ${item.label}`, 'info');
@@ -1246,20 +1250,21 @@ function clearGallery() {
 // 12. INDIRME
 // ============================================
 
-function downloadImage() {
+function downloadImage(format) {
     const imageToDownload = state.processedImage || state.originalImage;
 
     if (!imageToDownload) {
-        showToast('No image to download!', 'error');
+        showToast('Indirilecek gorsel yok!', 'error');
         return;
     }
 
+    const ext = format || state.settings.outputFormat || 'png';
     const link = document.createElement('a');
-    link.download = `trendyol-pro-${Date.now()}.${state.settings.outputFormat}`;
+    link.download = `trendyol-pro-${Date.now()}.${ext}`;
     link.href = imageToDownload;
     link.click();
 
-    showToast('Image downloaded!', 'success');
+    showToast('Gorsel indirildi!', 'success');
 }
 
 // ============================================
@@ -2077,11 +2082,7 @@ function showMultiVariationResults() {
     // Son üretilen görseli ana preview'e koy
     if (results.length > 0) {
         state.processedImage = results[results.length - 1].image;
-        const preview = document.getElementById('resultPreview');
-        if (preview) {
-            preview.src = state.processedImage;
-            preview.style.display = 'block';
-        }
+        showResultPreview(state.processedImage);
     }
 
     // Modal ile tüm sonuçları göster
@@ -2150,11 +2151,7 @@ function selectVariation(index) {
     const result = state.multiVariation.results[index];
     if (result) {
         state.processedImage = result.image;
-        const preview = document.getElementById('resultPreview');
-        if (preview) {
-            preview.src = result.image;
-            preview.style.display = 'block';
-        }
+        showResultPreview(result.image);
         closeMultiVariationResults();
         showToast(`Seçildi: ${result.label}`, 'success');
     }
@@ -2578,13 +2575,15 @@ async function generateVideo() {
             sourceImage = await applyBrandModelFace(sourceImage);
         }
 
-        // Step 3: Video oluştur
+        // Step 3: Video oluştur (MiniMax Hailuo)
         showLoader('Video oluşturuluyor... Bu işlem 1-2 dakika sürebilir');
 
-        const videoData = await callFalAPI('fal-ai/kling-video/v1.5/pro/image-to-video', {
+        const videoPrompt = 'Elegant jewelry product showcase, gentle rotation, soft studio lighting, professional commercial video, [Static shot]';
+
+        const videoData = await callFalAPI('fal-ai/minimax/video-01/image-to-video', {
             image_url: sourceImage,
-            duration: state.video.duration,
-            aspect_ratio: state.video.aspectRatio
+            prompt: videoPrompt,
+            prompt_optimizer: true
         }, falKey);
 
         if (videoData?.video?.url) {
@@ -2592,17 +2591,18 @@ async function generateVideo() {
 
             // Video player'ı göster
             const videoEl = document.getElementById('previewVideo');
-            const previewImg = document.getElementById('previewImage');
+            const resultPreview = document.getElementById('resultPreview');
             const placeholder = document.getElementById('previewPlaceholder');
             const canvas = document.getElementById('interactiveCanvas');
 
             if (videoEl) {
                 videoEl.src = videoData.video.url;
                 videoEl.classList.remove('hidden');
+                videoEl.style.display = 'block';
                 videoEl.load();
             }
-            if (previewImg) previewImg.classList.add('hidden');
-            if (placeholder) placeholder.classList.add('hidden');
+            if (resultPreview) { resultPreview.classList.add('hidden'); resultPreview.style.display = 'none'; }
+            if (placeholder) placeholder.style.display = 'none';
             if (canvas) canvas.classList.add('hidden');
 
             // Download butonlarını göster
