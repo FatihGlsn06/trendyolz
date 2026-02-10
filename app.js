@@ -691,7 +691,7 @@ async function generateImage() {
     // API key kontrolu
     const falKey = state.settings.falApiKey;
     if (!falKey) {
-        showToast('Lütfen Fal.ai API key girin (Ayarlar'dan)', 'error');
+        showToast('Fal.ai API key gerekli - Ayarlardan girin', 'error');
         openSettings();
         return;
     }
@@ -802,7 +802,7 @@ async function previewJewelryPlacement() {
 
     const falKey = state.settings.falApiKey;
     if (!falKey) {
-        showToast('Lütfen Fal.ai API key girin (Ayarlar'dan)', 'error');
+        showToast('Fal.ai API key gerekli - Ayarlardan girin', 'error');
         openSettings();
         return;
     }
@@ -856,7 +856,7 @@ async function generateSEO() {
 
     const geminiKey = state.settings.geminiApiKey;
     if (!geminiKey) {
-        showToast('Lütfen Gemini API key girin (Ayarlar'dan)', 'error');
+        showToast('Gemini API key gerekli - Ayarlardan girin', 'error');
         openSettings();
         return;
     }
@@ -1850,7 +1850,7 @@ async function generateMultipleVariations(category = null) {
 
     const falKey = state.settings.falApiKey;
     if (!falKey) {
-        showToast('Lütfen Fal.ai API key girin (Ayarlar'dan)', 'error');
+        showToast('Fal.ai API key gerekli - Ayarlardan girin', 'error');
         openSettings();
         return;
     }
@@ -1942,7 +1942,7 @@ async function generateCustomVariations(variations) {
 
     const falKey = state.settings.falApiKey;
     if (!falKey) {
-        showToast('Lütfen Fal.ai API key girin (Ayarlar'dan)', 'error');
+        showToast('Fal.ai API key gerekli - Ayarlardan girin', 'error');
         openSettings();
         return;
     }
@@ -2524,7 +2524,7 @@ async function generateVideo() {
 
     const falKey = state.settings.falApiKey;
     if (!falKey) {
-        showToast('Lütfen Fal.ai API key girin (Ayarlar'dan)', 'error');
+        showToast('Fal.ai API key gerekli - Ayarlardan girin', 'error');
         openSettings();
         return;
     }
