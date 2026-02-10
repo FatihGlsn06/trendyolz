@@ -236,7 +236,19 @@ const state = {
     autoOutfit: true,
     currentPrompt: '',
     isProcessing: false,
-    interactiveMode: false
+    interactiveMode: false,
+    brandModel: {
+        enabled: false,
+        name: '',
+        photos: [],
+        maxPhotos: 5
+    },
+    video: {
+        isGenerating: false,
+        result: null,
+        duration: 5,
+        aspectRatio: '9:16'
+    }
 };
 
 // ============================================
@@ -810,7 +822,13 @@ async function generateImage() {
             const resultImageUrl = productPhotoData.images[0].url;
 
             // Sonucu base64'e cevir
-            const resultBase64 = await fetchImageAsBase64(resultImageUrl);
+            let resultBase64 = await fetchImageAsBase64(resultImageUrl);
+
+            // Brand model aktifse yüz değiştir
+            if (state.brandModel.enabled && state.brandModel.photos.length > 0) {
+                showLoader('Marka modeli yüzü uygulanıyor...');
+                resultBase64 = await applyBrandModelFace(resultBase64);
+            }
 
             state.processedImage = resultBase64;
 
@@ -2452,6 +2470,282 @@ function setupKeyboardControls() {
 }
 
 // ============================================
+// 19. MARKA MODELİ
+// ============================================
+
+function toggleBrandModel() {
+    state.brandModel.enabled = !state.brandModel.enabled;
+    const btn = document.getElementById('brandModelToggleBtn');
+    const dot = document.getElementById('brandModelToggleDot');
+
+    if (state.brandModel.enabled) {
+        if (btn) { btn.classList.remove('bg-slate-600'); btn.classList.add('bg-amber-500'); }
+        if (dot) { dot.classList.remove('bg-slate-400'); dot.classList.add('bg-white'); dot.style.left = '18px'; }
+    } else {
+        if (btn) { btn.classList.remove('bg-amber-500'); btn.classList.add('bg-slate-600'); }
+        if (dot) { dot.classList.remove('bg-white'); dot.classList.add('bg-slate-400'); dot.style.left = '2px'; }
+    }
+
+    saveBrandModelToStorage();
+    showToast(state.brandModel.enabled ? 'Marka modeli aktif' : 'Marka modeli pasif', 'info');
+}
+
+function handleBrandModelUpload(event) {
+    const files = Array.from(event.target.files);
+    const remainingSlots = state.brandModel.maxPhotos - state.brandModel.photos.length;
+
+    if (files.length > remainingSlots) {
+        showToast(`En fazla ${state.brandModel.maxPhotos} fotoğraf yükleyebilirsiniz`, 'warning');
+    }
+
+    const filesToProcess = files.slice(0, Math.max(0, remainingSlots));
+
+    filesToProcess.forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            state.brandModel.photos.push(e.target.result);
+            updateBrandModelGallery();
+            saveBrandModelToStorage();
+            showToast(`Referans fotoğrafı eklendi (${state.brandModel.photos.length}/${state.brandModel.maxPhotos})`, 'success');
+        };
+        reader.readAsDataURL(file);
+    });
+
+    event.target.value = '';
+}
+
+function updateBrandModelGallery() {
+    const gallery = document.getElementById('brandModelGallery');
+    if (!gallery) return;
+
+    if (state.brandModel.photos.length === 0) {
+        gallery.classList.add('hidden');
+        return;
+    }
+
+    gallery.classList.remove('hidden');
+    gallery.innerHTML = state.brandModel.photos.map((photo, idx) => `
+        <div class="relative group">
+            <img src="${photo}" class="w-full aspect-square object-cover rounded-lg border border-slate-600">
+            <button onclick="removeBrandModelPhoto(${idx})"
+                class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[8px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    `).join('');
+}
+
+function removeBrandModelPhoto(index) {
+    state.brandModel.photos.splice(index, 1);
+    updateBrandModelGallery();
+    saveBrandModelToStorage();
+    showToast('Fotoğraf kaldırıldı', 'info');
+}
+
+function saveBrandModelName() {
+    const nameInput = document.getElementById('brandModelName');
+    if (nameInput) {
+        state.brandModel.name = nameInput.value;
+        saveBrandModelToStorage();
+    }
+}
+
+function saveBrandModelToStorage() {
+    try {
+        localStorage.setItem('brandModel', JSON.stringify({
+            enabled: state.brandModel.enabled,
+            name: state.brandModel.name,
+            photos: state.brandModel.photos
+        }));
+    } catch (e) {
+        console.warn('Brand model storage error:', e);
+    }
+}
+
+function loadBrandModel() {
+    try {
+        const saved = localStorage.getItem('brandModel');
+        if (saved) {
+            const data = JSON.parse(saved);
+            state.brandModel.enabled = data.enabled || false;
+            state.brandModel.name = data.name || '';
+            state.brandModel.photos = data.photos || [];
+
+            if (state.brandModel.enabled) {
+                const btn = document.getElementById('brandModelToggleBtn');
+                const dot = document.getElementById('brandModelToggleDot');
+                if (btn) { btn.classList.remove('bg-slate-600'); btn.classList.add('bg-amber-500'); }
+                if (dot) { dot.classList.remove('bg-slate-400'); dot.classList.add('bg-white'); dot.style.left = '18px'; }
+            }
+
+            const nameInput = document.getElementById('brandModelName');
+            if (nameInput) nameInput.value = state.brandModel.name;
+
+            updateBrandModelGallery();
+        }
+    } catch (e) {
+        console.warn('Brand model load error:', e);
+    }
+}
+
+// Brand model yüz uygula (face swap)
+async function applyBrandModelFace(imageBase64) {
+    if (!state.brandModel.enabled || state.brandModel.photos.length === 0) {
+        return imageBase64;
+    }
+
+    const falKey = state.settings.falApiKey;
+    try {
+        console.log('[Brand Model] Applying face swap...');
+        const referencePhoto = state.brandModel.photos[0];
+
+        const faceSwapData = await callFalAPI('fal-ai/face-swap', {
+            base_image_url: imageBase64,
+            swap_image_url: referencePhoto
+        }, falKey);
+
+        if (faceSwapData?.image?.url) {
+            const resultBase64 = await fetchImageAsBase64(faceSwapData.image.url);
+            console.log('[Brand Model] Face swap successful');
+            return resultBase64;
+        }
+    } catch (error) {
+        console.warn('[Brand Model] Face swap failed, using original:', error.message);
+    }
+
+    return imageBase64;
+}
+
+function updateVideoSettings() {
+    const durationEl = document.getElementById('videoDuration');
+    const ratioEl = document.getElementById('videoAspectRatio');
+    if (durationEl) state.video.duration = parseInt(durationEl.value);
+    if (ratioEl) state.video.aspectRatio = ratioEl.value;
+}
+
+// ============================================
+// 20. VIDEO OLUŞTURMA
+// ============================================
+
+async function generateVideo() {
+    if (!state.originalBase64 && !state.processedImage) {
+        showToast('Önce bir ürün görseli yükleyin!', 'error');
+        return;
+    }
+
+    const falKey = state.settings.falApiKey;
+    if (!falKey && !isDemoMode) {
+        showToast('Fal.ai API key gerekli veya Demo Mode açın', 'error');
+        openSettings();
+        return;
+    }
+
+    if (state.video.isGenerating) {
+        showToast('Video zaten oluşturuluyor...', 'warning');
+        return;
+    }
+
+    state.video.isGenerating = true;
+
+    try {
+        // Step 1: Ürün fotoğrafı oluştur
+        let sourceImage = state.processedImage || state.originalBase64;
+
+        showLoader('Ürün görseli hazırlanıyor...');
+
+        // Eğer henüz işlenmiş görsel yoksa, product photography ile oluştur
+        if (!state.processedImage) {
+            const selectedOutfit = outfitPresets[state.selectedOutfit] || outfitPresets.black_vneck;
+            const selectedPose = posePresets[state.selectedPose] || posePresets.front;
+            const selectedScene = scenePresets[state.selectedScene] || scenePresets.studio_clean;
+            const selectedStyle = stylePresets[state.selectedStyle] || stylePresets.studio;
+            const sceneDescription = buildSceneDescription(selectedOutfit, selectedPose, selectedScene, selectedStyle);
+
+            const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
+                product_image_url: state.originalBase64,
+                scene_description: sceneDescription,
+                optimize_description: true
+            }, falKey);
+
+            if (productPhotoData?.images?.[0]?.url) {
+                sourceImage = await fetchImageAsBase64(productPhotoData.images[0].url);
+                state.processedImage = sourceImage;
+            }
+        }
+
+        // Step 2: Brand model face swap (eğer aktifse)
+        if (state.brandModel.enabled && state.brandModel.photos.length > 0) {
+            showLoader('Marka modeli yüzü uygulanıyor...');
+            sourceImage = await applyBrandModelFace(sourceImage);
+        }
+
+        // Step 3: Video oluştur
+        showLoader('Video oluşturuluyor... Bu işlem 1-2 dakika sürebilir');
+
+        const videoData = await callFalAPI('fal-ai/kling-video/v1.5/pro/image-to-video', {
+            image_url: sourceImage,
+            duration: state.video.duration,
+            aspect_ratio: state.video.aspectRatio
+        }, falKey);
+
+        if (videoData?.video?.url) {
+            state.video.result = videoData.video.url;
+
+            // Video player'ı göster
+            const videoEl = document.getElementById('previewVideo');
+            const previewImg = document.getElementById('previewImage');
+            const placeholder = document.getElementById('previewPlaceholder');
+            const canvas = document.getElementById('interactiveCanvas');
+
+            if (videoEl) {
+                videoEl.src = videoData.video.url;
+                videoEl.classList.remove('hidden');
+                videoEl.load();
+            }
+            if (previewImg) previewImg.classList.add('hidden');
+            if (placeholder) placeholder.classList.add('hidden');
+            if (canvas) canvas.classList.add('hidden');
+
+            // Download butonlarını göster
+            const downloadActions = document.getElementById('downloadActions');
+            if (downloadActions) downloadActions.classList.remove('hidden');
+
+            const videoDownloadBtn = document.getElementById('videoDownloadBtn');
+            if (videoDownloadBtn) videoDownloadBtn.classList.remove('hidden');
+
+            hideLoader();
+            showToast('Video başarıyla oluşturuldu!', 'success');
+        } else {
+            throw new Error('Video API sonuç döndürmedi');
+        }
+
+    } catch (error) {
+        console.error('Video generation error:', error);
+        hideLoader();
+        showToast('Video hatası: ' + error.message, 'error');
+    } finally {
+        state.video.isGenerating = false;
+    }
+}
+
+function downloadVideo() {
+    if (!state.video.result) {
+        showToast('İndirilecek video yok!', 'error');
+        return;
+    }
+
+    const link = document.createElement('a');
+    link.download = `trendyol-video-${Date.now()}.mp4`;
+    link.href = state.video.result;
+    link.target = '_blank';
+    link.click();
+
+    showToast('Video indiriliyor...', 'success');
+}
+
+// ============================================
 // WINDOW ONLOAD
 // ============================================
 
@@ -2466,6 +2760,9 @@ window.onload = function() {
 
     // Template upload'u baslat
     setupTemplateUpload();
+
+    // Marka modelini yukle
+    loadBrandModel();
 
     // Ilk accordion'u ac
     const firstAccordion = document.querySelector('.accordion-header');
@@ -2526,4 +2823,12 @@ window.closeMultiVariationResults = closeMultiVariationResults;
 window.selectVariation = selectVariation;
 window.downloadVariation = downloadVariation;
 window.downloadAllVariations = downloadAllVariations;
+// Brand model & video
+window.toggleBrandModel = toggleBrandModel;
+window.handleBrandModelUpload = handleBrandModelUpload;
+window.removeBrandModelPhoto = removeBrandModelPhoto;
+window.saveBrandModelName = saveBrandModelName;
+window.updateVideoSettings = updateVideoSettings;
+window.generateVideo = generateVideo;
+window.downloadVideo = downloadVideo;
 // Deploy trigger 1770671322
