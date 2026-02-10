@@ -208,7 +208,7 @@
                                 <i class="fa-solid fa-wand-magic-sparkles text-orange-400"></i>
                                 <span class="text-sm font-medium">Stüdyo Pro</span>
                             </div>
-                            <span class="text-xs text-slate-500">fal.ai Product Photography</span>
+                            <span class="text-xs text-slate-500">Halüsinasyonsuz AI</span>
                         </div>
 
                         <!-- Upload Area Kompakt -->
@@ -237,11 +237,6 @@
                                 <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>Oluştur
                             </button>
                         </div>
-
-                        <!-- Çoklu Varyasyon Butonu -->
-                        <button onclick="quickGenerateVariations()" class="w-full mt-2 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 font-medium transition-all text-sm">
-                            <i class="fa-solid fa-layer-group mr-1"></i>4 Farklı Açıdan Üret
-                        </button>
                     </div>
 
                     <!-- ====== ACCORDION AYARLAR ====== -->
@@ -342,47 +337,25 @@
 
                                     <!-- Poz Seçimi -->
                                     <div>
-                                        <label class="text-[10px] text-slate-400 mb-2 block">Çekim Açısı</label>
-                                        <div class="grid grid-cols-5 gap-1" id="posePresets">
-                                            <div onclick="selectPose('front')" class="pose-card selected p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-pose="front" title="Önden Görünüm">
+                                        <label class="text-[10px] text-slate-400 mb-2 block">Poz / Açı</label>
+                                        <div class="grid grid-cols-6 gap-1" id="posePresets">
+                                            <div onclick="selectPose('front')" class="pose-card selected p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-pose="front">
                                                 <i class="fa-solid fa-user text-xs text-slate-400"></i>
-                                                <span class="block text-[8px] text-slate-500 mt-0.5">Önden</span>
                                             </div>
-                                            <div onclick="selectPose('three_quarter')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-pose="three_quarter" title="3/4 Açı - 45 derece">
-                                                <i class="fa-solid fa-rotate-right text-xs text-slate-400"></i>
-                                                <span class="block text-[8px] text-slate-500 mt-0.5">3/4</span>
-                                            </div>
-                                            <div onclick="selectPose('right')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-pose="right" title="Sağ Profil - 90 derece">
+                                            <div onclick="selectPose('right')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-pose="right">
                                                 <i class="fa-solid fa-arrow-right text-xs text-slate-400"></i>
-                                                <span class="block text-[8px] text-slate-500 mt-0.5">Sağ</span>
                                             </div>
-                                            <div onclick="selectPose('left')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-pose="left" title="Sol Profil - 90 derece">
+                                            <div onclick="selectPose('left')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-pose="left">
                                                 <i class="fa-solid fa-arrow-left text-xs text-slate-400"></i>
-                                                <span class="block text-[8px] text-slate-500 mt-0.5">Sol</span>
                                             </div>
-                                            <div onclick="selectPose('down')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-pose="down" title="Üstten Açı - Yukarıdan bakış">
+                                            <div onclick="selectPose('down')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-pose="down">
                                                 <i class="fa-solid fa-arrow-down text-xs text-slate-400"></i>
-                                                <span class="block text-[8px] text-slate-500 mt-0.5">Üst</span>
                                             </div>
-                                            <div onclick="selectPose('up')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-pose="up" title="Alttan Açı - Aşağıdan bakış">
-                                                <i class="fa-solid fa-arrow-up text-xs text-slate-400"></i>
-                                                <span class="block text-[8px] text-slate-500 mt-0.5">Alt</span>
-                                            </div>
-                                            <div onclick="selectPose('closeup')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-pose="closeup" title="Yakın Çekim - Makro">
+                                            <div onclick="selectPose('closeup')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-pose="closeup">
                                                 <i class="fa-solid fa-magnifying-glass-plus text-xs text-slate-400"></i>
-                                                <span class="block text-[8px] text-slate-500 mt-0.5">Yakın</span>
                                             </div>
-                                            <div onclick="selectPose('detail')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-pose="detail" title="Detay Çekim - Özellik odaklı">
-                                                <i class="fa-solid fa-gem text-xs text-slate-400"></i>
-                                                <span class="block text-[8px] text-slate-500 mt-0.5">Detay</span>
-                                            </div>
-                                            <div onclick="selectPose('surface')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-pose="surface" title="Düz Yüzey - Flat lay">
+                                            <div onclick="selectPose('surface')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-pose="surface">
                                                 <i class="fa-solid fa-square text-xs text-slate-400"></i>
-                                                <span class="block text-[8px] text-slate-500 mt-0.5">Düz</span>
-                                            </div>
-                                            <div onclick="selectPose('lifestyle')" class="pose-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-pose="lifestyle" title="Yaşam Tarzı - Doğal çekim">
-                                                <i class="fa-solid fa-camera text-xs text-slate-400"></i>
-                                                <span class="block text-[8px] text-slate-500 mt-0.5">Yaşam</span>
                                             </div>
                                         </div>
                                     </div>
@@ -421,49 +394,37 @@
                                     <div id="manualOutfitSection">
                                         <!-- Kıyafet -->
                                         <div class="mb-3">
-                                            <label class="text-[10px] text-slate-400 mb-1.5 block">Kıyafet Stili</label>
-                                            <div class="grid grid-cols-5 gap-1" id="outfitPresets">
-                                                <div onclick="selectOutfit('black_vneck')" class="outfit-card selected p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-outfit="black_vneck" title="Siyah V-Yaka - Kolye için ideal">
+                                            <label class="text-[10px] text-slate-400 mb-1.5 block">Kıyafet</label>
+                                            <div class="grid grid-cols-4 gap-1" id="outfitPresets">
+                                                <div onclick="selectOutfit('black_vneck')" class="outfit-card selected p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-outfit="black_vneck">
                                                     <div class="w-full h-5 bg-gradient-to-b from-slate-900 to-black rounded mb-0.5"></div>
-                                                    <p class="text-[8px]">V-Yaka</p>
+                                                    <p class="text-[8px]">Siyah</p>
                                                 </div>
-                                                <div onclick="selectOutfit('strapless')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-outfit="strapless" title="Straplez - Maksimum görünürlük">
-                                                    <div class="w-full h-5 bg-gradient-to-b from-slate-800 to-slate-900 rounded mb-0.5 flex items-end justify-center">
-                                                        <div class="w-3/4 h-2 bg-black rounded-t"></div>
-                                                    </div>
-                                                    <p class="text-[8px]">Straplez</p>
-                                                </div>
-                                                <div onclick="selectOutfit('white_off')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-outfit="white_off" title="Beyaz Omuz Açık - Zarif görünüm">
+                                                <div onclick="selectOutfit('white_off')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-outfit="white_off">
                                                     <div class="w-full h-5 bg-gradient-to-b from-white to-slate-100 rounded mb-0.5"></div>
-                                                    <p class="text-[8px]">Omuz Açık</p>
+                                                    <p class="text-[8px]">Beyaz</p>
                                                 </div>
-                                                <div onclick="selectOutfit('black_turtleneck')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-outfit="black_turtleneck" title="Siyah Balıkçı - Küpe için ideal">
-                                                    <div class="w-full h-5 bg-gradient-to-b from-slate-800 to-black rounded mb-0.5 flex items-start justify-center">
-                                                        <div class="w-2/3 h-2 bg-slate-900 rounded-b"></div>
-                                                    </div>
-                                                    <p class="text-[8px]">Balıkçı</p>
-                                                </div>
-                                                <div onclick="selectOutfit('cream_silk')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-outfit="cream_silk" title="Krem İpek - Lüks görünüm">
+                                                <div onclick="selectOutfit('cream_silk')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-outfit="cream_silk">
                                                     <div class="w-full h-5 bg-gradient-to-b from-amber-50 to-amber-100 rounded mb-0.5"></div>
                                                     <p class="text-[8px]">Krem</p>
                                                 </div>
-                                                <div onclick="selectOutfit('burgundy')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-outfit="burgundy" title="Bordo - Altın takı için ideal">
+                                                <div onclick="selectOutfit('burgundy')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-outfit="burgundy">
                                                     <div class="w-full h-5 bg-gradient-to-b from-rose-900 to-rose-950 rounded mb-0.5"></div>
                                                     <p class="text-[8px]">Bordo</p>
                                                 </div>
-                                                <div onclick="selectOutfit('navy')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-outfit="navy" title="Lacivert - Gümüş/inci için ideal">
+                                                <div onclick="selectOutfit('navy')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-outfit="navy">
                                                     <div class="w-full h-5 bg-gradient-to-b from-blue-900 to-blue-950 rounded mb-0.5"></div>
                                                     <p class="text-[8px]">Lacivert</p>
                                                 </div>
-                                                <div onclick="selectOutfit('forest')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-outfit="forest" title="Orman Yeşili - Altın kontrast">
-                                                    <div class="w-full h-5 bg-gradient-to-b from-emerald-800 to-emerald-900 rounded mb-0.5"></div>
-                                                    <p class="text-[8px]">Yeşil</p>
-                                                </div>
-                                                <div onclick="selectOutfit('nude')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-outfit="nude" title="Ten Rengi - Nötr arka plan">
+                                                <div onclick="selectOutfit('nude')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-outfit="nude">
                                                     <div class="w-full h-5 bg-gradient-to-b from-orange-100 to-orange-200 rounded mb-0.5"></div>
                                                     <p class="text-[8px]">Ten</p>
                                                 </div>
-                                                <div onclick="selectOutfit('none')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer hover:bg-slate-700/50" data-outfit="none" title="Kıyafetsiz - Sadece takı">
+                                                <div onclick="selectOutfit('forest')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-outfit="forest">
+                                                    <div class="w-full h-5 bg-gradient-to-b from-emerald-800 to-emerald-900 rounded mb-0.5"></div>
+                                                    <p class="text-[8px]">Yeşil</p>
+                                                </div>
+                                                <div onclick="selectOutfit('none')" class="outfit-card p-1.5 rounded-lg border border-slate-700 text-center cursor-pointer" data-outfit="none">
                                                     <div class="w-full h-5 bg-gradient-to-b from-rose-200 to-rose-300 rounded mb-0.5 flex items-center justify-center">
                                                         <i class="fa-solid fa-xmark text-rose-600 text-[8px]"></i>
                                                     </div>
@@ -518,116 +479,6 @@
                                                 <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>
                                                 AI takıyı analiz edip en uygun kombinasyonu seçecek
                                             </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Accordion: Popüler Şablonlar -->
-                        <div class="glass rounded-xl overflow-hidden">
-                            <div class="accordion-header p-3 flex items-center justify-between" onclick="toggleAccordion(this)">
-                                <div class="flex items-center gap-2">
-                                    <i class="fa-solid fa-fire text-orange-400"></i>
-                                    <span class="font-medium text-sm">Popüler Şablonlar</span>
-                                    <span class="text-[9px] bg-orange-500/20 text-orange-300 px-2 py-0.5 rounded-full">HIZLI</span>
-                                </div>
-                                <i class="fa-solid fa-chevron-down accordion-icon text-slate-400 text-xs"></i>
-                            </div>
-                            <div class="accordion-content">
-                                <div class="p-4 pt-0 space-y-3">
-                                    <p class="text-[10px] text-slate-400 mb-2">Tek tıkla profesyonel pozlar uygula</p>
-
-                                    <!-- Kolye Şablonları -->
-                                    <div class="space-y-2">
-                                        <div class="flex items-center gap-2 mb-1">
-                                            <i class="fa-solid fa-gem text-purple-400 text-xs"></i>
-                                            <span class="text-xs font-medium text-purple-300">Kolye</span>
-                                        </div>
-                                        <div class="grid grid-cols-4 gap-1">
-                                            <button onclick="applyPopularTemplate('necklace', 0)" class="p-2 bg-slate-800/50 hover:bg-purple-600/30 rounded-lg text-center transition-all border border-slate-700 hover:border-purple-500" title="Klasik Önden">
-                                                <i class="fa-solid fa-user text-[10px] text-slate-400 block mb-0.5"></i>
-                                                <span class="text-[8px]">Klasik</span>
-                                            </button>
-                                            <button onclick="applyPopularTemplate('necklace', 1)" class="p-2 bg-slate-800/50 hover:bg-purple-600/30 rounded-lg text-center transition-all border border-slate-700 hover:border-purple-500" title="3/4 Açık Omuz">
-                                                <i class="fa-solid fa-rotate-right text-[10px] text-slate-400 block mb-0.5"></i>
-                                                <span class="text-[8px]">3/4</span>
-                                            </button>
-                                            <button onclick="applyPopularTemplate('necklace', 2)" class="p-2 bg-slate-800/50 hover:bg-purple-600/30 rounded-lg text-center transition-all border border-slate-700 hover:border-purple-500" title="Detay Lüks">
-                                                <i class="fa-solid fa-magnifying-glass-plus text-[10px] text-slate-400 block mb-0.5"></i>
-                                                <span class="text-[8px]">Detay</span>
-                                            </button>
-                                            <button onclick="applyPopularTemplate('necklace', 3)" class="p-2 bg-slate-800/50 hover:bg-purple-600/30 rounded-lg text-center transition-all border border-slate-700 hover:border-purple-500" title="Romantik Üstten">
-                                                <i class="fa-solid fa-heart text-[10px] text-pink-400 block mb-0.5"></i>
-                                                <span class="text-[8px]">Romantik</span>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Küpe Şablonları -->
-                                    <div class="space-y-2">
-                                        <div class="flex items-center gap-2 mb-1">
-                                            <i class="fa-solid fa-star text-amber-400 text-xs"></i>
-                                            <span class="text-xs font-medium text-amber-300">Küpe</span>
-                                        </div>
-                                        <div class="grid grid-cols-4 gap-1">
-                                            <button onclick="applyPopularTemplate('earring', 0)" class="p-2 bg-slate-800/50 hover:bg-amber-600/30 rounded-lg text-center transition-all border border-slate-700 hover:border-amber-500" title="Sağ Profil">
-                                                <i class="fa-solid fa-arrow-right text-[10px] text-slate-400 block mb-0.5"></i>
-                                                <span class="text-[8px]">Sağ</span>
-                                            </button>
-                                            <button onclick="applyPopularTemplate('earring', 1)" class="p-2 bg-slate-800/50 hover:bg-amber-600/30 rounded-lg text-center transition-all border border-slate-700 hover:border-amber-500" title="Sol Profil">
-                                                <i class="fa-solid fa-arrow-left text-[10px] text-slate-400 block mb-0.5"></i>
-                                                <span class="text-[8px]">Sol</span>
-                                            </button>
-                                            <button onclick="applyPopularTemplate('earring', 2)" class="p-2 bg-slate-800/50 hover:bg-amber-600/30 rounded-lg text-center transition-all border border-slate-700 hover:border-amber-500" title="Yakın Detay">
-                                                <i class="fa-solid fa-magnifying-glass-plus text-[10px] text-slate-400 block mb-0.5"></i>
-                                                <span class="text-[8px]">Detay</span>
-                                            </button>
-                                            <button onclick="applyPopularTemplate('earring', 3)" class="p-2 bg-slate-800/50 hover:bg-amber-600/30 rounded-lg text-center transition-all border border-slate-700 hover:border-amber-500" title="Romantik Açı">
-                                                <i class="fa-solid fa-heart text-[10px] text-pink-400 block mb-0.5"></i>
-                                                <span class="text-[8px]">Romantik</span>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Bileklik Şablonları -->
-                                    <div class="space-y-2">
-                                        <div class="flex items-center gap-2 mb-1">
-                                            <i class="fa-solid fa-ring text-emerald-400 text-xs"></i>
-                                            <span class="text-xs font-medium text-emerald-300">Bileklik / Yüzük</span>
-                                        </div>
-                                        <div class="grid grid-cols-4 gap-1">
-                                            <button onclick="applyPopularTemplate('bracelet', 0)" class="p-2 bg-slate-800/50 hover:bg-emerald-600/30 rounded-lg text-center transition-all border border-slate-700 hover:border-emerald-500" title="El Üstü Klasik">
-                                                <i class="fa-solid fa-hand text-[10px] text-slate-400 block mb-0.5"></i>
-                                                <span class="text-[8px]">El</span>
-                                            </button>
-                                            <button onclick="applyPopularTemplate('bracelet', 1)" class="p-2 bg-slate-800/50 hover:bg-emerald-600/30 rounded-lg text-center transition-all border border-slate-700 hover:border-emerald-500" title="Açılı El">
-                                                <i class="fa-solid fa-rotate-right text-[10px] text-slate-400 block mb-0.5"></i>
-                                                <span class="text-[8px]">Açılı</span>
-                                            </button>
-                                            <button onclick="applyPopularTemplate('bracelet', 2)" class="p-2 bg-slate-800/50 hover:bg-emerald-600/30 rounded-lg text-center transition-all border border-slate-700 hover:border-emerald-500" title="Detay Çekim">
-                                                <i class="fa-solid fa-magnifying-glass-plus text-[10px] text-slate-400 block mb-0.5"></i>
-                                                <span class="text-[8px]">Detay</span>
-                                            </button>
-                                            <button onclick="applyPopularTemplate('bracelet', 3)" class="p-2 bg-slate-800/50 hover:bg-emerald-600/30 rounded-lg text-center transition-all border border-slate-700 hover:border-emerald-500" title="Yaşam Tarzı">
-                                                <i class="fa-solid fa-camera text-[10px] text-slate-400 block mb-0.5"></i>
-                                                <span class="text-[8px]">Lifestyle</span>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Hepsini Üret Butonu -->
-                                    <div class="pt-2 border-t border-slate-700">
-                                        <div class="grid grid-cols-3 gap-2">
-                                            <button onclick="generateMultipleVariations('necklace')" class="py-2 bg-purple-600/20 hover:bg-purple-600/40 rounded-lg text-[10px] font-medium text-purple-300 transition-all">
-                                                <i class="fa-solid fa-layer-group mr-1"></i>4 Kolye
-                                            </button>
-                                            <button onclick="generateMultipleVariations('earring')" class="py-2 bg-amber-600/20 hover:bg-amber-600/40 rounded-lg text-[10px] font-medium text-amber-300 transition-all">
-                                                <i class="fa-solid fa-layer-group mr-1"></i>4 Küpe
-                                            </button>
-                                            <button onclick="generateMultipleVariations('bracelet')" class="py-2 bg-emerald-600/20 hover:bg-emerald-600/40 rounded-lg text-[10px] font-medium text-emerald-300 transition-all">
-                                                <i class="fa-solid fa-layer-group mr-1"></i>4 Bileklik
-                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -749,8 +600,8 @@
                                 Önizleme
                             </h3>
                             <div class="flex items-center gap-2">
-                                <span id="engineBadge" class="text-[10px] px-2 py-1 bg-green-500/20 text-green-400 rounded-full">
-                                    <i class="fa-solid fa-camera mr-1"></i>Product Photo
+                                <span id="engineBadge" class="text-[10px] px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full">
+                                    <i class="fa-solid fa-magic-wand-sparkles mr-1"></i>Inpaint
                                 </span>
                             </div>
                         </div>
@@ -775,23 +626,18 @@
 
                             <!-- Interactive Position Controls (Şablon modunda görünür) -->
                             <div id="positionControls" class="hidden absolute inset-0 pointer-events-none">
-                                <!-- Yukarı -->
                                 <button onclick="moveJewelry('up')" class="pointer-events-auto absolute top-2 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-purple-600 border border-white/30 flex items-center justify-center transition-colors">
                                     <i class="fa-solid fa-arrow-up"></i>
                                 </button>
-                                <!-- Aşağı -->
                                 <button onclick="moveJewelry('down')" class="pointer-events-auto absolute bottom-2 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-purple-600 border border-white/30 flex items-center justify-center transition-colors">
                                     <i class="fa-solid fa-arrow-down"></i>
                                 </button>
-                                <!-- Sol -->
                                 <button onclick="moveJewelry('left')" class="pointer-events-auto absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-purple-600 border border-white/30 flex items-center justify-center transition-colors">
                                     <i class="fa-solid fa-arrow-left"></i>
                                 </button>
-                                <!-- Sağ -->
                                 <button onclick="moveJewelry('right')" class="pointer-events-auto absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-purple-600 border border-white/30 flex items-center justify-center transition-colors">
                                     <i class="fa-solid fa-arrow-right"></i>
                                 </button>
-                                <!-- Döndürme Kontrolleri -->
                                 <div class="pointer-events-auto absolute bottom-2 right-2 flex gap-1">
                                     <button onclick="rotateJewelry(-15)" class="w-8 h-8 rounded-full bg-black/50 hover:bg-purple-600 border border-white/30 flex items-center justify-center text-xs transition-colors" title="Sola döndür">
                                         <i class="fa-solid fa-rotate-left"></i>
@@ -800,7 +646,6 @@
                                         <i class="fa-solid fa-rotate-right"></i>
                                     </button>
                                 </div>
-                                <!-- Boyut Kontrolleri -->
                                 <div class="pointer-events-auto absolute bottom-2 left-2 flex gap-1">
                                     <button onclick="scaleJewelry(-5)" class="w-8 h-8 rounded-full bg-black/50 hover:bg-purple-600 border border-white/30 flex items-center justify-center text-xs transition-colors" title="Küçült">
                                         <i class="fa-solid fa-minus"></i>
@@ -809,7 +654,6 @@
                                         <i class="fa-solid fa-plus"></i>
                                     </button>
                                 </div>
-                                <!-- Bilgi -->
                                 <div class="pointer-events-auto absolute top-2 left-2 px-2 py-1 bg-black/70 rounded text-[10px] text-white/70">
                                     <i class="fa-solid fa-arrows-up-down-left-right mr-1"></i>Sürükle veya ok tuşları
                                 </div>
@@ -818,7 +662,6 @@
 
                         <!-- Download Actions -->
                         <div id="downloadActions" class="hidden mt-3 md:mt-4 space-y-2 md:space-y-3">
-                            <!-- İndirme Butonları -->
                             <div class="flex flex-wrap gap-2 md:gap-3">
                                 <button onclick="downloadImage('jpeg')" class="flex-1 min-w-[80px] py-2.5 md:py-3 rounded-xl bg-green-600 hover:bg-green-500 font-semibold transition-colors text-sm md:text-base">
                                     <i class="fa-solid fa-download mr-1 md:mr-2"></i>JPEG
@@ -872,11 +715,9 @@
                         </div>
                     </div>
                         </div>
-                        <!-- END Preview Column -->
 
                         <!-- SEO Column -->
                         <div>
-                            <!-- SEO Generator Panel -->
                             <div class="glass rounded-2xl p-4 md:p-5 border border-emerald-500/30 2xl:h-full">
                         <h3 class="font-semibold mb-4 flex items-center gap-2">
                             <i class="fa-solid fa-magnifying-glass-chart text-emerald-400"></i>
@@ -884,7 +725,6 @@
                             <span class="text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full ml-auto">AI Optimized</span>
                         </h3>
 
-                        <!-- ÜRÜN ÖZELLİKLERİ - BASİTLEŞTİRİLMİŞ -->
                         <div class="mb-4 p-4 bg-slate-800/30 rounded-xl border border-slate-700">
                             <h4 class="text-xs font-semibold text-purple-400 mb-3 flex items-center gap-2">
                                 <i class="fa-solid fa-gem"></i>
@@ -901,7 +741,6 @@
                                 Teknik bilgiler → Trendyol özellikleri | Başlık → AI arama kelimeleri oluşturur
                             </p>
 
-                            <!-- SEO Oluştur Butonu -->
                             <button onclick="generateSEO()" class="w-full py-2.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-xs font-bold transition-all">
                                 <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>
                                 SEO İçeriği Oluştur
@@ -916,7 +755,6 @@
                             </div>
 
                             <div id="seoResults" class="hidden space-y-4">
-                                <!-- Görsel Analiz Sonuçları -->
                                 <div id="visualAnalysisSection" class="p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
                                     <label class="text-xs text-purple-400 mb-2 block font-semibold">
                                         <i class="fa-solid fa-eye mr-1"></i>AI Görsel Analizi
@@ -924,7 +762,6 @@
                                     <div id="visualAnalysisContent" class="grid grid-cols-2 gap-2 text-[10px]"></div>
                                 </div>
 
-                                <!-- Barkod ve Model Kodu - Hızlı Kopyalama -->
                                 <div class="grid grid-cols-2 gap-2">
                                     <div class="p-2 bg-slate-800/50 rounded-lg border border-slate-700">
                                         <label class="text-[10px] text-slate-400 mb-1 block">
@@ -950,7 +787,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Başlık Önerileri -->
                                 <div>
                                     <label class="text-xs text-slate-400 flex justify-between mb-1">
                                         <span><i class="fa-solid fa-heading mr-1"></i>Ürün Başlığı (max 99 kar.)</span>
@@ -963,7 +799,6 @@
                                     </button>
                                 </div>
 
-                                <!-- Alternatif Başlıklar -->
                                 <div>
                                     <label class="text-xs text-slate-400 mb-1 block">
                                         <i class="fa-solid fa-list mr-1"></i>Alternatif Başlıklar
@@ -971,7 +806,6 @@
                                     <div id="altTitles" class="space-y-1"></div>
                                 </div>
 
-                                <!-- Kategori Önerisi -->
                                 <div>
                                     <label class="text-xs text-slate-400 flex justify-between mb-1">
                                         <span><i class="fa-solid fa-folder-tree mr-1"></i>Kategori Yolu</span>
@@ -982,7 +816,6 @@
                                     <input type="text" id="seoCategory" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs" readonly>
                                 </div>
 
-                                <!-- Teknik Açıklama -->
                                 <div>
                                     <label class="text-xs text-slate-400 flex justify-between mb-1">
                                         <span><i class="fa-solid fa-align-left mr-1"></i>Teknik Açıklama</span>
@@ -995,7 +828,6 @@
                                     </button>
                                 </div>
 
-                                <!-- Hikayeleştirilmiş Açıklama -->
                                 <div>
                                     <label class="text-xs text-slate-400 flex justify-between mb-1">
                                         <span><i class="fa-solid fa-heart mr-1 text-pink-400"></i>Hikayeleştirilmiş Açıklama</span>
@@ -1006,7 +838,6 @@
                                     <div id="seoStoryDescription" class="bg-slate-800/50 border border-pink-500/30 rounded-lg px-3 py-2 text-sm text-pink-200"></div>
                                 </div>
 
-                                <!-- Anahtar Kelimeler -->
                                 <div>
                                     <label class="text-xs text-slate-400 mb-1 block">
                                         <i class="fa-solid fa-key mr-1"></i>Anahtar Kelimeler
@@ -1017,7 +848,6 @@
                                     </button>
                                 </div>
 
-                                <!-- Long-tail Keywords -->
                                 <div>
                                     <label class="text-xs text-slate-400 mb-1 block">
                                         <i class="fa-solid fa-magnifying-glass mr-1"></i>Long-tail Aramalar
@@ -1025,7 +855,6 @@
                                     <div id="seoLongTail" class="space-y-1 text-xs"></div>
                                 </div>
 
-                                <!-- Sosyal Medya Hashtag'leri -->
                                 <div>
                                     <label class="text-xs text-slate-400 flex justify-between mb-1">
                                         <span><i class="fa-brands fa-instagram mr-1"></i>Sosyal Medya</span>
@@ -1036,7 +865,6 @@
                                     <div id="seoHashtags" class="text-xs text-pink-400"></div>
                                 </div>
 
-                                <!-- Regenerate Button -->
                                 <div class="flex gap-2 pt-2">
                                     <button onclick="generateSEO()" class="flex-1 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-medium">
                                         <i class="fa-solid fa-rotate mr-1"></i>Yeniden Oluştur
@@ -1049,9 +877,7 @@
                         </div>
                             </div>
                         </div>
-                        <!-- END SEO Column -->
                     </div>
-                    <!-- END Preview + SEO Grid -->
 
                     <!-- Mini Gallery (4 slots) -->
                     <div class="glass rounded-2xl p-4 md:p-5">
@@ -1110,7 +936,6 @@
             </div>
 
             <div class="space-y-4">
-                <!-- Demo Modu Toggle -->
                 <div class="p-4 bg-gradient-to-r from-orange-500/20 to-amber-500/20 rounded-xl border border-orange-500/50">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-3">
@@ -1130,11 +955,10 @@
                     </p>
                 </div>
 
-                <!-- Gemini API -->
                 <div id="geminiKeySection" class="p-4 bg-slate-800/30 rounded-xl border border-purple-500/30">
                     <label class="text-sm font-medium text-white mb-2 block flex items-center gap-2">
-                        <i class="fa-solid fa-brain text-purple-400"></i> Gemini API
-                        <span class="text-[10px] px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded-full">SEO & ANALİZ</span>
+                        <i class="fa-solid fa-brain text-purple-400"></i> Gemini 2.5 Flash
+                        <span class="text-[10px] px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded-full">CİLT ÜRETİM</span>
                     </label>
                     <input type="password" id="geminiKeyInput"
                            class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:border-purple-500 outline-none"
@@ -1144,11 +968,10 @@
                     </p>
                 </div>
 
-                <!-- Fal.ai API -->
                 <div id="falKeySection" class="p-4 bg-slate-800/30 rounded-xl border border-green-500/30">
                     <label class="text-sm font-medium text-white mb-2 block flex items-center gap-2">
-                        <i class="fa-solid fa-camera text-green-400"></i> Fal.ai
-                        <span class="text-[10px] px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full">PRODUCT PHOTOGRAPHY</span>
+                        <i class="fa-solid fa-cut text-green-400"></i> Fal.ai BiRefNet
+                        <span class="text-[10px] px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full">ARKA PLAN KALDIRMA</span>
                     </label>
                     <input type="password" id="falKeyInput"
                            class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:border-green-500 outline-none"
@@ -1157,7 +980,6 @@
                         <a href="https://fal.ai/dashboard/keys" target="_blank" class="text-green-400 hover:underline">Fal.ai API key al →</a>
                     </p>
                 </div>
-
             </div>
 
             <button onclick="saveSettings()" class="w-full mt-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 rounded-xl font-bold">
