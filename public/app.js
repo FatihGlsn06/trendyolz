@@ -748,13 +748,15 @@ async function generateImage() {
             // Sonucu base64'e cevir
             let resultBase64 = await fetchImageAsBase64(resultImageUrl);
 
+            // Urun gorselini kaydet (canvas icin gerekli)
+            state.processedImage = resultBase64;
+
             // Brand model aktifse yüz değiştir
             if (state.brandModel.enabled && state.brandModel.photos.length > 0) {
                 showLoader('Marka modeli yüzü uygulanıyor...');
                 resultBase64 = await applyBrandModelFace(resultBase64);
+                state.processedImage = resultBase64;
             }
-
-            state.processedImage = resultBase64;
 
             // Sonuc preview'ini guncelle
             showResultPreview(resultBase64);
@@ -2515,6 +2517,8 @@ function loadBrandModel() {
 }
 
 // Brand model yüz uygula (face swap)
+// Face swap mantigi: template model fotosunda yuz varsa ona uygula
+// Product photography ciktisinda genelde yuz olmaz (sadece taki gorseli)
 async function applyBrandModelFace(imageBase64) {
     if (!state.brandModel.enabled || state.brandModel.photos.length === 0) {
         return imageBase64;
@@ -2523,8 +2527,41 @@ async function applyBrandModelFace(imageBase64) {
     const falKey = state.settings.falApiKey;
     try {
         console.log('[Brand Model] Applying face swap...');
-        const referencePhoto = state.brandModel.photos[0];
+        const referencePhoto = state.brandModel.photos[0]; // Marka modelinin yuz fotosu
 
+        // Template model varsa: template'e face swap yap, sonra canvas composite kullan
+        if (state.templateImage) {
+            console.log('[Brand Model] Template found - swapping face on template');
+            const faceSwapData = await callFalAPI('fal-ai/face-swap', {
+                base_image_url: state.templateImage,   // Template foto (yuz var)
+                swap_image_url: referencePhoto          // Marka modeli yuzu
+            }, falKey);
+
+            if (faceSwapData?.image?.url) {
+                // Template'i guncelle (yuz degistirilmis hali)
+                const swappedTemplate = await fetchImageAsBase64(faceSwapData.image.url);
+                state.templateImage = swappedTemplate;
+                state.templateBase64 = swappedTemplate;
+
+                // Template preview'i guncelle
+                const previewImg = document.getElementById('templateImage');
+                if (previewImg) previewImg.src = swappedTemplate;
+
+                console.log('[Brand Model] Template face swap successful');
+                updateInteractivePreview();
+
+                // Canvas composite'i dondur (template + taki)
+                const canvas = document.getElementById('interactiveCanvas');
+                if (canvas) {
+                    // Canvas renderinin tamamlanmasini bekle
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    return canvas.toDataURL('image/png');
+                }
+            }
+        }
+
+        // Template yoksa: dogrudan product fotosuna dene (yuz varsa basarili olur)
+        console.log('[Brand Model] No template - trying face swap on generated image');
         const faceSwapData = await callFalAPI('fal-ai/face-swap', {
             base_image_url: imageBase64,
             swap_image_url: referencePhoto
@@ -2532,11 +2569,16 @@ async function applyBrandModelFace(imageBase64) {
 
         if (faceSwapData?.image?.url) {
             const resultBase64 = await fetchImageAsBase64(faceSwapData.image.url);
-            console.log('[Brand Model] Face swap successful');
+            console.log('[Brand Model] Direct face swap successful');
             return resultBase64;
         }
     } catch (error) {
-        console.warn('[Brand Model] Face swap failed, using original:', error.message);
+        console.warn('[Brand Model] Face swap failed:', error.message);
+        if (error.message.includes('no face') || error.message.includes('No face')) {
+            showToast('Yuz bulunamadi - model sablonu yukleyin (yuzlu foto)', 'warning');
+        } else {
+            showToast('Face swap hatasi: ' + error.message, 'warning');
+        }
     }
 
     return imageBase64;
