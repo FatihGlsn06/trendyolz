@@ -1,5 +1,9 @@
 // Vercel Serverless Function - Fal.ai Proxy
-// fal-ai/image-apps-v2/product-photography API için proxy (queue-based)
+// Supports: sync (fal.run), queue submit, status check, result fetch
+
+export const config = {
+    maxDuration: 60
+};
 
 export default async function handler(req, res) {
     // CORS headers
@@ -15,28 +19,73 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
+    const FAL_API_KEY = process.env.FAL_API_KEY;
+    if (!FAL_API_KEY) {
+        return res.status(500).json({ error: 'FAL_API_KEY not configured on server' });
+    }
+
     try {
-        const { endpoint, payload, ...restParams } = req.body;
+        const { endpoint, payload, action, requestId, ...restParams } = req.body;
 
         if (!endpoint) {
             return res.status(400).json({ error: 'Endpoint is required' });
         }
 
-        // Support both formats:
-        // Old: { endpoint, payload: { ... } }
-        // New: { endpoint, image_url: "...", model: "...", ... }
+        // Support both payload formats
         const actualPayload = payload || (Object.keys(restParams).length > 0 ? restParams : {});
 
-        // Fal.ai API key from environment
-        const FAL_API_KEY = process.env.FAL_API_KEY;
-        if (!FAL_API_KEY) {
-            return res.status(500).json({ error: 'FAL_API_KEY not configured on server' });
+        // ACTION: submit - Queue'ya gönder, request_id döndür
+        if (action === 'submit') {
+            console.log(`[FAL Proxy] Queue submit: ${endpoint}`);
+            const queueResponse = await fetch(`https://queue.fal.run/${endpoint}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Key ${FAL_API_KEY}`
+                },
+                body: JSON.stringify(actualPayload)
+            });
+
+            if (!queueResponse.ok) {
+                const errorText = await queueResponse.text();
+                console.error('[FAL Proxy] Queue submit error:', errorText);
+                return res.status(queueResponse.status).json({ error: 'Queue submit failed', details: errorText });
+            }
+
+            const queueData = await queueResponse.json();
+            console.log(`[FAL Proxy] Queue submitted, ID: ${queueData.request_id}`);
+            return res.status(200).json({ request_id: queueData.request_id });
         }
 
-        console.log(`[FAL Proxy] Calling endpoint: ${endpoint}`);
+        // ACTION: status - Queue durumunu kontrol et
+        if (action === 'status' && requestId) {
+            const statusResponse = await fetch(`https://queue.fal.run/${endpoint}/requests/${requestId}/status`, {
+                headers: { 'Authorization': `Key ${FAL_API_KEY}` }
+            });
 
-        // Queue'ya gönder
-        const queueResponse = await fetch(`https://queue.fal.run/${endpoint}`, {
+            if (!statusResponse.ok) {
+                return res.status(statusResponse.status).json({ error: 'Status check failed' });
+            }
+
+            return res.status(200).json(await statusResponse.json());
+        }
+
+        // ACTION: result - Queue sonucunu al
+        if (action === 'result' && requestId) {
+            const resultResponse = await fetch(`https://queue.fal.run/${endpoint}/requests/${requestId}`, {
+                headers: { 'Authorization': `Key ${FAL_API_KEY}` }
+            });
+
+            if (!resultResponse.ok) {
+                return res.status(resultResponse.status).json({ error: 'Result fetch failed' });
+            }
+
+            return res.status(200).json(await resultResponse.json());
+        }
+
+        // DEFAULT: Synchronous call via fal.run (hızlı işlemler için)
+        console.log(`[FAL Proxy] Sync call: ${endpoint}`);
+        const response = await fetch(`https://fal.run/${endpoint}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -45,69 +94,14 @@ export default async function handler(req, res) {
             body: JSON.stringify(actualPayload)
         });
 
-        if (!queueResponse.ok) {
-            const errorText = await queueResponse.text();
-            console.error('[FAL Proxy] Queue error:', errorText);
-            return res.status(queueResponse.status).json({
-                error: 'Failed to submit to queue',
-                details: errorText
-            });
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('[FAL Proxy] Sync error:', errorText);
+            return res.status(response.status).json({ error: 'Fal API error', details: errorText });
         }
 
-        const queueData = await queueResponse.json();
-        const requestId = queueData.request_id;
-
-        console.log(`[FAL Proxy] Request ID: ${requestId}`);
-
-        // Sonucu bekle (polling)
-        let result = null;
-        let attempts = 0;
-        const maxAttempts = 60; // 60 saniye max
-
-        while (attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 1000)); // 1 saniye bekle
-
-            const statusResponse = await fetch(`https://queue.fal.run/${endpoint}/requests/${requestId}/status`, {
-                headers: {
-                    'Authorization': `Key ${FAL_API_KEY}`
-                }
-            });
-
-            if (!statusResponse.ok) {
-                attempts++;
-                continue;
-            }
-
-            const statusData = await statusResponse.json();
-            console.log(`[FAL Proxy] Status: ${statusData.status}`);
-
-            if (statusData.status === 'COMPLETED') {
-                // Sonucu al
-                const resultResponse = await fetch(`https://queue.fal.run/${endpoint}/requests/${requestId}`, {
-                    headers: {
-                        'Authorization': `Key ${FAL_API_KEY}`
-                    }
-                });
-
-                if (resultResponse.ok) {
-                    result = await resultResponse.json();
-                    break;
-                }
-            } else if (statusData.status === 'FAILED') {
-                return res.status(500).json({
-                    error: 'Generation failed',
-                    details: statusData
-                });
-            }
-
-            attempts++;
-        }
-
-        if (!result) {
-            return res.status(504).json({ error: 'Request timed out' });
-        }
-
-        console.log('[FAL Proxy] Success');
+        const result = await response.json();
+        console.log('[FAL Proxy] Sync success');
         return res.status(200).json(result);
 
     } catch (error) {

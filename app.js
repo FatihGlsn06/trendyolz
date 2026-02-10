@@ -45,7 +45,7 @@ function loadDemoMode() {
 // 2. API CAGRI FONKSIYONLARI
 // ============================================
 
-// Demo modunda Fal.ai proxy cagrisi
+// Demo modunda Fal.ai proxy cagrisi (senkron - hızlı işlemler için)
 async function callFalAPIProxy(endpoint, payload) {
     const response = await fetch('/api/fal-proxy', {
         method: 'POST',
@@ -64,6 +64,74 @@ async function callFalAPIProxy(endpoint, payload) {
     }
 
     return await response.json();
+}
+
+// Demo modunda Fal.ai proxy cagrisi (queue - video gibi uzun işlemler için)
+async function callFalAPIProxyQueue(endpoint, payload) {
+    // Step 1: Queue'ya gönder
+    const submitResponse = await fetch('/api/fal-proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            endpoint: endpoint,
+            payload: payload,
+            action: 'submit'
+        })
+    });
+
+    if (!submitResponse.ok) {
+        const errorData = await submitResponse.json().catch(() => ({}));
+        throw new Error(errorData.error || `Queue submit error: ${submitResponse.status}`);
+    }
+
+    const { request_id } = await submitResponse.json();
+    console.log(`[Queue] Submitted, ID: ${request_id}`);
+
+    // Step 2: Client-side polling
+    const maxAttempts = 120; // 2 dakika max
+    for (let i = 0; i < maxAttempts; i++) {
+        await new Promise(resolve => setTimeout(resolve, 2000)); // 2sn bekle
+
+        const statusResponse = await fetch('/api/fal-proxy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                endpoint: endpoint,
+                action: 'status',
+                requestId: request_id
+            })
+        });
+
+        if (!statusResponse.ok) continue;
+
+        const statusData = await statusResponse.json();
+        console.log(`[Queue] Status: ${statusData.status}`);
+
+        if (statusData.status === 'COMPLETED') {
+            // Step 3: Sonucu al
+            const resultResponse = await fetch('/api/fal-proxy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    endpoint: endpoint,
+                    action: 'result',
+                    requestId: request_id
+                })
+            });
+
+            if (!resultResponse.ok) {
+                throw new Error('Failed to fetch queue result');
+            }
+
+            return await resultResponse.json();
+        }
+
+        if (statusData.status === 'FAILED') {
+            throw new Error('Queue processing failed');
+        }
+    }
+
+    throw new Error('Queue timed out after 2 minutes');
 }
 
 // Demo modunda Gemini proxy cagrisi
@@ -85,9 +153,14 @@ async function callGeminiAPIProxy(payload) {
 }
 
 // Unified Fal API wrapper
-async function callFalAPI(endpoint, payload, apiKey) {
+async function callFalAPI(endpoint, payload, apiKey, options = {}) {
+    const useQueue = options.queue || false;
+
     // Demo modunda proxy kullan
     if (isDemoMode) {
+        if (useQueue) {
+            return await callFalAPIProxyQueue(endpoint, payload);
+        }
         return await callFalAPIProxy(endpoint, payload);
     }
 
@@ -467,7 +540,7 @@ function setupDragDrop() {
 
     // Click to upload
     dropZone.addEventListener('click', () => {
-        const input = document.getElementById('imageInput');
+        const input = document.getElementById('fileInput');
         if (input) input.click();
     });
 }
@@ -490,20 +563,26 @@ function processFile(file) {
         state.originalImage = e.target.result;
         state.originalBase64 = e.target.result;
 
-        // Preview'i guncelle
-        const preview = document.getElementById('originalPreview');
-        if (preview) {
-            preview.src = e.target.result;
-            preview.style.display = 'block';
+        // Upload alanında önizleme göster (alan kapanmaz!)
+        const uploadPreview = document.getElementById('uploadPreview');
+        const uploadPreviewContainer = document.getElementById('uploadPreviewContainer');
+        const uploadPrompt = document.getElementById('uploadPrompt');
+        const fileName = document.getElementById('fileName');
+
+        if (uploadPreview) {
+            uploadPreview.src = e.target.result;
+        }
+        if (uploadPreviewContainer) {
+            uploadPreviewContainer.classList.remove('hidden');
+        }
+        if (uploadPrompt) {
+            uploadPrompt.classList.add('hidden');
+        }
+        if (fileName) {
+            fileName.textContent = file.name;
         }
 
-        // Drop zone'u gizle
-        const dropZone = document.getElementById('dropZone');
-        const previewContainer = document.getElementById('previewContainer');
-        if (dropZone) dropZone.style.display = 'none';
-        if (previewContainer) previewContainer.style.display = 'block';
-
-        showToast('Image uploaded successfully!', 'success');
+        showToast('Ürün görseli yüklendi!', 'success');
 
         // Interactive preview'i guncelle
         updateInteractivePreview();
@@ -2688,7 +2767,7 @@ async function generateVideo() {
             image_url: sourceImage,
             duration: state.video.duration,
             aspect_ratio: state.video.aspectRatio
-        }, falKey);
+        }, falKey, { queue: true });
 
         if (videoData?.video?.url) {
             state.video.result = videoData.video.url;
