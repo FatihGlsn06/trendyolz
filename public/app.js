@@ -724,34 +724,40 @@ async function generateImage() {
     state.isGenerating = true;
 
     try {
-        // Secili ayarlari al
         const selectedOutfit = outfitPresets[state.selectedOutfit] || outfitPresets.black_vneck;
         const selectedPose = posePresets[state.selectedPose] || posePresets.front;
         const selectedScene = scenePresets[state.selectedScene] || scenePresets.studio_clean;
         const selectedStyle = stylePresets[state.selectedStyle] || stylePresets.studio;
-
         const sceneDescription = buildSceneDescription(selectedOutfit, selectedPose, selectedScene, selectedStyle);
-        console.log('Scene Description:', sceneDescription);
 
         let resultBase64;
 
-        // ===== TEMPLATE MODEL + FLUX EDIT MODU =====
+        // ===== TEMPLATE MODEL + KONTEXT MODU =====
         if (state.templateImage) {
-            showLoader('FLUX Edit ile taki modele yerlestiriliyor...');
+            showLoader('Taki analiz ediliyor...');
 
-            const fluxEditPrompt = `Professional jewelry product photography. Place the jewelry from image 2 naturally on the model from image 1. ${sceneDescription}. Photorealistic, high-end commercial quality, perfect lighting on jewelry details.`;
+            // Gemini ile taki gorselini analiz et (detayli aciklama icin)
+            const jewelryDesc = await analyzeJewelryImage(state.originalBase64);
 
-            const fluxResult = await callFalAPI('fal-ai/flux-2-pro/edit', {
-                image_urls: [state.templateImage, state.originalBase64],
-                prompt: fluxEditPrompt,
-                image_size: 'auto',
+            showLoader('FLUX Kontext ile taki modele yerlestiriliyor...');
+
+            // Kontext: model fotosunu baz al, taki ekle
+            const kontextPrompt = `Add ${jewelryDesc} on the model in this photo. The jewelry should look natural and realistic on the model. ${sceneDescription}. Keep the model's face, body, pose and background exactly the same. Only add the jewelry. Professional product photography quality, sharp details on the jewelry.`;
+
+            console.log('Kontext prompt:', kontextPrompt);
+
+            const kontextResult = await callFalAPI('fal-ai/flux-pro/kontext', {
+                image_url: state.templateImage,
+                prompt: kontextPrompt,
+                guidance_scale: 4.0,
+                num_inference_steps: 28,
                 output_format: 'jpeg'
             }, falKey);
 
-            if (fluxResult?.images?.[0]?.url) {
-                resultBase64 = await fetchImageAsBase64(fluxResult.images[0].url);
+            if (kontextResult?.images?.[0]?.url) {
+                resultBase64 = await fetchImageAsBase64(kontextResult.images[0].url);
             } else {
-                throw new Error('FLUX Edit sonuc dondurmed');
+                throw new Error('FLUX Kontext sonuc dondurmedi');
             }
 
         // ===== STANDART PRODUCT PHOTOGRAPHY MODU =====
@@ -766,14 +772,14 @@ async function generateImage() {
             if (productPhotoData?.images?.[0]?.url) {
                 resultBase64 = await fetchImageAsBase64(productPhotoData.images[0].url);
             } else {
-                throw new Error('Product Photography API sonuc dondurmed');
+                throw new Error('Product Photography API sonuc dondurmedi');
             }
         }
 
         // Urun gorselini kaydet
         state.processedImage = resultBase64;
 
-        // Brand model face-swap (FLUX Edit sonucunda artik yuz VAR)
+        // Brand model face-swap (Kontext ciktisinda model yuzu VAR)
         if (state.brandModel.enabled && state.brandModel.photos.length > 0) {
             showLoader('Marka modeli yuzu uygulanıyor...');
             resultBase64 = await applyBrandModelFace(resultBase64);
@@ -791,12 +797,83 @@ async function generateImage() {
         showToast('Profesyonel urun gorseli olusturuldu!', 'success');
 
     } catch (error) {
-        console.error('Product Photography error:', error);
+        console.error('Generation error:', error);
         hideLoader();
         showToast('Gorsel olusturma hatasi: ' + error.message, 'error');
     } finally {
         state.isGenerating = false;
     }
+}
+
+// Gemini ile taki gorselini analiz et - Kontext promptu icin detayli aciklama
+async function analyzeJewelryImage(imageBase64) {
+    const geminiKey = state.settings.geminiApiKey;
+
+    // Gemini key yoksa genel aciklama don
+    if (!geminiKey) {
+        const category = state.selectedCategory || 'necklace';
+        const categoryNames = {
+            necklace: 'a delicate necklace', bracelet: 'an elegant bracelet',
+            earring: 'beautiful earrings', ring: 'a stylish ring', set: 'a jewelry set'
+        };
+        return categoryNames[category] || 'elegant jewelry';
+    }
+
+    try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`;
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [
+                        { text: 'Describe this jewelry item in ONE detailed English sentence for an AI image editor. Include: type (necklace/bracelet/ring/earring), metal color (gold/silver/rose gold), stone types, design style. Example: "a delicate rose gold chain necklace with a small diamond pendant". Be specific and concise. ONLY return the description, nothing else.' },
+                        { inlineData: { mimeType: 'image/jpeg', data: imageBase64.split(',')[1] || imageBase64 } }
+                    ]
+                }],
+                generationConfig: { temperature: 0.2, maxOutputTokens: 100 }
+            })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const desc = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+            if (desc) {
+                console.log('Jewelry description:', desc);
+                return desc;
+            }
+        }
+    } catch (e) {
+        console.warn('Gemini analysis failed, using default:', e.message);
+    }
+
+    return 'elegant jewelry piece';
+}
+
+// Tek varyasyon uret - template varsa Kontext, yoksa product-photography
+async function generateSingleVariation(sceneDescription, falKey, jewelryDesc) {
+    if (state.templateImage && jewelryDesc) {
+        const kontextPrompt = `Add ${jewelryDesc} on the model in this photo. ${sceneDescription}. Keep the model exactly the same. Only add the jewelry. Professional quality, sharp jewelry details.`;
+        const result = await callFalAPI('fal-ai/flux-pro/kontext', {
+            image_url: state.templateImage,
+            prompt: kontextPrompt,
+            guidance_scale: 4.0,
+            num_inference_steps: 28,
+            output_format: 'jpeg'
+        }, falKey);
+        if (result?.images?.[0]?.url) {
+            return await fetchImageAsBase64(result.images[0].url);
+        }
+    } else {
+        const result = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
+            product_image_url: state.originalBase64,
+            prompt: sceneDescription
+        }, falKey);
+        if (result?.images?.[0]?.url) {
+            return await fetchImageAsBase64(result.images[0].url);
+        }
+    }
+    return null;
 }
 
 // Sahne aciklamasi olustur
@@ -1914,6 +1991,13 @@ async function generateMultipleVariations(category = null) {
     showMultiVariationProgress(0, template.variations.length);
 
     try {
+        // Template varsa taki analizini onceden yap (her varyasyonda tekrar analiz etme)
+        let jewelryDesc = null;
+        if (state.templateImage) {
+            showLoader('Taki analiz ediliyor...');
+            jewelryDesc = await analyzeJewelryImage(state.originalBase64);
+        }
+
         for (let i = 0; i < template.variations.length; i++) {
             const variation = template.variations[i];
 
@@ -1933,29 +2017,8 @@ async function generateMultipleVariations(category = null) {
 
             const sceneDescription = buildSceneDescription(selectedOutfit, selectedPose, selectedScene, selectedStyle);
 
-            // API cagrisi - template varsa FLUX Edit, yoksa product-photography
-            let resultBase64 = null;
-
-            if (state.templateImage) {
-                const fluxPrompt = `Professional jewelry product photography. Place the jewelry from image 2 naturally on the model from image 1. ${sceneDescription}. Photorealistic, high-end commercial quality.`;
-                const fluxResult = await callFalAPI('fal-ai/flux-2-pro/edit', {
-                    image_urls: [state.templateImage, state.originalBase64],
-                    prompt: fluxPrompt,
-                    image_size: 'auto',
-                    output_format: 'jpeg'
-                }, falKey);
-                if (fluxResult?.images?.[0]?.url) {
-                    resultBase64 = await fetchImageAsBase64(fluxResult.images[0].url);
-                }
-            } else {
-                const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
-                    product_image_url: state.originalBase64,
-                    prompt: sceneDescription
-                }, falKey);
-                if (productPhotoData?.images?.[0]?.url) {
-                    resultBase64 = await fetchImageAsBase64(productPhotoData.images[0].url);
-                }
-            }
+            // API cagrisi
+            let resultBase64 = await generateSingleVariation(sceneDescription, falKey, jewelryDesc);
 
             if (resultBase64) {
                 state.multiVariation.results.push({
@@ -1968,7 +2031,6 @@ async function generateMultipleVariations(category = null) {
                 addToGallery(resultBase64, variation.label);
             }
 
-            // Rate limit icin bekleme
             if (i < template.variations.length - 1) {
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
@@ -2013,6 +2075,11 @@ async function generateCustomVariations(variations) {
     showMultiVariationProgress(0, variations.length);
 
     try {
+        let jewelryDesc = null;
+        if (state.templateImage) {
+            jewelryDesc = await analyzeJewelryImage(state.originalBase64);
+        }
+
         for (let i = 0; i < variations.length; i++) {
             const variation = variations[i];
 
@@ -2025,28 +2092,7 @@ async function generateCustomVariations(variations) {
 
             const sceneDescription = buildSceneDescription(selectedOutfit, selectedPose, selectedScene, selectedStyle);
 
-            let resultBase64 = null;
-
-            if (state.templateImage) {
-                const fluxPrompt = `Professional jewelry product photography. Place the jewelry from image 2 naturally on the model from image 1. ${sceneDescription}. Photorealistic, high-end commercial quality.`;
-                const fluxResult = await callFalAPI('fal-ai/flux-2-pro/edit', {
-                    image_urls: [state.templateImage, state.originalBase64],
-                    prompt: fluxPrompt,
-                    image_size: 'auto',
-                    output_format: 'jpeg'
-                }, falKey);
-                if (fluxResult?.images?.[0]?.url) {
-                    resultBase64 = await fetchImageAsBase64(fluxResult.images[0].url);
-                }
-            } else {
-                const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
-                    product_image_url: state.originalBase64,
-                    prompt: sceneDescription
-                }, falKey);
-                if (productPhotoData?.images?.[0]?.url) {
-                    resultBase64 = await fetchImageAsBase64(productPhotoData.images[0].url);
-                }
-            }
+            let resultBase64 = await generateSingleVariation(sceneDescription, falKey, jewelryDesc);
 
             if (resultBase64) {
                 state.multiVariation.results.push({
@@ -2632,43 +2678,21 @@ async function generateVideo() {
         if (state.processedImage) {
             // Daha once olusturulmus gorsel var
             sourceImage = state.processedImage;
-        } else if (state.templateImage) {
-            // Template varsa FLUX Edit ile birlestir
-            const selectedOutfit = outfitPresets[state.selectedOutfit] || outfitPresets.black_vneck;
-            const selectedPose = posePresets[state.selectedPose] || posePresets.front;
-            const selectedScene = scenePresets[state.selectedScene] || scenePresets.studio_clean;
-            const selectedStyle = stylePresets[state.selectedStyle] || stylePresets.studio;
-            const sceneDescription = buildSceneDescription(selectedOutfit, selectedPose, selectedScene, selectedStyle);
-
-            const fluxPrompt = `Professional jewelry product photography. Place the jewelry from image 2 naturally on the model from image 1. ${sceneDescription}. Photorealistic, high-end commercial quality.`;
-            const fluxResult = await callFalAPI('fal-ai/flux-2-pro/edit', {
-                image_urls: [state.templateImage, state.originalBase64],
-                prompt: fluxPrompt,
-                image_size: 'auto',
-                output_format: 'jpeg'
-            }, falKey);
-
-            if (fluxResult?.images?.[0]?.url) {
-                sourceImage = await fetchImageAsBase64(fluxResult.images[0].url);
-                state.processedImage = sourceImage;
-            } else {
-                sourceImage = state.originalBase64;
-            }
         } else {
-            // Template yok, product-photography kullan
+            // Gorsel henuz uretilmemis, Kontext veya product-photography ile uret
             const selectedOutfit = outfitPresets[state.selectedOutfit] || outfitPresets.black_vneck;
             const selectedPose = posePresets[state.selectedPose] || posePresets.front;
             const selectedScene = scenePresets[state.selectedScene] || scenePresets.studio_clean;
             const selectedStyle = stylePresets[state.selectedStyle] || stylePresets.studio;
             const sceneDescription = buildSceneDescription(selectedOutfit, selectedPose, selectedScene, selectedStyle);
 
-            const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
-                product_image_url: state.originalBase64,
-                prompt: sceneDescription
-            }, falKey);
+            let jewelryDesc = null;
+            if (state.templateImage) {
+                jewelryDesc = await analyzeJewelryImage(state.originalBase64);
+            }
 
-            if (productPhotoData?.images?.[0]?.url) {
-                sourceImage = await fetchImageAsBase64(productPhotoData.images[0].url);
+            sourceImage = await generateSingleVariation(sceneDescription, falKey, jewelryDesc);
+            if (sourceImage) {
                 state.processedImage = sourceImage;
             } else {
                 sourceImage = state.originalBase64;
