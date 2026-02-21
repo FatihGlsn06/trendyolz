@@ -751,51 +751,25 @@ async function generateImage() {
         if (!productPhotoData?.images?.[0]?.url) throw new Error('Product Photography sonuç döndürmedi');
         const productPhotoBase64 = await fetchImageAsBase64(productPhotoData.images[0].url);
 
-        // ===== STEP 2: Gemini → takiyi detayli analiz et =====
-        showLoader('Takı analiz ediliyor...');
-        const jewelryDescription = await analyzeJewelryImage(productPhotoBase64);
-        console.log('Jewelry analysis:', jewelryDescription);
-
-        // ===== STEP 3: Manken gorseli belirle =====
-        let modelImage = state.templateImage; // kullanici yuklediyse
-
-        if (!modelImage) {
-            // Template yoksa AI ile manken olustur
-            showLoader('AI ile manken modeli oluşturuluyor...');
-            const modelPrompt = buildModelPrompt(selectedOutfit, selectedPose, selectedScene, selectedStyle);
-            console.log('Model generation prompt:', modelPrompt);
-
-            const modelResult = await callFalAPI('fal-ai/flux-2-max', {
-                prompt: modelPrompt,
-                image_size: { width: 1024, height: 768 },
-                output_format: 'jpeg',
-                safety_tolerance: '5'
-            }, falKey);
-
-            if (modelResult?.images?.[0]?.url) {
-                modelImage = await fetchImageAsBase64(modelResult.images[0].url);
-            } else {
-                throw new Error('Model oluşturulamadı');
-            }
-        }
-
-        // ===== STEP 4: FLUX 2 Max Edit → product photo takisini mankene yerlestir =====
-        showLoader('Takı mankene yerleştiriliyor...');
+        // ===== STEP 2: FLUX 2 Max Edit → product photo'yu manken uzerinde goster =====
+        // Taki zaten görselde var. FLUX sadece etrafina model ekleyecek.
+        // Takiyi yeniden uretmeyecek, degistirmeyecek.
+        showLoader('Takı manken üzerinde gösteriliyor...');
         const category = state.selectedCategory || 'necklace';
-        const kontextPrompt = buildPlacementPrompt(category, jewelryDescription);
-        console.log('Kontext prompt:', kontextPrompt);
+        const editPrompt = buildWornPrompt(category, selectedOutfit, selectedScene, selectedStyle);
+        console.log('Edit prompt:', editPrompt);
 
-        const kontextResult = await callFalAPI('fal-ai/flux-2-max/edit', {
-            image_urls: [productPhotoBase64, modelImage],
-            prompt: kontextPrompt,
-            image_size: 'auto',
+        const editResult = await callFalAPI('fal-ai/flux-2-max/edit', {
+            image_urls: [productPhotoBase64],
+            prompt: editPrompt,
+            image_size: { width: 1024, height: 768 },
             output_format: 'jpeg',
             safety_tolerance: '5',
-            guidance_scale: 50
+            guidance_scale: 30
         }, falKey);
 
-        if (kontextResult?.images?.[0]?.url) {
-            resultBase64 = await fetchImageAsBase64(kontextResult.images[0].url);
+        if (editResult?.images?.[0]?.url) {
+            resultBase64 = await fetchImageAsBase64(editResult.images[0].url);
         } else {
             throw new Error('FLUX 2 Max Edit sonuç döndürmedi');
         }
@@ -874,7 +848,7 @@ async function analyzeJewelryImage(imageBase64) {
     return 'elegant jewelry piece';
 }
 
-// Tek varyasyon uret - ProductPhoto + Gemini + Manken + Kontext pipeline
+// Tek varyasyon uret - ProductPhoto + FLUX Edit (tek gorsel) pipeline
 async function generateSingleVariation(sceneDescription, falKey) {
     // Step 1: Product Photography
     const prodResult = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
@@ -884,66 +858,63 @@ async function generateSingleVariation(sceneDescription, falKey) {
     if (!prodResult?.images?.[0]?.url) return null;
     const productPhoto = await fetchImageAsBase64(prodResult.images[0].url);
 
-    // Step 2: Gemini - takiyi detayli analiz et
-    const jewelryDescription = await analyzeJewelryImage(productPhoto);
-
-    // Step 3: Manken belirle (template veya AI ile olustur)
-    let modelImage = state.templateImage;
-    if (!modelImage) {
-        const selectedOutfit = outfitPresets[state.selectedOutfit] || outfitPresets.black_vneck;
-        const selectedPose = posePresets[state.selectedPose] || posePresets.front;
-        const selectedScene = scenePresets[state.selectedScene] || scenePresets.studio_clean;
-        const selectedStyle = stylePresets[state.selectedStyle] || stylePresets.studio;
-        const modelPrompt = buildModelPrompt(selectedOutfit, selectedPose, selectedScene, selectedStyle);
-
-        const modelResult = await callFalAPI('fal-ai/flux-2-max', {
-            prompt: modelPrompt,
-            image_size: { width: 1024, height: 768 },
-            output_format: 'jpeg',
-            safety_tolerance: '5'
-        }, falKey);
-        if (modelResult?.images?.[0]?.url) {
-            modelImage = await fetchImageAsBase64(modelResult.images[0].url);
-        } else {
-            return null;
-        }
-    }
-
-    // Step 4: FLUX 2 Max Edit - product photo takisini mankene yerlestir
+    // Step 2: FLUX 2 Max Edit - product photo'yu manken uzerinde goster
+    const selectedOutfit = outfitPresets[state.selectedOutfit] || outfitPresets.black_vneck;
+    const selectedScene = scenePresets[state.selectedScene] || scenePresets.studio_clean;
+    const selectedStyle = stylePresets[state.selectedStyle] || stylePresets.studio;
     const category = state.selectedCategory || 'necklace';
-    const kontextPrompt = buildPlacementPrompt(category, jewelryDescription);
+    const editPrompt = buildWornPrompt(category, selectedOutfit, selectedScene, selectedStyle);
 
-    const kontextResult = await callFalAPI('fal-ai/flux-2-max/edit', {
-        image_urls: [productPhoto, modelImage],
-        prompt: kontextPrompt,
-        image_size: 'auto',
+    const editResult = await callFalAPI('fal-ai/flux-2-max/edit', {
+        image_urls: [productPhoto],
+        prompt: editPrompt,
+        image_size: { width: 1024, height: 768 },
         output_format: 'jpeg',
         safety_tolerance: '5',
-        guidance_scale: 50
+        guidance_scale: 30
     }, falKey);
 
-    if (kontextResult?.images?.[0]?.url) {
-        return await fetchImageAsBase64(kontextResult.images[0].url);
+    if (editResult?.images?.[0]?.url) {
+        return await fetchImageAsBase64(editResult.images[0].url);
     }
     return null;
 }
 
-// Gemini jewelry analizini kullanarak FLUX 2 Max Edit icin yerlesim promptu
-// @Image1 = taki (product photo), @Image2 = manken (model photo)
-function buildPlacementPrompt(category, jewelryDescription) {
+// Product photo'yu manken uzerinde gosteren tek-gorsel edit promptu olustur
+// Taki zaten gorselde, FLUX sadece etrafina model ekleyecek
+function buildWornPrompt(category, outfit, scene, style) {
     const cat = category || 'necklace';
 
-    const placementInstructions = {
-        necklace: 'Show @Image1 (this exact necklace) being worn on the neck of the person in @Image2.',
-        bracelet: 'Show @Image1 (this exact bracelet) being worn on the wrist of the person in @Image2.',
-        ring: 'Show @Image1 (this exact ring) being worn on the finger of the person in @Image2.',
-        earring: 'Show @Image1 (this exact earrings) being worn on the ears of the person in @Image2.',
-        set: 'Show @Image1 (this exact jewelry set) being worn by the person in @Image2.'
+    // Kategori bazli yerlesim
+    const wornInstructions = {
+        necklace: 'Show this exact necklace being worn on the neck and collarbone of an anonymous female model.',
+        bracelet: 'Show this exact bracelet being worn on the wrist of an anonymous female model.',
+        ring: 'Show this exact ring being worn on the finger of an anonymous female model.',
+        earring: 'Show these exact earrings being worn on the ears of an anonymous female model.',
+        set: 'Show this exact jewelry set being worn by an anonymous female model.'
     };
 
-    const placement = placementInstructions[cat] || placementInstructions.necklace;
+    const parts = [wornInstructions[cat] || wornInstructions.necklace];
 
-    return `@Image1 is a product photo of ${jewelryDescription}. @Image2 is a model photo. ${placement} ABSOLUTE RULES: Transfer the EXACT jewelry from @Image1 onto the model. Do NOT add any extra jewelry pieces. Do NOT change the design, color, number of strands, bead count, stone arrangement, metal type, chain pattern, or any detail of the jewelry. The output jewelry must be a 1:1 copy of @Image1. Keep the model framing and clothing from @Image2. Only add realistic shadow where jewelry meets skin. Professional e-commerce product photography.`;
+    // Model ozellikleri
+    parts.push('The model is anonymous - face cropped at chin level, only lower lips barely visible, NO eyes or nose visible');
+
+    // Kiyafet
+    if (outfit && outfit.prompt && outfit.id !== 'none') {
+        parts.push(`Model is ${outfit.prompt}`);
+    } else {
+        parts.push('Model wearing black shirt with open collar showing neck and collarbone');
+    }
+
+    // Arka plan
+    if (scene) {
+        parts.push(`${scene.background}, ${scene.lighting}`);
+    }
+
+    // KRITIK: takiyi degistirme
+    parts.push('CRITICAL: Do NOT modify, redesign, simplify or change the jewelry in any way. The jewelry must remain EXACTLY as shown in the input image - same design, same colors, same stones, same number of strands, same chain pattern. You are only adding a model around/behind the jewelry. Tiffany & Co campaign style, professional e-commerce photography');
+
+    return parts.join('. ');
 }
 
 // AI ile manken olusturmak icin prompt olustur (Tiffany tarzi, anonim model, yuz yok)
