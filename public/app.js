@@ -778,19 +778,19 @@ async function generateImage() {
         if (!modelResult?.images?.[0]?.url) throw new Error('Model oluşturulamadı');
         const modelImage = await fetchImageAsBase64(modelResult.images[0].url);
 
-        // ===== STEP 4: Seffaf takiyi manken uzerine yerlestir =====
-        showLoader('Takı mankene yerleştiriliyor...');
+        // ===== STEP 4: Taki pozisyonla + bulanik manken ipucu + mask olustur =====
+        showLoader('Takı pozisyonlanıyor ve inpaint hazırlanıyor...');
         const category = state.selectedCategory || 'necklace';
-        const compositeImage = await createComposite(modelImage, transparentJewelry, category);
+        const { positionedImage, preservationMask } = await prepareInpaintImages(transparentJewelry, modelImage, category);
 
-        // ===== STEP 5: Kenar birlesim maskesi olustur + FLUX Fill ile blend =====
-        showLoader('Kenarlar doğal hale getiriliyor...');
-        const edgeMask = await createEdgeBlendMask(transparentJewelry, modelImage);
-
+        // ===== STEP 5: FLUX Pro Fill → taki korunuyor, TÜM model yeniden üretiliyor =====
+        showLoader('AI ile doğal model oluşturuluyor (takı korunuyor)...');
         const fillPrompt = buildInpaintPrompt(category, selectedOutfit, selectedScene, selectedStyle);
+        console.log('Fill prompt:', fillPrompt);
+
         const fillResult = await callFalAPI('fal-ai/flux-pro/v1/fill', {
-            image_url: compositeImage,
-            mask_url: edgeMask,
+            image_url: positionedImage,
+            mask_url: preservationMask,
             prompt: fillPrompt,
             output_format: 'jpeg',
             safety_tolerance: '5'
@@ -799,9 +799,7 @@ async function generateImage() {
         if (fillResult?.images?.[0]?.url) {
             resultBase64 = await fetchImageAsBase64(fillResult.images[0].url);
         } else {
-            // Fill basarisiz olursa composite'i kullan
-            console.warn('Edge blend failed, using composite');
-            resultBase64 = compositeImage;
+            throw new Error('FLUX Fill sonuç döndürmedi');
         }
 
         // Urun gorselini kaydet
@@ -878,7 +876,7 @@ async function analyzeJewelryImage(imageBase64) {
     return 'elegant jewelry piece';
 }
 
-// Tek varyasyon uret - ProductPhoto + BiRefNet + Manken + Composite + Fill pipeline
+// Tek varyasyon uret - ProductPhoto + BiRefNet + Manken + Inpaint pipeline (canvas yok)
 async function generateSingleVariation(sceneDescription, falKey) {
     // Step 1: Product Photography
     const prodResult = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
@@ -914,17 +912,16 @@ async function generateSingleVariation(sceneDescription, falKey) {
     if (!modelResult?.images?.[0]?.url) return null;
     const modelImage = await fetchImageAsBase64(modelResult.images[0].url);
 
-    // Step 4: Composite → taki manken uzerine
+    // Step 4: Taki pozisyonla + bulanik manken ipucu + mask
     const category = state.selectedCategory || 'necklace';
-    const compositeImage = await createComposite(modelImage, transparentJewelry, category);
+    const { positionedImage, preservationMask } = await prepareInpaintImages(transparentJewelry, modelImage, category);
 
-    // Step 5: FLUX Fill → kenar blend
-    const edgeMask = await createEdgeBlendMask(transparentJewelry, modelImage);
+    // Step 5: FLUX Fill → taki korunuyor, model yeniden uretiliyor
     const fillPrompt = buildInpaintPrompt(category, selectedOutfit, selectedScene, selectedStyle);
 
     const fillResult = await callFalAPI('fal-ai/flux-pro/v1/fill', {
-        image_url: compositeImage,
-        mask_url: edgeMask,
+        image_url: positionedImage,
+        mask_url: preservationMask,
         prompt: fillPrompt,
         output_format: 'jpeg',
         safety_tolerance: '5'
@@ -933,43 +930,51 @@ async function generateSingleVariation(sceneDescription, falKey) {
     if (fillResult?.images?.[0]?.url) {
         return await fetchImageAsBase64(fillResult.images[0].url);
     }
-    return compositeImage;
+    return null;
 }
 
-// Inpainting prompt: maskeli alana (BEYAZ) ne uretilecek
-// Taki pikselleri korunuyor (SIYAH mask), sadece etraf uretiliyor
+// Inpainting prompt: FLUX Fill tum modeli sifirdan uretiyor, taki pikselleri korunuyor
+// Bu prompt BEYAZ alan icin - yani taki DISINDAKI her sey
 function buildInpaintPrompt(category, outfit, scene, style) {
     const cat = category || 'necklace';
 
-    // Kategori bazli vücut bolumu
+    // Kategori bazli vucut aciklamasi
     const bodyContext = {
-        necklace: 'Female model neck, collarbone and upper chest area wearing this necklace.',
-        bracelet: 'Female model wrist and hand area wearing this bracelet.',
-        ring: 'Female model hand and fingers wearing this ring.',
-        earring: 'Female model face profile and ear area wearing these earrings.',
-        set: 'Female model upper body wearing this jewelry set.'
+        necklace: 'Professional close-up photo of a female model wearing a necklace. Focus on neck, collarbone and upper chest.',
+        bracelet: 'Professional photo of a female model wearing a bracelet. Focus on wrist and hand.',
+        ring: 'Professional photo of a female model wearing a ring. Focus on hand and fingers.',
+        earring: 'Professional photo of a female model wearing earrings. Focus on ear and face profile.',
+        set: 'Professional photo of a female model wearing a jewelry set. Upper body shot.'
     };
 
     const parts = [bodyContext[cat] || bodyContext.necklace];
 
-    // Anonim model
-    parts.push('Anonymous model, face cropped at chin level, only lower lips barely visible, NO eyes or nose');
+    // Anonim model - Tiffany tarzi
+    parts.push('Photo cropped at chin level, face cut off at chin, only lower lips barely visible at very top of frame. NO eyes, NO nose, NO forehead. Anonymous faceless model');
+
+    // Gercekci cilt ve vucut
+    parts.push('Realistic smooth skin, natural skin tone, visible collarbone, realistic skin texture with natural light and shadow');
 
     // Kiyafet
     if (outfit && outfit.prompt && outfit.id !== 'none') {
         parts.push(outfit.prompt);
     } else {
-        parts.push('Black shirt with open collar showing neck and collarbone');
+        parts.push('Wearing elegant black shirt with open collar, showing neck and decollete area');
     }
 
-    // Arka plan
+    // Sahne ve isik
     if (scene) {
         parts.push(`${scene.background}, ${scene.lighting}`);
     } else {
-        parts.push('Clean white studio background, soft even lighting');
+        parts.push('Clean white studio background, soft diffused studio lighting');
     }
 
-    parts.push('Tiffany & Co campaign style, professional e-commerce catalog photography, natural skin tone, realistic lighting');
+    if (style) {
+        parts.push(`${style.lighting} lighting, ${style.mood} atmosphere`);
+    }
+
+    // Kalite ve stil
+    parts.push('Tiffany & Co campaign style, luxury e-commerce catalog photography, 8K quality, sharp focus, professional studio photo. The jewelry in the image must be preserved exactly as-is, generate the model body around it naturally with proper shadows and reflections');
 
     return parts.join('. ');
 }
@@ -1489,98 +1494,96 @@ async function createJewelryMask(transparentImageBase64) {
     return canvas.toDataURL('image/png');
 }
 
-// Kenar birlesim maskesi: taki+model birlesim noktasini maskeyle
-// Siyah = koru (taki merkezi + model), Beyaz = inpaint (sadece kenar gecis bolgesi)
-async function createEdgeBlendMask(transparentJewelryBase64, modelImageBase64) {
+// Inpaint icin gorsel hazirla: bulanik manken + taki pozisyonlama + koruma maskesi
+// Canvas composite DEGIL - FLUX Fill tum modeli sifirdan uretecek
+// Bulanik manken sadece vucut sekli ipucu verir, taki pikselleri %100 korunur
+async function prepareInpaintImages(transparentJewelryBase64, mannequinBase64, category) {
     const jewelryImg = await loadImage(transparentJewelryBase64);
-    const modelImg = await loadImage(modelImageBase64);
+    const mannequinImg = await loadImage(mannequinBase64);
 
-    const canvas = document.createElement('canvas');
-    canvas.width = modelImg.width;
-    canvas.height = modelImg.height;
-    const ctx = canvas.getContext('2d');
+    const W = mannequinImg.width;
+    const H = mannequinImg.height;
 
-    // Onca jewelry'nin alpha kanalini al (composite boyutunda)
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = modelImg.width;
-    tempCanvas.height = modelImg.height;
-    const tempCtx = tempCanvas.getContext('2d');
+    // --- 1. Bulanik manken olustur (vucut sekli ipucu) ---
+    const blurCanvas = document.createElement('canvas');
+    blurCanvas.width = W;
+    blurCanvas.height = H;
+    const blurCtx = blurCanvas.getContext('2d');
 
-    // Jewelry'yi composite pozisyonuna ciz (createComposite ile ayni pozisyon)
-    const category = state.selectedCategory || 'necklace';
-    const pos = getJewelryPosition(category, modelImg.width, modelImg.height);
+    // Mankeni agir blur ile ciz - FLUX Fill icin yapisal ipucu
+    blurCtx.filter = 'blur(25px)';
+    blurCtx.drawImage(mannequinImg, 0, 0, W, H);
+    blurCtx.filter = 'none';
 
-    tempCtx.save();
-    tempCtx.translate(pos.x, pos.y);
-    if (state.position) {
-        tempCtx.rotate((state.position.rotation * Math.PI) / 180);
+    // --- 2. Taki pozisyonunu hesapla ---
+    const pos = getJewelryPosition(category, W, H);
+    const aspectRatio = jewelryImg.width / jewelryImg.height;
+    let jw, jh;
+    if (aspectRatio > 1) {
+        jw = pos.width;
+        jh = pos.width / aspectRatio;
+    } else {
+        jh = pos.height;
+        jw = pos.height * aspectRatio;
     }
-    tempCtx.drawImage(jewelryImg, -pos.width / 2, -pos.height / 2, pos.width, pos.height);
-    tempCtx.restore();
 
-    const jewelryPixels = tempCtx.getImageData(0, 0, canvas.width, canvas.height);
+    const rotation = state.position ? (state.position.rotation * Math.PI) / 180 : 0;
 
-    // Mask olustur: tamamen SIYAH (koru) baslat
-    ctx.fillStyle = 'black';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    const maskData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const mask = maskData.data;
-    const jData = jewelryPixels.data;
+    // --- 3. Taki'yi bulanik manken uzerine ciz ---
+    blurCtx.save();
+    blurCtx.translate(pos.x, pos.y);
+    blurCtx.rotate(rotation);
+    blurCtx.drawImage(jewelryImg, -jw / 2, -jh / 2, jw, jh);
+    blurCtx.restore();
 
-    // Jewelry kenar piksellerini bul: alpha gecis bolgesi
-    // Dilate: jewelry etrafinda 15px BEYAZ bant (inpaint edilecek alan)
-    const dilateRadius = 15;
-    const w = canvas.width;
-    const h = canvas.height;
+    // --- 4. Koruma maskesi olustur ---
+    // BEYAZ = yeniden uret (tum model, arka plan)
+    // SIYAH = koru (sadece taki pikselleri)
+    const maskCanvas = document.createElement('canvas');
+    maskCanvas.width = W;
+    maskCanvas.height = H;
+    const maskCtx = maskCanvas.getContext('2d');
 
-    // Once jewelry pikselleri bul
-    const isJewelry = new Uint8Array(w * h);
-    for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-            const idx = (y * w + x) * 4;
-            if (jData[idx + 3] > 20) {
-                isJewelry[y * w + x] = 1;
-            }
+    // Tamamen BEYAZ baslat (her sey yeniden uretilecek)
+    maskCtx.fillStyle = 'white';
+    maskCtx.fillRect(0, 0, W, H);
+
+    // Taki piksellerini bul (alpha kanalından)
+    const alphaCanvas = document.createElement('canvas');
+    alphaCanvas.width = W;
+    alphaCanvas.height = H;
+    const alphaCtx = alphaCanvas.getContext('2d');
+
+    alphaCtx.save();
+    alphaCtx.translate(pos.x, pos.y);
+    alphaCtx.rotate(rotation);
+    alphaCtx.drawImage(jewelryImg, -jw / 2, -jh / 2, jw, jh);
+    alphaCtx.restore();
+
+    const alphaData = alphaCtx.getImageData(0, 0, W, H);
+    const maskData = maskCtx.getImageData(0, 0, W, H);
+
+    // Taki pikselleri SIYAH (koru) - alpha > 20 olan pikseller
+    for (let i = 0; i < alphaData.data.length; i += 4) {
+        if (alphaData.data[i + 3] > 20) {
+            maskData.data[i] = 0;       // R
+            maskData.data[i + 1] = 0;   // G
+            maskData.data[i + 2] = 0;   // B
+            maskData.data[i + 3] = 255; // A
         }
     }
 
-    // Jewelry etrafindaki bant: jewelry kenarından dilateRadius piksel icinde
-    for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-            if (isJewelry[y * w + x]) continue; // jewelry icinde = koru
+    maskCtx.putImageData(maskData, 0, 0);
 
-            // Bu piksel jewelry'ye yakin mi?
-            let nearJewelry = false;
-            for (let dy = -dilateRadius; dy <= dilateRadius && !nearJewelry; dy++) {
-                for (let dx = -dilateRadius; dx <= dilateRadius && !nearJewelry; dx++) {
-                    const ny = y + dy;
-                    const nx = x + dx;
-                    if (ny >= 0 && ny < h && nx >= 0 && nx < w) {
-                        if (isJewelry[ny * w + nx]) {
-                            const dist = Math.sqrt(dx * dx + dy * dy);
-                            if (dist <= dilateRadius) {
-                                nearJewelry = true;
-                            }
-                        }
-                    }
-                }
-            }
+    console.log('Inpaint images prepared - jewelry preserved, model will be regenerated');
 
-            if (nearJewelry) {
-                // Kenar bolgesi - BEYAZ (inpaint et, dogal blend icin)
-                const idx = (y * w + x) * 4;
-                mask[idx] = 255;
-                mask[idx + 1] = 255;
-                mask[idx + 2] = 255;
-            }
-        }
-    }
-
-    ctx.putImageData(maskData, 0, 0);
-    return canvas.toDataURL('image/png');
+    return {
+        positionedImage: blurCanvas.toDataURL('image/png', 1.0),
+        preservationMask: maskCanvas.toDataURL('image/png')
+    };
 }
 
-// Jewelry pozisyon hesaplaması (createComposite ile senkronize)
+// Jewelry pozisyon hesaplamasi - kategori bazli vucut konumu
 function getJewelryPosition(category, canvasWidth, canvasHeight) {
     const cat = category || 'necklace';
     let posX, posY, scaleFactor;
