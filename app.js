@@ -751,19 +751,7 @@ async function generateImage() {
         if (!productPhotoData?.images?.[0]?.url) throw new Error('Product Photography sonuç döndürmedi');
         const productPhotoBase64 = await fetchImageAsBase64(productPhotoData.images[0].url);
 
-        // ===== STEP 2: BiRefNet → arka plan kaldir =====
-        showLoader('Takı arka planı kaldırılıyor...');
-        const birefnetData = await callFalAPI('fal-ai/birefnet', {
-            image_url: productPhotoBase64,
-            model: 'General Use (Heavy)',
-            operating_resolution: '1024x1024',
-            output_format: 'png'
-        }, falKey);
-
-        if (!birefnetData?.image?.url) throw new Error('BiRefNet sonuç döndürmedi');
-        const transparentJewelry = await fetchImageAsBase64(birefnetData.image.url);
-
-        // ===== STEP 3: Manken gorseli belirle =====
+        // ===== STEP 2: Manken gorseli belirle =====
         let modelImage = state.templateImage; // kullanici yuklediyse
 
         if (!modelImage) {
@@ -786,12 +774,24 @@ async function generateImage() {
             }
         }
 
-        // ===== STEP 4: Kontext Max Multi → takiyi mankene yerlestir =====
+        // ===== STEP 3: Kontext Max Multi → product photo takisini mankene yerlestir =====
         showLoader('FLUX Kontext ile takı mankene yerleştiriliyor...');
-        const kontextPrompt = `Place the jewelry from the second image naturally on the model in the first image. If it is a necklace, place it on the neck/collarbone area. If earrings, place on ears. If bracelet, place on wrist. If ring, place on finger. The jewelry must look exactly as shown in the second image, preserve every detail, color, and design of the jewelry. Keep the same close-up anonymous framing - face cropped at chin, no full face visible. Tiffany & Co campaign style. Professional studio photography, realistic shadows and reflections where jewelry meets skin. Clean background.`;
+
+        // Taki kategorisine gore yerlesim promptu
+        const category = state.selectedCategory || 'necklace';
+        const placementMap = {
+            necklace: 'Place the exact necklace from @Image2 on the neck of the model in @Image1',
+            bracelet: 'Place the exact bracelet from @Image2 on the wrist of the model in @Image1',
+            ring: 'Place the exact ring from @Image2 on the finger of the model in @Image1',
+            earring: 'Place the exact earrings from @Image2 on the ears of the model in @Image1',
+            set: 'Place the exact jewelry set from @Image2 on the model in @Image1'
+        };
+        const placementInstruction = placementMap[category] || placementMap.necklace;
+
+        const kontextPrompt = `${placementInstruction}. CRITICAL: Use the EXACT jewelry from the product photo in @Image2 - do NOT modify, reimagine, redesign, or regenerate the jewelry in any way. The jewelry design, color, shape, stones, metal, chain style, pendant must be IDENTICAL to @Image2. You are only changing its position to wear it on the model. Keep the model's anonymous close-up framing from @Image1. Tiffany & Co campaign style. Add only subtle realistic shadow where jewelry touches skin.`;
 
         const kontextResult = await callFalAPI('fal-ai/flux-pro/kontext/max/multi', {
-            image_urls: [modelImage, transparentJewelry],
+            image_urls: [modelImage, productPhotoBase64],
             prompt: kontextPrompt,
             output_format: 'jpeg',
             safety_tolerance: '5'
@@ -877,7 +877,7 @@ async function analyzeJewelryImage(imageBase64) {
     return 'elegant jewelry piece';
 }
 
-// Tek varyasyon uret - ProductPhoto + BiRefNet + Manken + Kontext pipeline
+// Tek varyasyon uret - ProductPhoto + Manken + Kontext pipeline
 async function generateSingleVariation(sceneDescription, falKey) {
     // Step 1: Product Photography
     const prodResult = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
@@ -887,17 +887,7 @@ async function generateSingleVariation(sceneDescription, falKey) {
     if (!prodResult?.images?.[0]?.url) return null;
     const productPhoto = await fetchImageAsBase64(prodResult.images[0].url);
 
-    // Step 2: BiRefNet - arka plan kaldir
-    const birefnetResult = await callFalAPI('fal-ai/birefnet', {
-        image_url: productPhoto,
-        model: 'General Use (Heavy)',
-        operating_resolution: '1024x1024',
-        output_format: 'png'
-    }, falKey);
-    if (!birefnetResult?.image?.url) return null;
-    const transparentJewelry = await fetchImageAsBase64(birefnetResult.image.url);
-
-    // Step 3: Manken belirle (template veya AI ile olustur)
+    // Step 2: Manken belirle (template veya AI ile olustur)
     let modelImage = state.templateImage;
     if (!modelImage) {
         const selectedOutfit = outfitPresets[state.selectedOutfit] || outfitPresets.black_vneck;
@@ -908,7 +898,7 @@ async function generateSingleVariation(sceneDescription, falKey) {
 
         const modelResult = await callFalAPI('fal-ai/flux-2-pro', {
             prompt: modelPrompt,
-            image_size: { width: 768, height: 1024 },
+            image_size: { width: 1024, height: 768 },
             output_format: 'jpeg',
             safety_tolerance: '5'
         }, falKey);
@@ -919,10 +909,20 @@ async function generateSingleVariation(sceneDescription, falKey) {
         }
     }
 
-    // Step 4: Kontext Max Multi - takiyi mankene yerlestir
-    const kontextPrompt = `Place the jewelry from the second image naturally on the model in the first image. If it is a necklace, place it on the neck/collarbone area. If earrings, place on ears. If bracelet, place on wrist. If ring, place on finger. The jewelry must look exactly as shown in the second image, preserve every detail, color, and design of the jewelry. Keep the same close-up anonymous framing - face cropped at chin, no full face visible. Tiffany & Co campaign style. Professional studio photography, realistic shadows and reflections where jewelry meets skin. Clean background.`;
+    // Step 3: Kontext Max Multi - product photo takisini mankene yerlestir
+    const category = state.selectedCategory || 'necklace';
+    const placementMap = {
+        necklace: 'Place the exact necklace from @Image2 on the neck of the model in @Image1',
+        bracelet: 'Place the exact bracelet from @Image2 on the wrist of the model in @Image1',
+        ring: 'Place the exact ring from @Image2 on the finger of the model in @Image1',
+        earring: 'Place the exact earrings from @Image2 on the ears of the model in @Image1',
+        set: 'Place the exact jewelry set from @Image2 on the model in @Image1'
+    };
+    const placementInstruction = placementMap[category] || placementMap.necklace;
+
+    const kontextPrompt = `${placementInstruction}. CRITICAL: Use the EXACT jewelry from the product photo in @Image2 - do NOT modify, reimagine, redesign, or regenerate the jewelry in any way. The jewelry design, color, shape, stones, metal, chain style, pendant must be IDENTICAL to @Image2. You are only changing its position to wear it on the model. Keep the model's anonymous close-up framing from @Image1. Tiffany & Co campaign style. Add only subtle realistic shadow where jewelry touches skin.`;
     const kontextResult = await callFalAPI('fal-ai/flux-pro/kontext/max/multi', {
-        image_urls: [modelImage, transparentJewelry],
+        image_urls: [modelImage, productPhoto],
         prompt: kontextPrompt,
         output_format: 'jpeg',
         safety_tolerance: '5'
