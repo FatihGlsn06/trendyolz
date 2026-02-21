@@ -756,22 +756,21 @@ async function generateImage() {
             if (!birefnetData?.image?.url) throw new Error('BiRefNet sonuç döndürmedi');
             const transparentJewelry = await fetchImageAsBase64(birefnetData.image.url);
 
-            // Step 3: FLUX Edit ile takiyi manken uzerine yerlestir
-            showLoader('FLUX Edit ile takı mankene yerleştiriliyor...');
-            const editPrompt = `@Image1 is a fashion model photo. @Image2 is a jewelry piece with transparent background. Place the jewelry from @Image2 naturally on the model in @Image1. If necklace, put on neck. If earrings, put on ears. If bracelet, put on wrist. If ring, put on finger. The jewelry must look exactly like @Image2, preserve every detail. Professional studio photography, realistic shadows and lighting.`;
+            // Step 3: FLUX Kontext Max Multi - takiyi mankene yerlestir (en dusuk halusinasyon)
+            showLoader('FLUX Kontext ile takı mankene yerleştiriliyor...');
+            const kontextPrompt = `Place the jewelry from the second image naturally on the model in the first image. If it is a necklace, put it on the neck. If earrings, put on ears. If bracelet, put on wrist. If ring, put on finger. The jewelry must look exactly as shown in the second image, preserve every detail of the jewelry design. Professional studio photography, realistic shadows where jewelry meets skin.`;
 
-            const editResult = await callFalAPI('fal-ai/flux-2-pro/edit', {
+            const kontextResult = await callFalAPI('fal-ai/flux-pro/kontext/max/multi', {
                 image_urls: [state.templateImage, transparentJewelry],
-                prompt: editPrompt,
-                image_size: 'auto',
+                prompt: kontextPrompt,
                 output_format: 'jpeg',
                 safety_tolerance: '5'
             }, falKey);
 
-            if (editResult?.images?.[0]?.url) {
-                resultBase64 = await fetchImageAsBase64(editResult.images[0].url);
+            if (kontextResult?.images?.[0]?.url) {
+                resultBase64 = await fetchImageAsBase64(kontextResult.images[0].url);
             } else {
-                throw new Error('FLUX Edit sonuç döndürmedi');
+                throw new Error('FLUX Kontext sonuç döndürmedi');
             }
 
         // ===== STANDART PRODUCT PHOTOGRAPHY MODU =====
@@ -885,17 +884,16 @@ async function generateSingleVariation(sceneDescription, falKey) {
         if (!birefnetResult?.image?.url) return null;
         const transparentJewelry = await fetchImageAsBase64(birefnetResult.image.url);
 
-        // Step 3: FLUX Edit - mankene yerlestir
-        const editPrompt = `@Image1 is a fashion model photo. @Image2 is a jewelry piece with transparent background. Place the jewelry from @Image2 naturally on the model in @Image1. If necklace, put on neck. If earrings, put on ears. If bracelet, put on wrist. If ring, put on finger. The jewelry must look exactly like @Image2, preserve every detail. Professional studio photography, realistic shadows and lighting.`;
-        const editResult = await callFalAPI('fal-ai/flux-2-pro/edit', {
+        // Step 3: FLUX Kontext Max Multi - mankene yerlestir
+        const kontextPrompt = `Place the jewelry from the second image naturally on the model in the first image. If it is a necklace, put it on the neck. If earrings, put on ears. If bracelet, put on wrist. If ring, put on finger. The jewelry must look exactly as shown in the second image, preserve every detail of the jewelry design. Professional studio photography, realistic shadows where jewelry meets skin.`;
+        const kontextResult = await callFalAPI('fal-ai/flux-pro/kontext/max/multi', {
             image_urls: [state.templateImage, transparentJewelry],
-            prompt: editPrompt,
-            image_size: 'auto',
+            prompt: kontextPrompt,
             output_format: 'jpeg',
             safety_tolerance: '5'
         }, falKey);
-        if (editResult?.images?.[0]?.url) {
-            return await fetchImageAsBase64(editResult.images[0].url);
+        if (kontextResult?.images?.[0]?.url) {
+            return await fetchImageAsBase64(kontextResult.images[0].url);
         }
     } else {
         const result = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
