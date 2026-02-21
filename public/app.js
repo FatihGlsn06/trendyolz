@@ -732,61 +732,66 @@ async function generateImage() {
 
         let resultBase64;
 
-        // ===== TEMPLATE MODEL MODU (ProductPhoto + BiRefNet + FLUX Edit) =====
-        if (state.templateImage) {
-            // Step 1: Product Photography ile profesyonel taki gorseli olustur
-            showLoader('Product Photography ile takı görseli oluşturuluyor...');
-            const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
-                product_image_url: state.originalBase64,
-                prompt: sceneDescription
-            }, falKey);
+        // ===== STEP 1: Product Photography → temiz taki gorseli =====
+        showLoader('Product Photography ile takı görseli oluşturuluyor...');
+        const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
+            product_image_url: state.originalBase64,
+            prompt: sceneDescription
+        }, falKey);
 
-            if (!productPhotoData?.images?.[0]?.url) throw new Error('Product Photography sonuç döndürmedi');
-            const productPhotoBase64 = await fetchImageAsBase64(productPhotoData.images[0].url);
+        if (!productPhotoData?.images?.[0]?.url) throw new Error('Product Photography sonuç döndürmedi');
+        const productPhotoBase64 = await fetchImageAsBase64(productPhotoData.images[0].url);
 
-            // Step 2: BiRefNet ile product photo arka planini kaldir
-            showLoader('Takı arka planı kaldırılıyor...');
-            const birefnetData = await callFalAPI('fal-ai/birefnet', {
-                image_url: productPhotoBase64,
-                model: 'General',
-                operating_resolution: '1024x1024',
-                output_format: 'png'
-            }, falKey);
+        // ===== STEP 2: BiRefNet → arka plan kaldir =====
+        showLoader('Takı arka planı kaldırılıyor...');
+        const birefnetData = await callFalAPI('fal-ai/birefnet', {
+            image_url: productPhotoBase64,
+            model: 'General',
+            operating_resolution: '1024x1024',
+            output_format: 'png'
+        }, falKey);
 
-            if (!birefnetData?.image?.url) throw new Error('BiRefNet sonuç döndürmedi');
-            const transparentJewelry = await fetchImageAsBase64(birefnetData.image.url);
+        if (!birefnetData?.image?.url) throw new Error('BiRefNet sonuç döndürmedi');
+        const transparentJewelry = await fetchImageAsBase64(birefnetData.image.url);
 
-            // Step 3: FLUX Kontext Max Multi - takiyi mankene yerlestir (en dusuk halusinasyon)
-            showLoader('FLUX Kontext ile takı mankene yerleştiriliyor...');
-            const kontextPrompt = `Place the jewelry from the second image naturally on the model in the first image. If it is a necklace, put it on the neck. If earrings, put on ears. If bracelet, put on wrist. If ring, put on finger. The jewelry must look exactly as shown in the second image, preserve every detail of the jewelry design. Professional studio photography, realistic shadows where jewelry meets skin.`;
+        // ===== STEP 3: Manken gorseli belirle =====
+        let modelImage = state.templateImage; // kullanici yuklediyse
 
-            const kontextResult = await callFalAPI('fal-ai/flux-pro/kontext/max/multi', {
-                image_urls: [state.templateImage, transparentJewelry],
-                prompt: kontextPrompt,
+        if (!modelImage) {
+            // Template yoksa AI ile manken olustur
+            showLoader('AI ile manken modeli oluşturuluyor...');
+            const modelPrompt = buildModelPrompt(selectedOutfit, selectedPose, selectedScene, selectedStyle);
+            console.log('Model generation prompt:', modelPrompt);
+
+            const modelResult = await callFalAPI('fal-ai/flux-2-pro', {
+                prompt: modelPrompt,
+                image_size: { width: 768, height: 1024 },
                 output_format: 'jpeg',
                 safety_tolerance: '5'
             }, falKey);
 
-            if (kontextResult?.images?.[0]?.url) {
-                resultBase64 = await fetchImageAsBase64(kontextResult.images[0].url);
+            if (modelResult?.images?.[0]?.url) {
+                modelImage = await fetchImageAsBase64(modelResult.images[0].url);
             } else {
-                throw new Error('FLUX Kontext sonuç döndürmedi');
+                throw new Error('Model oluşturulamadı');
             }
+        }
 
-        // ===== STANDART PRODUCT PHOTOGRAPHY MODU =====
+        // ===== STEP 4: Kontext Max Multi → takiyi mankene yerlestir =====
+        showLoader('FLUX Kontext ile takı mankene yerleştiriliyor...');
+        const kontextPrompt = `Place the jewelry from the second image naturally on the model in the first image. If it is a necklace, put it on the neck. If earrings, put on ears. If bracelet, put on wrist. If ring, put on finger. The jewelry must look exactly as shown in the second image, preserve every detail of the jewelry design. Professional studio photography, realistic shadows where jewelry meets skin.`;
+
+        const kontextResult = await callFalAPI('fal-ai/flux-pro/kontext/max/multi', {
+            image_urls: [modelImage, transparentJewelry],
+            prompt: kontextPrompt,
+            output_format: 'jpeg',
+            safety_tolerance: '5'
+        }, falKey);
+
+        if (kontextResult?.images?.[0]?.url) {
+            resultBase64 = await fetchImageAsBase64(kontextResult.images[0].url);
         } else {
-            showLoader('Profesyonel urun fotografi olusturuluyor...');
-
-            const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
-                product_image_url: state.originalBase64,
-                prompt: sceneDescription
-            }, falKey);
-
-            if (productPhotoData?.images?.[0]?.url) {
-                resultBase64 = await fetchImageAsBase64(productPhotoData.images[0].url);
-            } else {
-                throw new Error('Product Photography API sonuc dondurmedi');
-            }
+            throw new Error('FLUX Kontext sonuç döndürmedi');
         }
 
         // Urun gorselini kaydet
@@ -863,48 +868,100 @@ async function analyzeJewelryImage(imageBase64) {
     return 'elegant jewelry piece';
 }
 
-// Tek varyasyon uret - template varsa ProductPhoto+BiRefNet+FLUX Edit, yoksa product-photography
+// Tek varyasyon uret - ProductPhoto + BiRefNet + Manken + Kontext pipeline
 async function generateSingleVariation(sceneDescription, falKey) {
-    if (state.templateImage) {
-        // Step 1: Product Photography
-        const prodResult = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
-            product_image_url: state.originalBase64,
-            prompt: sceneDescription
-        }, falKey);
-        if (!prodResult?.images?.[0]?.url) return null;
-        const productPhoto = await fetchImageAsBase64(prodResult.images[0].url);
+    // Step 1: Product Photography
+    const prodResult = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
+        product_image_url: state.originalBase64,
+        prompt: sceneDescription
+    }, falKey);
+    if (!prodResult?.images?.[0]?.url) return null;
+    const productPhoto = await fetchImageAsBase64(prodResult.images[0].url);
 
-        // Step 2: BiRefNet - arka plan kaldir
-        const birefnetResult = await callFalAPI('fal-ai/birefnet', {
-            image_url: productPhoto,
-            model: 'General',
-            operating_resolution: '1024x1024',
-            output_format: 'png'
-        }, falKey);
-        if (!birefnetResult?.image?.url) return null;
-        const transparentJewelry = await fetchImageAsBase64(birefnetResult.image.url);
+    // Step 2: BiRefNet - arka plan kaldir
+    const birefnetResult = await callFalAPI('fal-ai/birefnet', {
+        image_url: productPhoto,
+        model: 'General',
+        operating_resolution: '1024x1024',
+        output_format: 'png'
+    }, falKey);
+    if (!birefnetResult?.image?.url) return null;
+    const transparentJewelry = await fetchImageAsBase64(birefnetResult.image.url);
 
-        // Step 3: FLUX Kontext Max Multi - mankene yerlestir
-        const kontextPrompt = `Place the jewelry from the second image naturally on the model in the first image. If it is a necklace, put it on the neck. If earrings, put on ears. If bracelet, put on wrist. If ring, put on finger. The jewelry must look exactly as shown in the second image, preserve every detail of the jewelry design. Professional studio photography, realistic shadows where jewelry meets skin.`;
-        const kontextResult = await callFalAPI('fal-ai/flux-pro/kontext/max/multi', {
-            image_urls: [state.templateImage, transparentJewelry],
-            prompt: kontextPrompt,
+    // Step 3: Manken belirle (template veya AI ile olustur)
+    let modelImage = state.templateImage;
+    if (!modelImage) {
+        const selectedOutfit = outfitPresets[state.selectedOutfit] || outfitPresets.black_vneck;
+        const selectedPose = posePresets[state.selectedPose] || posePresets.front;
+        const selectedScene = scenePresets[state.selectedScene] || scenePresets.studio_clean;
+        const selectedStyle = stylePresets[state.selectedStyle] || stylePresets.studio;
+        const modelPrompt = buildModelPrompt(selectedOutfit, selectedPose, selectedScene, selectedStyle);
+
+        const modelResult = await callFalAPI('fal-ai/flux-2-pro', {
+            prompt: modelPrompt,
+            image_size: { width: 768, height: 1024 },
             output_format: 'jpeg',
             safety_tolerance: '5'
         }, falKey);
-        if (kontextResult?.images?.[0]?.url) {
-            return await fetchImageAsBase64(kontextResult.images[0].url);
-        }
-    } else {
-        const result = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
-            product_image_url: state.originalBase64,
-            prompt: sceneDescription
-        }, falKey);
-        if (result?.images?.[0]?.url) {
-            return await fetchImageAsBase64(result.images[0].url);
+        if (modelResult?.images?.[0]?.url) {
+            modelImage = await fetchImageAsBase64(modelResult.images[0].url);
+        } else {
+            return null;
         }
     }
+
+    // Step 4: Kontext Max Multi - takiyi mankene yerlestir
+    const kontextPrompt = `Place the jewelry from the second image naturally on the model in the first image. If it is a necklace, put it on the neck. If earrings, put on ears. If bracelet, put on wrist. If ring, put on finger. The jewelry must look exactly as shown in the second image, preserve every detail of the jewelry design. Professional studio photography, realistic shadows where jewelry meets skin.`;
+    const kontextResult = await callFalAPI('fal-ai/flux-pro/kontext/max/multi', {
+        image_urls: [modelImage, transparentJewelry],
+        prompt: kontextPrompt,
+        output_format: 'jpeg',
+        safety_tolerance: '5'
+    }, falKey);
+    if (kontextResult?.images?.[0]?.url) {
+        return await fetchImageAsBase64(kontextResult.images[0].url);
+    }
     return null;
+}
+
+// AI ile manken olusturmak icin prompt olustur (takisiz model)
+function buildModelPrompt(outfit, pose, scene, style) {
+    const parts = [
+        'Beautiful young female fashion model, professional portrait photography'
+    ];
+
+    // Kiyafet
+    if (outfit && outfit.prompt && outfit.id !== 'none') {
+        parts.push(outfit.prompt);
+    } else {
+        parts.push('wearing elegant black V-neck top, deep neckline');
+    }
+
+    // Poz
+    if (pose && pose.prompt) {
+        parts.push(pose.prompt);
+    }
+
+    // Sahne
+    if (scene) {
+        parts.push(`${scene.background}, ${scene.lighting}`);
+    }
+
+    // Stil
+    if (style) {
+        parts.push(`${style.lighting} lighting, ${style.mood} atmosphere`);
+    }
+
+    // Takisiz olacak - boyun/kulak/bilek gorunur
+    parts.push('NO jewelry, no necklace, no earrings, no bracelet, no ring. Clean bare neck and decollete area clearly visible. Smooth skin. High-end fashion photography, sharp focus, 8K quality');
+
+    // Custom prompt
+    const smartPrompt = document.getElementById('smartPromptInput')?.value?.trim();
+    if (smartPrompt) {
+        parts.push(smartPrompt);
+    }
+
+    return parts.join('. ');
 }
 
 // Sahne aciklamasi olustur
