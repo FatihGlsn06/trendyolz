@@ -96,8 +96,8 @@ async function callGeminiAPI(prompt, apiKey, options = {}) {
 // ============================================
 
 const geminiConfig = {
-    textModel: 'gemini-2.5-flash',
-    fallbackTextModel: 'gemini-2.0-flash',
+    textModel: 'gemini-2.5-pro',
+    fallbackTextModel: 'gemini-2.5-flash',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
     maxRetries: 3,
     retryDelayMs: 1000
