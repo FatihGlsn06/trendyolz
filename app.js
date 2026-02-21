@@ -755,7 +755,7 @@ async function generateImage() {
         showLoader('Takı arka planı kaldırılıyor...');
         const birefnetData = await callFalAPI('fal-ai/birefnet', {
             image_url: productPhotoBase64,
-            model: 'General',
+            model: 'General Use (Heavy)',
             operating_resolution: '1024x1024',
             output_format: 'png'
         }, falKey);
@@ -890,7 +890,7 @@ async function generateSingleVariation(sceneDescription, falKey) {
     // Step 2: BiRefNet - arka plan kaldir
     const birefnetResult = await callFalAPI('fal-ai/birefnet', {
         image_url: productPhoto,
-        model: 'General',
+        model: 'General Use (Heavy)',
         operating_resolution: '1024x1024',
         output_format: 'png'
     }, falKey);
@@ -1031,7 +1031,7 @@ async function previewJewelryPlacement() {
         // BiRefNet ile arka plan kaldirma
         const birefnetData = await callFalAPI('fal-ai/birefnet', {
             image_url: state.originalBase64,
-            model: 'General',
+            model: 'General Use (Heavy)',
             operating_resolution: '1024x1024',
             output_format: 'png'
         }, falKey);
