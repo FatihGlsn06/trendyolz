@@ -105,8 +105,8 @@ async function callGeminiAPI(prompt, apiKey, options = {}) {
 // ============================================
 
 const geminiConfig = {
-    textModel: 'gemini-2.5-pro',
-    fallbackTextModel: 'gemini-2.5-flash',
+    textModel: 'gemini-3.1-pro-preview',
+    fallbackTextModel: 'gemini-3-flash-preview',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
     maxRetries: 3,
     retryDelayMs: 1000
@@ -765,7 +765,7 @@ async function generateImage() {
             const modelPrompt = buildModelPrompt(selectedOutfit, selectedPose, selectedScene, selectedStyle);
             console.log('Model generation prompt:', modelPrompt);
 
-            const modelResult = await callFalAPI('fal-ai/flux-2-pro', {
+            const modelResult = await callFalAPI('fal-ai/flux-2-max', {
                 prompt: modelPrompt,
                 image_size: { width: 1024, height: 768 },
                 output_format: 'jpeg',
@@ -779,15 +779,16 @@ async function generateImage() {
             }
         }
 
-        // ===== STEP 4: Kontext Max Multi → product photo takisini mankene yerlestir =====
+        // ===== STEP 4: FLUX 2 Max Edit → product photo takisini mankene yerlestir =====
         showLoader('Takı mankene yerleştiriliyor...');
         const category = state.selectedCategory || 'necklace';
         const kontextPrompt = buildPlacementPrompt(category, jewelryDescription);
         console.log('Kontext prompt:', kontextPrompt);
 
-        const kontextResult = await callFalAPI('fal-ai/flux-pro/kontext/max/multi', {
+        const kontextResult = await callFalAPI('fal-ai/flux-2-max/edit', {
             image_urls: [modelImage, productPhotoBase64],
             prompt: kontextPrompt,
+            image_size: 'auto',
             output_format: 'jpeg',
             safety_tolerance: '5'
         }, falKey);
@@ -894,7 +895,7 @@ async function generateSingleVariation(sceneDescription, falKey) {
         const selectedStyle = stylePresets[state.selectedStyle] || stylePresets.studio;
         const modelPrompt = buildModelPrompt(selectedOutfit, selectedPose, selectedScene, selectedStyle);
 
-        const modelResult = await callFalAPI('fal-ai/flux-2-pro', {
+        const modelResult = await callFalAPI('fal-ai/flux-2-max', {
             prompt: modelPrompt,
             image_size: { width: 1024, height: 768 },
             output_format: 'jpeg',
@@ -907,13 +908,14 @@ async function generateSingleVariation(sceneDescription, falKey) {
         }
     }
 
-    // Step 4: Kontext Max Multi - product photo takisini mankene yerlestir
+    // Step 4: FLUX 2 Max Edit - product photo takisini mankene yerlestir
     const category = state.selectedCategory || 'necklace';
     const kontextPrompt = buildPlacementPrompt(category, jewelryDescription);
 
-    const kontextResult = await callFalAPI('fal-ai/flux-pro/kontext/max/multi', {
+    const kontextResult = await callFalAPI('fal-ai/flux-2-max/edit', {
         image_urls: [modelImage, productPhoto],
         prompt: kontextPrompt,
+        image_size: 'auto',
         output_format: 'jpeg',
         safety_tolerance: '5'
     }, falKey);
