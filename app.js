@@ -751,8 +751,8 @@ async function generateImage() {
         if (!productPhotoData?.images?.[0]?.url) throw new Error('Product Photography sonuç döndürmedi');
         const productPhotoBase64 = await fetchImageAsBase64(productPhotoData.images[0].url);
 
-        // ===== STEP 2: BiRefNet → taki segmentasyonu (seffaf PNG) =====
-        showLoader('Takı segmentasyonu çıkartılıyor...');
+        // ===== STEP 2: BiRefNet → seffaf taki (arka plan kaldir) =====
+        showLoader('Takı arka planı kaldırılıyor...');
         const birefnetData = await callFalAPI('fal-ai/birefnet', {
             image_url: productPhotoBase64,
             model: 'General Use (Heavy)',
@@ -763,21 +763,34 @@ async function generateImage() {
         if (!birefnetData?.image?.url) throw new Error('BiRefNet sonuç döndürmedi');
         const transparentJewelry = await fetchImageAsBase64(birefnetData.image.url);
 
-        // ===== STEP 3: Ters mask olustur =====
-        // Jewelry pikselleri = SIYAH (koru), arka plan = BEYAZ (model uret)
-        showLoader('Inpainting maskesi oluşturuluyor...');
-        const jewelryMask = await createJewelryMask(transparentJewelry);
-        console.log('Mask created for inpainting');
+        // ===== STEP 3: FLUX 2 Max → gercek manken olustur (takisiz) =====
+        showLoader('AI ile manken modeli oluşturuluyor...');
+        const modelPrompt = buildModelPrompt(selectedOutfit, selectedPose, selectedScene, selectedStyle);
+        console.log('Model prompt:', modelPrompt);
 
-        // ===== STEP 4: FLUX Pro Fill → sadece BEYAZ alana model uret, takiya DOKUNMA =====
-        showLoader('Takının etrafına model oluşturuluyor (inpainting)...');
+        const modelResult = await callFalAPI('fal-ai/flux-2-max', {
+            prompt: modelPrompt,
+            image_size: { width: 1024, height: 768 },
+            output_format: 'jpeg',
+            safety_tolerance: '5'
+        }, falKey);
+
+        if (!modelResult?.images?.[0]?.url) throw new Error('Model oluşturulamadı');
+        const modelImage = await fetchImageAsBase64(modelResult.images[0].url);
+
+        // ===== STEP 4: Seffaf takiyi manken uzerine yerlestir =====
+        showLoader('Takı mankene yerleştiriliyor...');
         const category = state.selectedCategory || 'necklace';
-        const fillPrompt = buildInpaintPrompt(category, selectedOutfit, selectedScene, selectedStyle);
-        console.log('Inpaint prompt:', fillPrompt);
+        const compositeImage = await createComposite(modelImage, transparentJewelry, category);
 
+        // ===== STEP 5: Kenar birlesim maskesi olustur + FLUX Fill ile blend =====
+        showLoader('Kenarlar doğal hale getiriliyor...');
+        const edgeMask = await createEdgeBlendMask(transparentJewelry, modelImage);
+
+        const fillPrompt = buildInpaintPrompt(category, selectedOutfit, selectedScene, selectedStyle);
         const fillResult = await callFalAPI('fal-ai/flux-pro/v1/fill', {
-            image_url: productPhotoBase64,
-            mask_url: jewelryMask,
+            image_url: compositeImage,
+            mask_url: edgeMask,
             prompt: fillPrompt,
             output_format: 'jpeg',
             safety_tolerance: '5'
@@ -786,7 +799,9 @@ async function generateImage() {
         if (fillResult?.images?.[0]?.url) {
             resultBase64 = await fetchImageAsBase64(fillResult.images[0].url);
         } else {
-            throw new Error('FLUX Fill sonuç döndürmedi');
+            // Fill basarisiz olursa composite'i kullan
+            console.warn('Edge blend failed, using composite');
+            resultBase64 = compositeImage;
         }
 
         // Urun gorselini kaydet
@@ -863,7 +878,7 @@ async function analyzeJewelryImage(imageBase64) {
     return 'elegant jewelry piece';
 }
 
-// Tek varyasyon uret - ProductPhoto + BiRefNet + Mask + FLUX Fill (inpainting) pipeline
+// Tek varyasyon uret - ProductPhoto + BiRefNet + Manken + Composite + Fill pipeline
 async function generateSingleVariation(sceneDescription, falKey) {
     // Step 1: Product Photography
     const prodResult = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
@@ -873,7 +888,7 @@ async function generateSingleVariation(sceneDescription, falKey) {
     if (!prodResult?.images?.[0]?.url) return null;
     const productPhoto = await fetchImageAsBase64(prodResult.images[0].url);
 
-    // Step 2: BiRefNet → taki segmentasyonu
+    // Step 2: BiRefNet → seffaf taki
     const birefnetResult = await callFalAPI('fal-ai/birefnet', {
         image_url: productPhoto,
         model: 'General Use (Heavy)',
@@ -883,19 +898,33 @@ async function generateSingleVariation(sceneDescription, falKey) {
     if (!birefnetResult?.image?.url) return null;
     const transparentJewelry = await fetchImageAsBase64(birefnetResult.image.url);
 
-    // Step 3: Ters mask olustur
-    const jewelryMask = await createJewelryMask(transparentJewelry);
-
-    // Step 4: FLUX Pro Fill → taki korunuyor, etraf model olarak uretiliyor
+    // Step 3: Manken olustur
     const selectedOutfit = outfitPresets[state.selectedOutfit] || outfitPresets.black_vneck;
+    const selectedPose = posePresets[state.selectedPose] || posePresets.front;
     const selectedScene = scenePresets[state.selectedScene] || scenePresets.studio_clean;
     const selectedStyle = stylePresets[state.selectedStyle] || stylePresets.studio;
+    const modelPrompt = buildModelPrompt(selectedOutfit, selectedPose, selectedScene, selectedStyle);
+
+    const modelResult = await callFalAPI('fal-ai/flux-2-max', {
+        prompt: modelPrompt,
+        image_size: { width: 1024, height: 768 },
+        output_format: 'jpeg',
+        safety_tolerance: '5'
+    }, falKey);
+    if (!modelResult?.images?.[0]?.url) return null;
+    const modelImage = await fetchImageAsBase64(modelResult.images[0].url);
+
+    // Step 4: Composite → taki manken uzerine
     const category = state.selectedCategory || 'necklace';
+    const compositeImage = await createComposite(modelImage, transparentJewelry, category);
+
+    // Step 5: FLUX Fill → kenar blend
+    const edgeMask = await createEdgeBlendMask(transparentJewelry, modelImage);
     const fillPrompt = buildInpaintPrompt(category, selectedOutfit, selectedScene, selectedStyle);
 
     const fillResult = await callFalAPI('fal-ai/flux-pro/v1/fill', {
-        image_url: productPhoto,
-        mask_url: jewelryMask,
+        image_url: compositeImage,
+        mask_url: edgeMask,
         prompt: fillPrompt,
         output_format: 'jpeg',
         safety_tolerance: '5'
@@ -904,7 +933,7 @@ async function generateSingleVariation(sceneDescription, falKey) {
     if (fillResult?.images?.[0]?.url) {
         return await fetchImageAsBase64(fillResult.images[0].url);
     }
-    return null;
+    return compositeImage;
 }
 
 // Inpainting prompt: maskeli alana (BEYAZ) ne uretilecek
@@ -1458,6 +1487,139 @@ async function createJewelryMask(transparentImageBase64) {
 
     ctx.putImageData(imageData, 0, 0);
     return canvas.toDataURL('image/png');
+}
+
+// Kenar birlesim maskesi: taki+model birlesim noktasini maskeyle
+// Siyah = koru (taki merkezi + model), Beyaz = inpaint (sadece kenar gecis bolgesi)
+async function createEdgeBlendMask(transparentJewelryBase64, modelImageBase64) {
+    const jewelryImg = await loadImage(transparentJewelryBase64);
+    const modelImg = await loadImage(modelImageBase64);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = modelImg.width;
+    canvas.height = modelImg.height;
+    const ctx = canvas.getContext('2d');
+
+    // Onca jewelry'nin alpha kanalini al (composite boyutunda)
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = modelImg.width;
+    tempCanvas.height = modelImg.height;
+    const tempCtx = tempCanvas.getContext('2d');
+
+    // Jewelry'yi composite pozisyonuna ciz (createComposite ile ayni pozisyon)
+    const category = state.selectedCategory || 'necklace';
+    const pos = getJewelryPosition(category, modelImg.width, modelImg.height);
+
+    tempCtx.save();
+    tempCtx.translate(pos.x, pos.y);
+    if (state.position) {
+        tempCtx.rotate((state.position.rotation * Math.PI) / 180);
+    }
+    tempCtx.drawImage(jewelryImg, -pos.width / 2, -pos.height / 2, pos.width, pos.height);
+    tempCtx.restore();
+
+    const jewelryPixels = tempCtx.getImageData(0, 0, canvas.width, canvas.height);
+
+    // Mask olustur: tamamen SIYAH (koru) baslat
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const maskData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const mask = maskData.data;
+    const jData = jewelryPixels.data;
+
+    // Jewelry kenar piksellerini bul: alpha gecis bolgesi
+    // Dilate: jewelry etrafinda 15px BEYAZ bant (inpaint edilecek alan)
+    const dilateRadius = 15;
+    const w = canvas.width;
+    const h = canvas.height;
+
+    // Once jewelry pikselleri bul
+    const isJewelry = new Uint8Array(w * h);
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            const idx = (y * w + x) * 4;
+            if (jData[idx + 3] > 20) {
+                isJewelry[y * w + x] = 1;
+            }
+        }
+    }
+
+    // Jewelry etrafindaki bant: jewelry kenarından dilateRadius piksel icinde
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            if (isJewelry[y * w + x]) continue; // jewelry icinde = koru
+
+            // Bu piksel jewelry'ye yakin mi?
+            let nearJewelry = false;
+            for (let dy = -dilateRadius; dy <= dilateRadius && !nearJewelry; dy++) {
+                for (let dx = -dilateRadius; dx <= dilateRadius && !nearJewelry; dx++) {
+                    const ny = y + dy;
+                    const nx = x + dx;
+                    if (ny >= 0 && ny < h && nx >= 0 && nx < w) {
+                        if (isJewelry[ny * w + nx]) {
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist <= dilateRadius) {
+                                nearJewelry = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (nearJewelry) {
+                // Kenar bolgesi - BEYAZ (inpaint et, dogal blend icin)
+                const idx = (y * w + x) * 4;
+                mask[idx] = 255;
+                mask[idx + 1] = 255;
+                mask[idx + 2] = 255;
+            }
+        }
+    }
+
+    ctx.putImageData(maskData, 0, 0);
+    return canvas.toDataURL('image/png');
+}
+
+// Jewelry pozisyon hesaplaması (createComposite ile senkronize)
+function getJewelryPosition(category, canvasWidth, canvasHeight) {
+    const cat = category || 'necklace';
+    let posX, posY, scaleFactor;
+
+    switch (cat) {
+        case 'necklace':
+            posX = canvasWidth * 0.5;
+            posY = canvasHeight * 0.55;
+            scaleFactor = 0.45;
+            break;
+        case 'earring':
+            posX = canvasWidth * 0.35;
+            posY = canvasHeight * 0.2;
+            scaleFactor = 0.25;
+            break;
+        case 'bracelet':
+            posX = canvasWidth * 0.5;
+            posY = canvasHeight * 0.75;
+            scaleFactor = 0.35;
+            break;
+        case 'ring':
+            posX = canvasWidth * 0.5;
+            posY = canvasHeight * 0.7;
+            scaleFactor = 0.2;
+            break;
+        default:
+            posX = canvasWidth * 0.5;
+            posY = canvasHeight * 0.5;
+            scaleFactor = 0.4;
+    }
+
+    if (state.position) {
+        posX = (canvasWidth * state.position.x) / 100;
+        posY = (canvasHeight * state.position.y) / 100;
+        scaleFactor = scaleFactor * (state.position.scale / 100);
+    }
+
+    const maxDim = Math.min(canvasWidth, canvasHeight) * scaleFactor;
+    return { x: posX, y: posY, width: maxDim, height: maxDim };
 }
 
 // ============================================
