@@ -732,12 +732,22 @@ async function generateImage() {
 
         let resultBase64;
 
-        // ===== TEMPLATE MODEL MODU (BiRefNet + Canvas + Kontext) =====
+        // ===== TEMPLATE MODEL MODU (ProductPhoto + BiRefNet + FLUX Edit) =====
         if (state.templateImage) {
-            // Step 1: Taki arka planini kaldir
+            // Step 1: Product Photography ile profesyonel taki gorseli olustur
+            showLoader('Product Photography ile takı görseli oluşturuluyor...');
+            const productPhotoData = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
+                product_image_url: state.originalBase64,
+                prompt: sceneDescription
+            }, falKey);
+
+            if (!productPhotoData?.images?.[0]?.url) throw new Error('Product Photography sonuç döndürmedi');
+            const productPhotoBase64 = await fetchImageAsBase64(productPhotoData.images[0].url);
+
+            // Step 2: BiRefNet ile product photo arka planini kaldir
             showLoader('Takı arka planı kaldırılıyor...');
             const birefnetData = await callFalAPI('fal-ai/birefnet', {
-                image_url: state.originalBase64,
+                image_url: productPhotoBase64,
                 model: 'General',
                 operating_resolution: '1024x1024',
                 output_format: 'png'
@@ -746,28 +756,19 @@ async function generateImage() {
             if (!birefnetData?.image?.url) throw new Error('BiRefNet sonuç döndürmedi');
             const transparentJewelry = await fetchImageAsBase64(birefnetData.image.url);
 
-            // Step 2: Canvas ile takiyi model uzerine yerlestir
-            showLoader('Takı modele yerleştiriliyor...');
-            const compositeBase64 = await createComposite(state.templateImage, transparentJewelry);
+            // Step 3: FLUX Edit ile takiyi manken uzerine yerlestir
+            showLoader('FLUX Edit ile takı mankene yerleştiriliyor...');
+            const editPrompt = `The first image shows a fashion model. The second image shows a jewelry piece with transparent background. Place the jewelry piece naturally on the model - if it's a necklace put it on the neck, if earrings put on ears, if bracelet on wrist, if ring on finger. The jewelry must look exactly as shown, not altered or reimagined. Professional studio lighting, natural shadows where jewelry meets skin. ${sceneDescription}`;
 
-            // Step 3: FLUX Kontext ile birlestirmeyi iyilestir
-            showLoader('FLUX Kontext ile görsel iyileştiriliyor...');
-            const kontextPrompt = `Professional jewelry product photography. Make the lighting and shadows perfectly consistent between the jewelry and the model. The jewelry should look naturally worn. Keep every detail of both the jewelry design and the model exactly the same. Only improve lighting, shadows and natural blending. ${sceneDescription}`;
-
-            console.log('Kontext refinement prompt:', kontextPrompt);
-
-            const kontextResult = await callFalAPI('fal-ai/flux-pro/kontext', {
-                image_url: compositeBase64,
-                prompt: kontextPrompt,
-                guidance_scale: 3.5,
-                num_inference_steps: 28,
-                output_format: 'jpeg'
+            const editResult = await callFalAPI('fal-ai/flux-2-pro/edit', {
+                image_urls: [state.templateImage, transparentJewelry],
+                prompt: editPrompt
             }, falKey);
 
-            if (kontextResult?.images?.[0]?.url) {
-                resultBase64 = await fetchImageAsBase64(kontextResult.images[0].url);
+            if (editResult?.images?.[0]?.url) {
+                resultBase64 = await fetchImageAsBase64(editResult.images[0].url);
             } else {
-                throw new Error('FLUX Kontext sonuç döndürmedi');
+                throw new Error('FLUX Edit sonuç döndürmedi');
             }
 
         // ===== STANDART PRODUCT PHOTOGRAPHY MODU =====
@@ -860,22 +861,35 @@ async function analyzeJewelryImage(imageBase64) {
     return 'elegant jewelry piece';
 }
 
-// Tek varyasyon uret - template varsa BiRefNet+Canvas+Kontext pipeline, yoksa product-photography
-async function generateSingleVariation(sceneDescription, falKey, transparentJewelry) {
-    if (state.templateImage && transparentJewelry) {
-        // Canvas composite + Kontext refinement
-        const compositeBase64 = await createComposite(state.templateImage, transparentJewelry);
-
-        const kontextPrompt = `Professional jewelry product photography. Make the lighting and shadows perfectly consistent between the jewelry and the model. The jewelry should look naturally worn. Keep every detail exactly the same. Only improve lighting, shadows and natural blending. ${sceneDescription}`;
-        const result = await callFalAPI('fal-ai/flux-pro/kontext', {
-            image_url: compositeBase64,
-            prompt: kontextPrompt,
-            guidance_scale: 3.5,
-            num_inference_steps: 28,
-            output_format: 'jpeg'
+// Tek varyasyon uret - template varsa ProductPhoto+BiRefNet+FLUX Edit, yoksa product-photography
+async function generateSingleVariation(sceneDescription, falKey) {
+    if (state.templateImage) {
+        // Step 1: Product Photography
+        const prodResult = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
+            product_image_url: state.originalBase64,
+            prompt: sceneDescription
         }, falKey);
-        if (result?.images?.[0]?.url) {
-            return await fetchImageAsBase64(result.images[0].url);
+        if (!prodResult?.images?.[0]?.url) return null;
+        const productPhoto = await fetchImageAsBase64(prodResult.images[0].url);
+
+        // Step 2: BiRefNet - arka plan kaldir
+        const birefnetResult = await callFalAPI('fal-ai/birefnet', {
+            image_url: productPhoto,
+            model: 'General',
+            operating_resolution: '1024x1024',
+            output_format: 'png'
+        }, falKey);
+        if (!birefnetResult?.image?.url) return null;
+        const transparentJewelry = await fetchImageAsBase64(birefnetResult.image.url);
+
+        // Step 3: FLUX Edit - mankene yerlestir
+        const editPrompt = `The first image shows a fashion model. The second image shows a jewelry piece with transparent background. Place the jewelry piece naturally on the model - if it's a necklace put it on the neck, if earrings put on ears, if bracelet on wrist, if ring on finger. The jewelry must look exactly as shown, not altered or reimagined. Professional studio lighting, natural shadows. ${sceneDescription}`;
+        const editResult = await callFalAPI('fal-ai/flux-2-pro/edit', {
+            image_urls: [state.templateImage, transparentJewelry],
+            prompt: editPrompt
+        }, falKey);
+        if (editResult?.images?.[0]?.url) {
+            return await fetchImageAsBase64(editResult.images[0].url);
         }
     } else {
         const result = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
@@ -2033,21 +2047,6 @@ async function generateMultipleVariations(category = null) {
     showMultiVariationProgress(0, template.variations.length);
 
     try {
-        // Template varsa arka plani onceden kaldir (her varyasyonda tekrar BiRefNet cagirma)
-        let transparentJewelry = null;
-        if (state.templateImage) {
-            showLoader('Takı arka planı kaldırılıyor...');
-            const birefnetData = await callFalAPI('fal-ai/birefnet', {
-                image_url: state.originalBase64,
-                model: 'General',
-                operating_resolution: '1024x1024',
-                output_format: 'png'
-            }, falKey);
-            if (birefnetData?.image?.url) {
-                transparentJewelry = await fetchImageAsBase64(birefnetData.image.url);
-            }
-        }
-
         for (let i = 0; i < template.variations.length; i++) {
             const variation = template.variations[i];
 
@@ -2067,8 +2066,8 @@ async function generateMultipleVariations(category = null) {
 
             const sceneDescription = buildSceneDescription(selectedOutfit, selectedPose, selectedScene, selectedStyle);
 
-            // API cagrisi
-            let resultBase64 = await generateSingleVariation(sceneDescription, falKey, transparentJewelry);
+            // API cagrisi (generateSingleVariation icinde ProductPhoto+BiRefNet+FLUX Edit pipeline var)
+            let resultBase64 = await generateSingleVariation(sceneDescription, falKey);
 
             if (resultBase64) {
                 state.multiVariation.results.push({
@@ -2125,20 +2124,6 @@ async function generateCustomVariations(variations) {
     showMultiVariationProgress(0, variations.length);
 
     try {
-        let transparentJewelry = null;
-        if (state.templateImage) {
-            showLoader('Takı arka planı kaldırılıyor...');
-            const birefnetData = await callFalAPI('fal-ai/birefnet', {
-                image_url: state.originalBase64,
-                model: 'General',
-                operating_resolution: '1024x1024',
-                output_format: 'png'
-            }, falKey);
-            if (birefnetData?.image?.url) {
-                transparentJewelry = await fetchImageAsBase64(birefnetData.image.url);
-            }
-        }
-
         for (let i = 0; i < variations.length; i++) {
             const variation = variations[i];
 
@@ -2151,7 +2136,7 @@ async function generateCustomVariations(variations) {
 
             const sceneDescription = buildSceneDescription(selectedOutfit, selectedPose, selectedScene, selectedStyle);
 
-            let resultBase64 = await generateSingleVariation(sceneDescription, falKey, transparentJewelry);
+            let resultBase64 = await generateSingleVariation(sceneDescription, falKey);
 
             if (resultBase64) {
                 state.multiVariation.results.push({
@@ -2778,28 +2763,14 @@ async function generateVideo() {
             // Daha once olusturulmus gorsel var
             sourceImage = state.processedImage;
         } else {
-            // Gorsel henuz uretilmemis, BiRefNet+Canvas+Kontext veya product-photography ile uret
+            // Gorsel henuz uretilmemis, ProductPhoto+BiRefNet+FLUX Edit pipeline ile uret
             const selectedOutfit = outfitPresets[state.selectedOutfit] || outfitPresets.black_vneck;
             const selectedPose = posePresets[state.selectedPose] || posePresets.front;
             const selectedScene = scenePresets[state.selectedScene] || scenePresets.studio_clean;
             const selectedStyle = stylePresets[state.selectedStyle] || stylePresets.studio;
             const sceneDescription = buildSceneDescription(selectedOutfit, selectedPose, selectedScene, selectedStyle);
 
-            let transparentJewelry = null;
-            if (state.templateImage) {
-                showLoader('Takı arka planı kaldırılıyor...');
-                const birefnetData = await callFalAPI('fal-ai/birefnet', {
-                    image_url: state.originalBase64,
-                    model: 'General',
-                    operating_resolution: '1024x1024',
-                    output_format: 'png'
-                }, falKey);
-                if (birefnetData?.image?.url) {
-                    transparentJewelry = await fetchImageAsBase64(birefnetData.image.url);
-                }
-            }
-
-            sourceImage = await generateSingleVariation(sceneDescription, falKey, transparentJewelry);
+            sourceImage = await generateSingleVariation(sceneDescription, falKey);
             if (sourceImage) {
                 state.processedImage = sourceImage;
             } else {
