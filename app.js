@@ -96,8 +96,8 @@ async function callGeminiAPI(prompt, apiKey, options = {}) {
 // ============================================
 
 const geminiConfig = {
-    textModel: 'gemini-2.0-flash',
-    fallbackTextModel: 'gemini-1.5-flash',
+    textModel: 'gemini-2.5-flash',
+    fallbackTextModel: 'gemini-2.0-flash',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
     maxRetries: 3,
     retryDelayMs: 1000
@@ -820,7 +820,7 @@ async function analyzeJewelryImage(imageBase64) {
     }
 
     try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`;
+        const url = `${geminiConfig.baseUrl}/${geminiConfig.textModel}:generateContent?key=${geminiKey}`;
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1037,38 +1037,67 @@ SADECE JSON döndür!`;
         let seoData;
         const imageBase64 = state.processedImage || state.originalImage;
 
-        // Görsel analiz için Gemini Vision API kullan
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`;
+        // Retry + fallback model mekanizmasi
+        const models = [geminiConfig.textModel, geminiConfig.fallbackTextModel];
+        let lastError = null;
 
-        const requestBody = {
-            contents: [{
-                parts: [
-                    { text: seoPrompt },
-                    ...(imageBase64 ? [{
-                        inlineData: {
-                            mimeType: 'image/jpeg',
-                            data: imageBase64.split(',')[1]
-                        }
-                    }] : [])
-                ]
-            }],
-            generationConfig: { temperature: 0.3 }
-        };
+        for (const model of models) {
+            try {
+                const url = `${geminiConfig.baseUrl}/${model}:generateContent?key=${geminiKey}`;
 
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
-        });
+                const requestBody = {
+                    contents: [{
+                        parts: [
+                            { text: seoPrompt },
+                            ...(imageBase64 ? [{
+                                inlineData: {
+                                    mimeType: 'image/jpeg',
+                                    data: imageBase64.split(',')[1]
+                                }
+                            }] : [])
+                        ]
+                    }],
+                    generationConfig: {
+                        temperature: 0.3,
+                        maxOutputTokens: 4096,
+                        responseMimeType: 'application/json'
+                    }
+                };
 
-        if (!response.ok) throw new Error('SEO oluşturulamadı');
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
 
-        const data = await response.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        seoData = parseSEOJson(text);
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    const errMsg = errorData.error?.message || `HTTP ${response.status}`;
+                    throw new Error(`Gemini ${model}: ${errMsg}`);
+                }
+
+                const data = await response.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+                if (!text) {
+                    const blockReason = data.candidates?.[0]?.finishReason || data.promptFeedback?.blockReason;
+                    throw new Error(blockReason ? `Blocked: ${blockReason}` : 'Bos yanit');
+                }
+
+                seoData = parseSEOJson(text);
+                if (seoData) break;
+                throw new Error('JSON parse edilemedi');
+
+            } catch (error) {
+                lastError = error;
+                console.warn(`SEO ${model} failed:`, error.message);
+                if (model === models[models.length - 1]) break;
+                showLoader(`${model} basarisiz, yedek model deneniyor...`);
+            }
+        }
 
         if (!seoData) {
-            throw new Error('SEO verisi parse edilemedi');
+            throw lastError || new Error('SEO oluşturulamadı');
         }
 
         // State'e kaydet
