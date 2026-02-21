@@ -933,17 +933,17 @@ async function generateSingleVariation(sceneDescription, falKey) {
     return null;
 }
 
-// AI ile manken olusturmak icin prompt olustur (takisiz model)
+// AI ile manken olusturmak icin prompt olustur (Tiffany tarzi, e-ticaret uyumlu)
 function buildModelPrompt(outfit, pose, scene, style) {
     const parts = [
-        'Beautiful young female fashion model, professional portrait photography'
+        'Professional e-commerce jewelry product model photo, Tiffany & Co campaign style, elegant and classy'
     ];
 
-    // Kiyafet
+    // Kiyafet (e-ticaret uyumlu, dekolte yok)
     if (outfit && outfit.prompt && outfit.id !== 'none') {
         parts.push(outfit.prompt);
     } else {
-        parts.push('wearing elegant black V-neck top, deep neckline');
+        parts.push('wearing modest elegant black crew neck top, high neckline, no cleavage');
     }
 
     // Poz
@@ -961,8 +961,8 @@ function buildModelPrompt(outfit, pose, scene, style) {
         parts.push(`${style.lighting} lighting, ${style.mood} atmosphere`);
     }
 
-    // Takisiz olacak - boyun/kulak/bilek gorunur
-    parts.push('NO jewelry, no necklace, no earrings, no bracelet, no ring. Clean bare neck and decollete area clearly visible. Smooth skin. High-end fashion photography, sharp focus, 8K quality');
+    // Tiffany tarzi model kimliği - e-ticaret uyumlu
+    parts.push('NO jewelry, no necklace, no earrings, no bracelet, no ring visible. Clean bare neck area visible for jewelry placement. Modest clothing, no cleavage, no revealing outfit. Tiffany style clean minimal aesthetic. Neutral makeup, natural beauty. Professional e-commerce catalog photography, sharp focus, 8K quality');
 
     // Custom prompt
     const smartPrompt = document.getElementById('smartPromptInput')?.value?.trim();
@@ -1783,83 +1783,83 @@ const stylePresets = {
 const outfitPresets = {
     black_vneck: {
         id: 'black_vneck',
-        name: 'Siyah V-Yaka',
+        name: 'Siyah Yuvarlak Yaka',
         color: '#000000',
-        style: 'V-neck top',
-        description: 'Classic black V-neck for elegant contrast',
-        prompt: 'model wearing elegant black V-neck top, deep neckline showing decollete, perfect for necklace display'
+        style: 'Crew neck top',
+        description: 'Klasik siyah, Tiffany tarzı şık',
+        prompt: 'model wearing elegant black crew neck top, modest high neckline, no cleavage, Tiffany campaign style, clean and classy e-commerce look'
     },
     white_off: {
         id: 'white_off',
-        name: 'Beyaz Omuz Açık',
+        name: 'Beyaz Bluz',
         color: '#FFFFFF',
-        style: 'Off-shoulder',
-        description: 'White off-shoulder for delicate pieces',
-        prompt: 'model wearing white off-shoulder blouse, bare shoulders, elegant and romantic style'
+        style: 'White blouse',
+        description: 'Beyaz şık bluz, zarif görünüm',
+        prompt: 'model wearing white elegant blouse with modest neckline, no cleavage, clean sophisticated e-commerce style'
     },
     cream_silk: {
         id: 'cream_silk',
         name: 'Krem İpek',
         color: '#FFF8DC',
         style: 'Silk blouse',
-        description: 'Luxurious cream silk for premium look',
-        prompt: 'model wearing luxurious cream silk blouse, soft satin texture, premium elegant appearance'
+        description: 'Lüks krem ipek, premium görünüm',
+        prompt: 'model wearing luxurious cream silk blouse, modest neckline, soft satin texture, premium Tiffany style catalog look'
     },
     burgundy: {
         id: 'burgundy',
         name: 'Bordo',
         color: '#800020',
-        style: 'V-neck',
-        description: 'Rich burgundy for gold jewelry',
-        prompt: 'model wearing rich burgundy wine-colored top, deep V-neck, perfect contrast for gold jewelry'
+        style: 'Crew neck',
+        description: 'Bordo, altın takı kontrastı',
+        prompt: 'model wearing rich burgundy wine-colored crew neck top, modest neckline, no cleavage, elegant contrast for gold jewelry'
     },
     navy: {
         id: 'navy',
         name: 'Lacivert',
         color: '#000080',
         style: 'Classic top',
-        description: 'Navy blue for silver/pearl jewelry',
-        prompt: 'model wearing navy blue classic top, sophisticated dark blue, ideal for silver and pearl jewelry'
+        description: 'Lacivert, gümüş/inci takı için',
+        prompt: 'model wearing navy blue classic crew neck top, modest neckline, sophisticated dark blue, ideal for silver and pearl jewelry'
     },
     nude: {
         id: 'nude',
         name: 'Ten Rengi',
         color: '#E8D4C4',
         style: 'Simple top',
-        description: 'Neutral nude for versatile styling',
-        prompt: 'model wearing nude beige simple top, neutral skin-tone color, minimal distraction from jewelry'
+        description: 'Nötr ten rengi, çok yönlü',
+        prompt: 'model wearing nude beige simple crew neck top, modest neckline, neutral skin-tone color, minimal distraction from jewelry'
     },
     forest: {
         id: 'forest',
         name: 'Orman Yeşili',
         color: '#228B22',
         style: 'Elegant top',
-        description: 'Forest green for gold contrast',
-        prompt: 'model wearing forest green elegant top, rich emerald green, beautiful contrast for gold jewelry'
+        description: 'Yeşil, altın takı kontrastı',
+        prompt: 'model wearing forest green elegant crew neck top, modest neckline, rich emerald green, beautiful contrast for gold jewelry'
     },
     black_turtleneck: {
         id: 'black_turtleneck',
         name: 'Siyah Balıkçı',
         color: '#000000',
         style: 'Turtleneck',
-        description: 'Black turtleneck for statement pieces',
-        prompt: 'model wearing black turtleneck sweater, high neck, perfect backdrop for statement earrings'
+        description: 'Balıkçı yaka, küpe ve yüzük için ideal',
+        prompt: 'model wearing black turtleneck sweater, high neck fully covered, perfect modest backdrop for statement earrings'
     },
-    strapless: {
-        id: 'strapless',
-        name: 'Straplez',
-        color: '#000000',
-        style: 'Strapless',
-        description: 'Strapless for maximum jewelry visibility',
-        prompt: 'model wearing black strapless top, bare shoulders and neck, maximum visibility for necklace'
+    black_blazer: {
+        id: 'black_blazer',
+        name: 'Siyah Blazer',
+        color: '#1a1a1a',
+        style: 'Blazer',
+        description: 'Profesyonel blazer, e-ticaret şıklığı',
+        prompt: 'model wearing black tailored blazer over white crew neck top, professional and modest, Tiffany catalog style'
     },
     none: {
         id: 'none',
-        name: 'Kıyafetsiz',
+        name: 'Sade',
         color: 'transparent',
-        style: 'Skin only',
-        description: 'Direct skin/model presentation',
-        prompt: 'bare skin, no clothing visible, focus entirely on jewelry piece, clean minimal presentation'
+        style: 'Simple',
+        description: 'Sade ve minimal sunum',
+        prompt: 'model wearing simple plain black crew neck top, very modest, minimal, clean background, focus entirely on jewelry'
     }
 };
 
