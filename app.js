@@ -758,11 +758,14 @@ async function generateImage() {
 
             // Step 3: FLUX Edit ile takiyi manken uzerine yerlestir
             showLoader('FLUX Edit ile takı mankene yerleştiriliyor...');
-            const editPrompt = `The first image shows a fashion model. The second image shows a jewelry piece with transparent background. Place the jewelry piece naturally on the model - if it's a necklace put it on the neck, if earrings put on ears, if bracelet on wrist, if ring on finger. The jewelry must look exactly as shown, not altered or reimagined. Professional studio lighting, natural shadows where jewelry meets skin. ${sceneDescription}`;
+            const editPrompt = `@Image1 is a fashion model photo. @Image2 is a jewelry piece with transparent background. Place the jewelry from @Image2 naturally on the model in @Image1. If necklace, put on neck. If earrings, put on ears. If bracelet, put on wrist. If ring, put on finger. The jewelry must look exactly like @Image2, preserve every detail. Professional studio photography, realistic shadows and lighting.`;
 
             const editResult = await callFalAPI('fal-ai/flux-2-pro/edit', {
                 image_urls: [state.templateImage, transparentJewelry],
-                prompt: editPrompt
+                prompt: editPrompt,
+                image_size: 'auto',
+                output_format: 'jpeg',
+                safety_tolerance: '5'
             }, falKey);
 
             if (editResult?.images?.[0]?.url) {
@@ -883,10 +886,13 @@ async function generateSingleVariation(sceneDescription, falKey) {
         const transparentJewelry = await fetchImageAsBase64(birefnetResult.image.url);
 
         // Step 3: FLUX Edit - mankene yerlestir
-        const editPrompt = `The first image shows a fashion model. The second image shows a jewelry piece with transparent background. Place the jewelry piece naturally on the model - if it's a necklace put it on the neck, if earrings put on ears, if bracelet on wrist, if ring on finger. The jewelry must look exactly as shown, not altered or reimagined. Professional studio lighting, natural shadows. ${sceneDescription}`;
+        const editPrompt = `@Image1 is a fashion model photo. @Image2 is a jewelry piece with transparent background. Place the jewelry from @Image2 naturally on the model in @Image1. If necklace, put on neck. If earrings, put on ears. If bracelet, put on wrist. If ring, put on finger. The jewelry must look exactly like @Image2, preserve every detail. Professional studio photography, realistic shadows and lighting.`;
         const editResult = await callFalAPI('fal-ai/flux-2-pro/edit', {
             image_urls: [state.templateImage, transparentJewelry],
-            prompt: editPrompt
+            prompt: editPrompt,
+            image_size: 'auto',
+            output_format: 'jpeg',
+            safety_tolerance: '5'
         }, falKey);
         if (editResult?.images?.[0]?.url) {
             return await fetchImageAsBase64(editResult.images[0].url);
