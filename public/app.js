@@ -760,7 +760,7 @@ async function generateImage() {
         const editResult = await callFalAPI('fal-ai/flux-2-max/edit', {
             image_urls: [productPhotoBase64],
             prompt: editPrompt,
-            image_size: { width: 1024, height: 768 },
+            image_size: { width: 2048, height: 1536 },
             output_format: 'jpeg',
             safety_tolerance: '5'
         }, falKey);
@@ -866,7 +866,7 @@ async function generateSingleVariation(sceneDescription, falKey) {
     const editResult = await callFalAPI('fal-ai/flux-2-max/edit', {
         image_urls: [productPhoto],
         prompt: editPrompt,
-        image_size: { width: 1024, height: 768 },
+        image_size: { width: 2048, height: 1536 },
         output_format: 'jpeg',
         safety_tolerance: '5'
     }, falKey);
