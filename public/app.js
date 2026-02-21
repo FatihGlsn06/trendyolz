@@ -732,24 +732,34 @@ async function generateImage() {
 
         let resultBase64;
 
-        // ===== TEMPLATE MODEL + KONTEXT MODU =====
+        // ===== TEMPLATE MODEL MODU (BiRefNet + Canvas + Kontext) =====
         if (state.templateImage) {
-            showLoader('Taki analiz ediliyor...');
+            // Step 1: Taki arka planini kaldir
+            showLoader('Takı arka planı kaldırılıyor...');
+            const birefnetData = await callFalAPI('fal-ai/birefnet', {
+                image_url: state.originalBase64,
+                model: 'General',
+                operating_resolution: '1024x1024',
+                output_format: 'png'
+            }, falKey);
 
-            // Gemini ile taki gorselini analiz et (detayli aciklama icin)
-            const jewelryDesc = await analyzeJewelryImage(state.originalBase64);
+            if (!birefnetData?.image?.url) throw new Error('BiRefNet sonuç döndürmedi');
+            const transparentJewelry = await fetchImageAsBase64(birefnetData.image.url);
 
-            showLoader('FLUX Kontext ile taki modele yerlestiriliyor...');
+            // Step 2: Canvas ile takiyi model uzerine yerlestir
+            showLoader('Takı modele yerleştiriliyor...');
+            const compositeBase64 = await createComposite(state.templateImage, transparentJewelry);
 
-            // Kontext: model fotosunu baz al, taki ekle
-            const kontextPrompt = `Add ${jewelryDesc} on the model in this photo. The jewelry should look natural and realistic on the model. ${sceneDescription}. Keep the model's face, body, pose and background exactly the same. Only add the jewelry. Professional product photography quality, sharp details on the jewelry.`;
+            // Step 3: FLUX Kontext ile birlestirmeyi iyilestir
+            showLoader('FLUX Kontext ile görsel iyileştiriliyor...');
+            const kontextPrompt = `Professional jewelry product photography. Make the lighting and shadows perfectly consistent between the jewelry and the model. The jewelry should look naturally worn. Keep every detail of both the jewelry design and the model exactly the same. Only improve lighting, shadows and natural blending. ${sceneDescription}`;
 
-            console.log('Kontext prompt:', kontextPrompt);
+            console.log('Kontext refinement prompt:', kontextPrompt);
 
             const kontextResult = await callFalAPI('fal-ai/flux-pro/kontext', {
-                image_url: state.templateImage,
+                image_url: compositeBase64,
                 prompt: kontextPrompt,
-                guidance_scale: 4.0,
+                guidance_scale: 3.5,
                 num_inference_steps: 28,
                 output_format: 'jpeg'
             }, falKey);
@@ -757,7 +767,7 @@ async function generateImage() {
             if (kontextResult?.images?.[0]?.url) {
                 resultBase64 = await fetchImageAsBase64(kontextResult.images[0].url);
             } else {
-                throw new Error('FLUX Kontext sonuc dondurmedi');
+                throw new Error('FLUX Kontext sonuç döndürmedi');
             }
 
         // ===== STANDART PRODUCT PHOTOGRAPHY MODU =====
@@ -850,14 +860,17 @@ async function analyzeJewelryImage(imageBase64) {
     return 'elegant jewelry piece';
 }
 
-// Tek varyasyon uret - template varsa Kontext, yoksa product-photography
-async function generateSingleVariation(sceneDescription, falKey, jewelryDesc) {
-    if (state.templateImage && jewelryDesc) {
-        const kontextPrompt = `Add ${jewelryDesc} on the model in this photo. ${sceneDescription}. Keep the model exactly the same. Only add the jewelry. Professional quality, sharp jewelry details.`;
+// Tek varyasyon uret - template varsa BiRefNet+Canvas+Kontext pipeline, yoksa product-photography
+async function generateSingleVariation(sceneDescription, falKey, transparentJewelry) {
+    if (state.templateImage && transparentJewelry) {
+        // Canvas composite + Kontext refinement
+        const compositeBase64 = await createComposite(state.templateImage, transparentJewelry);
+
+        const kontextPrompt = `Professional jewelry product photography. Make the lighting and shadows perfectly consistent between the jewelry and the model. The jewelry should look naturally worn. Keep every detail exactly the same. Only improve lighting, shadows and natural blending. ${sceneDescription}`;
         const result = await callFalAPI('fal-ai/flux-pro/kontext', {
-            image_url: state.templateImage,
+            image_url: compositeBase64,
             prompt: kontextPrompt,
-            guidance_scale: 4.0,
+            guidance_scale: 3.5,
             num_inference_steps: 28,
             output_format: 'jpeg'
         }, falKey);
@@ -2020,11 +2033,19 @@ async function generateMultipleVariations(category = null) {
     showMultiVariationProgress(0, template.variations.length);
 
     try {
-        // Template varsa taki analizini onceden yap (her varyasyonda tekrar analiz etme)
-        let jewelryDesc = null;
+        // Template varsa arka plani onceden kaldir (her varyasyonda tekrar BiRefNet cagirma)
+        let transparentJewelry = null;
         if (state.templateImage) {
-            showLoader('Taki analiz ediliyor...');
-            jewelryDesc = await analyzeJewelryImage(state.originalBase64);
+            showLoader('Takı arka planı kaldırılıyor...');
+            const birefnetData = await callFalAPI('fal-ai/birefnet', {
+                image_url: state.originalBase64,
+                model: 'General',
+                operating_resolution: '1024x1024',
+                output_format: 'png'
+            }, falKey);
+            if (birefnetData?.image?.url) {
+                transparentJewelry = await fetchImageAsBase64(birefnetData.image.url);
+            }
         }
 
         for (let i = 0; i < template.variations.length; i++) {
@@ -2047,7 +2068,7 @@ async function generateMultipleVariations(category = null) {
             const sceneDescription = buildSceneDescription(selectedOutfit, selectedPose, selectedScene, selectedStyle);
 
             // API cagrisi
-            let resultBase64 = await generateSingleVariation(sceneDescription, falKey, jewelryDesc);
+            let resultBase64 = await generateSingleVariation(sceneDescription, falKey, transparentJewelry);
 
             if (resultBase64) {
                 state.multiVariation.results.push({
@@ -2104,9 +2125,18 @@ async function generateCustomVariations(variations) {
     showMultiVariationProgress(0, variations.length);
 
     try {
-        let jewelryDesc = null;
+        let transparentJewelry = null;
         if (state.templateImage) {
-            jewelryDesc = await analyzeJewelryImage(state.originalBase64);
+            showLoader('Takı arka planı kaldırılıyor...');
+            const birefnetData = await callFalAPI('fal-ai/birefnet', {
+                image_url: state.originalBase64,
+                model: 'General',
+                operating_resolution: '1024x1024',
+                output_format: 'png'
+            }, falKey);
+            if (birefnetData?.image?.url) {
+                transparentJewelry = await fetchImageAsBase64(birefnetData.image.url);
+            }
         }
 
         for (let i = 0; i < variations.length; i++) {
@@ -2121,7 +2151,7 @@ async function generateCustomVariations(variations) {
 
             const sceneDescription = buildSceneDescription(selectedOutfit, selectedPose, selectedScene, selectedStyle);
 
-            let resultBase64 = await generateSingleVariation(sceneDescription, falKey, jewelryDesc);
+            let resultBase64 = await generateSingleVariation(sceneDescription, falKey, transparentJewelry);
 
             if (resultBase64) {
                 state.multiVariation.results.push({
@@ -2421,6 +2451,46 @@ function getCanvasComposite() {
     return null;
 }
 
+// Takiyi model uzerine canvas ile birlestir (transparent taki + model template)
+async function createComposite(templateBase64, transparentJewelryBase64) {
+    const templateImg = await loadImage(templateBase64);
+    const jewelryImg = await loadImage(transparentJewelryBase64);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = templateImg.width;
+    canvas.height = templateImg.height;
+    const ctx = canvas.getContext('2d');
+
+    // Model template ciz
+    ctx.drawImage(templateImg, 0, 0);
+
+    // Takiyi pozisyon ayarlarina gore yerlestir
+    const x = (canvas.width * state.position.x) / 100;
+    const y = (canvas.height * state.position.y) / 100;
+    const scale = state.position.scale / 100;
+    const rotation = (state.position.rotation * Math.PI) / 180;
+
+    // Taki boyutunu template oranina gore ayarla
+    const maxDim = Math.min(canvas.width, canvas.height) * 0.4;
+    const aspectRatio = jewelryImg.width / jewelryImg.height;
+    let width, height;
+    if (aspectRatio > 1) {
+        width = maxDim * scale;
+        height = (maxDim / aspectRatio) * scale;
+    } else {
+        height = maxDim * scale;
+        width = (maxDim * aspectRatio) * scale;
+    }
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+    ctx.drawImage(jewelryImg, -width / 2, -height / 2, width, height);
+    ctx.restore();
+
+    return canvas.toDataURL('image/jpeg', 0.92);
+}
+
 function setupCanvasDrag() {
     const canvas = document.getElementById('interactiveCanvas');
     if (!canvas) return;
@@ -2708,19 +2778,28 @@ async function generateVideo() {
             // Daha once olusturulmus gorsel var
             sourceImage = state.processedImage;
         } else {
-            // Gorsel henuz uretilmemis, Kontext veya product-photography ile uret
+            // Gorsel henuz uretilmemis, BiRefNet+Canvas+Kontext veya product-photography ile uret
             const selectedOutfit = outfitPresets[state.selectedOutfit] || outfitPresets.black_vneck;
             const selectedPose = posePresets[state.selectedPose] || posePresets.front;
             const selectedScene = scenePresets[state.selectedScene] || scenePresets.studio_clean;
             const selectedStyle = stylePresets[state.selectedStyle] || stylePresets.studio;
             const sceneDescription = buildSceneDescription(selectedOutfit, selectedPose, selectedScene, selectedStyle);
 
-            let jewelryDesc = null;
+            let transparentJewelry = null;
             if (state.templateImage) {
-                jewelryDesc = await analyzeJewelryImage(state.originalBase64);
+                showLoader('Takı arka planı kaldırılıyor...');
+                const birefnetData = await callFalAPI('fal-ai/birefnet', {
+                    image_url: state.originalBase64,
+                    model: 'General',
+                    operating_resolution: '1024x1024',
+                    output_format: 'png'
+                }, falKey);
+                if (birefnetData?.image?.url) {
+                    transparentJewelry = await fetchImageAsBase64(birefnetData.image.url);
+                }
             }
 
-            sourceImage = await generateSingleVariation(sceneDescription, falKey, jewelryDesc);
+            sourceImage = await generateSingleVariation(sceneDescription, falKey, transparentJewelry);
             if (sourceImage) {
                 state.processedImage = sourceImage;
             } else {
