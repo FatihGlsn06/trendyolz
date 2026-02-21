@@ -751,7 +751,19 @@ async function generateImage() {
         if (!productPhotoData?.images?.[0]?.url) throw new Error('Product Photography sonuç döndürmedi');
         const productPhotoBase64 = await fetchImageAsBase64(productPhotoData.images[0].url);
 
-        // ===== STEP 2: Manken gorseli belirle =====
+        // ===== STEP 2: BiRefNet → seffaf taki (arka plan kaldir) =====
+        showLoader('Takı arka planı kaldırılıyor...');
+        const birefnetData = await callFalAPI('fal-ai/birefnet', {
+            image_url: productPhotoBase64,
+            model: 'General Use (Heavy)',
+            operating_resolution: '1024x1024',
+            output_format: 'png'
+        }, falKey);
+
+        if (!birefnetData?.image?.url) throw new Error('BiRefNet sonuç döndürmedi');
+        const transparentJewelry = await fetchImageAsBase64(birefnetData.image.url);
+
+        // ===== STEP 3: Manken gorseli belirle =====
         let modelImage = state.templateImage; // kullanici yuklediyse
 
         if (!modelImage) {
@@ -774,25 +786,18 @@ async function generateImage() {
             }
         }
 
-        // ===== STEP 3: Kontext Max Multi → product photo takisini mankene yerlestir =====
-        showLoader('FLUX Kontext ile takı mankene yerleştiriliyor...');
-
-        // Taki kategorisine gore yerlesim promptu
+        // ===== STEP 4: Canvas → seffaf takiyi manken uzerine pixel-perfect yapistir =====
+        showLoader('Takı mankene yerleştiriliyor...');
         const category = state.selectedCategory || 'necklace';
-        const placementMap = {
-            necklace: 'Place the exact necklace from @Image2 on the neck of the model in @Image1',
-            bracelet: 'Place the exact bracelet from @Image2 on the wrist of the model in @Image1',
-            ring: 'Place the exact ring from @Image2 on the finger of the model in @Image1',
-            earring: 'Place the exact earrings from @Image2 on the ears of the model in @Image1',
-            set: 'Place the exact jewelry set from @Image2 on the model in @Image1'
-        };
-        const placementInstruction = placementMap[category] || placementMap.necklace;
+        const compositeImage = await createComposite(modelImage, transparentJewelry, category);
 
-        const kontextPrompt = `${placementInstruction}. CRITICAL: Use the EXACT jewelry from the product photo in @Image2 - do NOT modify, reimagine, redesign, or regenerate the jewelry in any way. The jewelry design, color, shape, stones, metal, chain style, pendant must be IDENTICAL to @Image2. You are only changing its position to wear it on the model. Keep the model's anonymous close-up framing from @Image1. Tiffany & Co campaign style. Add only subtle realistic shadow where jewelry touches skin.`;
+        // ===== STEP 5: Kontext → sadece golge/dogallik refinement (tek gorsel) =====
+        showLoader('Doğal görünüm iyileştiriliyor...');
+        const refinementPrompt = `Make this jewelry product photo look completely natural and realistic. The jewelry is already placed on the model - just add subtle realistic shadows where the jewelry touches skin, natural light reflections on the metal and stones, and ensure seamless blending. Do NOT change the jewelry design, shape, or position. Do NOT change the model or framing. Tiffany & Co campaign quality, professional studio photography.`;
 
-        const kontextResult = await callFalAPI('fal-ai/flux-pro/kontext/max/multi', {
-            image_urls: [modelImage, productPhotoBase64],
-            prompt: kontextPrompt,
+        const kontextResult = await callFalAPI('fal-ai/flux-pro/kontext/max', {
+            image_url: compositeImage,
+            prompt: refinementPrompt,
             output_format: 'jpeg',
             safety_tolerance: '5'
         }, falKey);
@@ -800,7 +805,9 @@ async function generateImage() {
         if (kontextResult?.images?.[0]?.url) {
             resultBase64 = await fetchImageAsBase64(kontextResult.images[0].url);
         } else {
-            throw new Error('FLUX Kontext sonuç döndürmedi');
+            // Kontext basarisiz olursa composite'i kullan
+            console.warn('Kontext refinement failed, using canvas composite');
+            resultBase64 = compositeImage;
         }
 
         // Urun gorselini kaydet
@@ -877,7 +884,7 @@ async function analyzeJewelryImage(imageBase64) {
     return 'elegant jewelry piece';
 }
 
-// Tek varyasyon uret - ProductPhoto + Manken + Kontext pipeline
+// Tek varyasyon uret - ProductPhoto + BiRefNet + Manken + Canvas + Kontext pipeline
 async function generateSingleVariation(sceneDescription, falKey) {
     // Step 1: Product Photography
     const prodResult = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
@@ -887,7 +894,17 @@ async function generateSingleVariation(sceneDescription, falKey) {
     if (!prodResult?.images?.[0]?.url) return null;
     const productPhoto = await fetchImageAsBase64(prodResult.images[0].url);
 
-    // Step 2: Manken belirle (template veya AI ile olustur)
+    // Step 2: BiRefNet - seffaf taki (arka plan kaldir)
+    const birefnetResult = await callFalAPI('fal-ai/birefnet', {
+        image_url: productPhoto,
+        model: 'General Use (Heavy)',
+        operating_resolution: '1024x1024',
+        output_format: 'png'
+    }, falKey);
+    if (!birefnetResult?.image?.url) return null;
+    const transparentJewelry = await fetchImageAsBase64(birefnetResult.image.url);
+
+    // Step 3: Manken belirle (template veya AI ile olustur)
     let modelImage = state.templateImage;
     if (!modelImage) {
         const selectedOutfit = outfitPresets[state.selectedOutfit] || outfitPresets.black_vneck;
@@ -909,28 +926,25 @@ async function generateSingleVariation(sceneDescription, falKey) {
         }
     }
 
-    // Step 3: Kontext Max Multi - product photo takisini mankene yerlestir
+    // Step 4: Canvas - seffaf takiyi manken uzerine pixel-perfect yapistir
     const category = state.selectedCategory || 'necklace';
-    const placementMap = {
-        necklace: 'Place the exact necklace from @Image2 on the neck of the model in @Image1',
-        bracelet: 'Place the exact bracelet from @Image2 on the wrist of the model in @Image1',
-        ring: 'Place the exact ring from @Image2 on the finger of the model in @Image1',
-        earring: 'Place the exact earrings from @Image2 on the ears of the model in @Image1',
-        set: 'Place the exact jewelry set from @Image2 on the model in @Image1'
-    };
-    const placementInstruction = placementMap[category] || placementMap.necklace;
+    const compositeImage = await createComposite(modelImage, transparentJewelry, category);
 
-    const kontextPrompt = `${placementInstruction}. CRITICAL: Use the EXACT jewelry from the product photo in @Image2 - do NOT modify, reimagine, redesign, or regenerate the jewelry in any way. The jewelry design, color, shape, stones, metal, chain style, pendant must be IDENTICAL to @Image2. You are only changing its position to wear it on the model. Keep the model's anonymous close-up framing from @Image1. Tiffany & Co campaign style. Add only subtle realistic shadow where jewelry touches skin.`;
-    const kontextResult = await callFalAPI('fal-ai/flux-pro/kontext/max/multi', {
-        image_urls: [modelImage, productPhoto],
-        prompt: kontextPrompt,
+    // Step 5: Kontext - sadece golge/dogallik refinement (tek gorsel)
+    const refinementPrompt = `Make this jewelry product photo look completely natural and realistic. The jewelry is already placed on the model - just add subtle realistic shadows where the jewelry touches skin, natural light reflections on the metal and stones, and ensure seamless blending. Do NOT change the jewelry design, shape, or position. Do NOT change the model or framing. Tiffany & Co campaign quality, professional studio photography.`;
+
+    const kontextResult = await callFalAPI('fal-ai/flux-pro/kontext/max', {
+        image_url: compositeImage,
+        prompt: refinementPrompt,
         output_format: 'jpeg',
         safety_tolerance: '5'
     }, falKey);
+
     if (kontextResult?.images?.[0]?.url) {
         return await fetchImageAsBase64(kontextResult.images[0].url);
     }
-    return null;
+    // Kontext basarisiz olursa composite'i dön
+    return compositeImage;
 }
 
 // AI ile manken olusturmak icin prompt olustur (Tiffany tarzi, anonim model, yuz yok)
@@ -2508,7 +2522,8 @@ function getCanvasComposite() {
 }
 
 // Takiyi model uzerine canvas ile birlestir (transparent taki + model template)
-async function createComposite(templateBase64, transparentJewelryBase64) {
+// Kategori bazli akilli pozisyonlama
+async function createComposite(templateBase64, transparentJewelryBase64, category) {
     const templateImg = await loadImage(templateBase64);
     const jewelryImg = await loadImage(transparentJewelryBase64);
 
@@ -2520,31 +2535,72 @@ async function createComposite(templateBase64, transparentJewelryBase64) {
     // Model template ciz
     ctx.drawImage(templateImg, 0, 0);
 
-    // Takiyi pozisyon ayarlarina gore yerlestir
-    const x = (canvas.width * state.position.x) / 100;
-    const y = (canvas.height * state.position.y) / 100;
-    const scale = state.position.scale / 100;
-    const rotation = (state.position.rotation * Math.PI) / 180;
+    // Kategori bazli pozisyon ve boyut ayarlari
+    const cat = category || 'necklace';
+    let posX, posY, scaleFactor;
 
-    // Taki boyutunu template oranina gore ayarla
-    const maxDim = Math.min(canvas.width, canvas.height) * 0.4;
+    switch (cat) {
+        case 'necklace':
+            // Boyun/gogus ustu - goruntunun ortasi, ust 2/3 bolge
+            posX = canvas.width * 0.5;
+            posY = canvas.height * 0.55;
+            scaleFactor = 0.45;
+            break;
+        case 'earring':
+            // Kulak hizasi - biraz yukari ve yana
+            posX = canvas.width * 0.35;
+            posY = canvas.height * 0.2;
+            scaleFactor = 0.25;
+            break;
+        case 'bracelet':
+            posX = canvas.width * 0.5;
+            posY = canvas.height * 0.75;
+            scaleFactor = 0.35;
+            break;
+        case 'ring':
+            posX = canvas.width * 0.5;
+            posY = canvas.height * 0.7;
+            scaleFactor = 0.2;
+            break;
+        case 'set':
+            posX = canvas.width * 0.5;
+            posY = canvas.height * 0.5;
+            scaleFactor = 0.5;
+            break;
+        default:
+            posX = canvas.width * 0.5;
+            posY = canvas.height * 0.5;
+            scaleFactor = 0.4;
+    }
+
+    // Kullanici pozisyon ayarlari varsa onlari kullan
+    if (state.position) {
+        posX = (canvas.width * state.position.x) / 100;
+        posY = (canvas.height * state.position.y) / 100;
+        scaleFactor = scaleFactor * (state.position.scale / 100);
+    }
+
+    // Taki boyutunu hesapla
+    const maxDim = Math.min(canvas.width, canvas.height) * scaleFactor;
     const aspectRatio = jewelryImg.width / jewelryImg.height;
     let width, height;
     if (aspectRatio > 1) {
-        width = maxDim * scale;
-        height = (maxDim / aspectRatio) * scale;
+        width = maxDim;
+        height = maxDim / aspectRatio;
     } else {
-        height = maxDim * scale;
-        width = (maxDim * aspectRatio) * scale;
+        height = maxDim;
+        width = maxDim * aspectRatio;
     }
 
+    const rotation = state.position ? (state.position.rotation * Math.PI) / 180 : 0;
+
     ctx.save();
-    ctx.translate(x, y);
+    ctx.translate(posX, posY);
     ctx.rotate(rotation);
     ctx.drawImage(jewelryImg, -width / 2, -height / 2, width, height);
     ctx.restore();
 
-    return canvas.toDataURL('image/jpeg', 0.92);
+    return canvas.toDataURL('image/png', 1.0);
 }
 
 function setupCanvasDrag() {
