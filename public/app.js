@@ -774,7 +774,7 @@ async function generateImage() {
 
             const modelResult = await callFalAPI('fal-ai/flux-2-pro', {
                 prompt: modelPrompt,
-                image_size: { width: 768, height: 1024 },
+                image_size: { width: 1024, height: 768 },
                 output_format: 'jpeg',
                 safety_tolerance: '5'
             }, falKey);
@@ -788,7 +788,7 @@ async function generateImage() {
 
         // ===== STEP 4: Kontext Max Multi → takiyi mankene yerlestir =====
         showLoader('FLUX Kontext ile takı mankene yerleştiriliyor...');
-        const kontextPrompt = `Place the jewelry from the second image naturally on the model in the first image. If it is a necklace, put it on the neck. If earrings, put on ears. If bracelet, put on wrist. If ring, put on finger. The jewelry must look exactly as shown in the second image, preserve every detail of the jewelry design. Professional studio photography, realistic shadows where jewelry meets skin.`;
+        const kontextPrompt = `Place the jewelry from the second image naturally on the model in the first image. If it is a necklace, place it on the neck/collarbone area. If earrings, place on ears. If bracelet, place on wrist. If ring, place on finger. The jewelry must look exactly as shown in the second image, preserve every detail, color, and design of the jewelry. Keep the same close-up anonymous framing - face cropped at chin, no full face visible. Tiffany & Co campaign style. Professional studio photography, realistic shadows and reflections where jewelry meets skin. Clean background.`;
 
         const kontextResult = await callFalAPI('fal-ai/flux-pro/kontext/max/multi', {
             image_urls: [modelImage, transparentJewelry],
@@ -920,7 +920,7 @@ async function generateSingleVariation(sceneDescription, falKey) {
     }
 
     // Step 4: Kontext Max Multi - takiyi mankene yerlestir
-    const kontextPrompt = `Place the jewelry from the second image naturally on the model in the first image. If it is a necklace, put it on the neck. If earrings, put on ears. If bracelet, put on wrist. If ring, put on finger. The jewelry must look exactly as shown in the second image, preserve every detail of the jewelry design. Professional studio photography, realistic shadows where jewelry meets skin.`;
+    const kontextPrompt = `Place the jewelry from the second image naturally on the model in the first image. If it is a necklace, place it on the neck/collarbone area. If earrings, place on ears. If bracelet, place on wrist. If ring, place on finger. The jewelry must look exactly as shown in the second image, preserve every detail, color, and design of the jewelry. Keep the same close-up anonymous framing - face cropped at chin, no full face visible. Tiffany & Co campaign style. Professional studio photography, realistic shadows and reflections where jewelry meets skin. Clean background.`;
     const kontextResult = await callFalAPI('fal-ai/flux-pro/kontext/max/multi', {
         image_urls: [modelImage, transparentJewelry],
         prompt: kontextPrompt,
@@ -933,22 +933,23 @@ async function generateSingleVariation(sceneDescription, falKey) {
     return null;
 }
 
-// AI ile manken olusturmak icin prompt olustur (Tiffany tarzi, e-ticaret uyumlu)
+// AI ile manken olusturmak icin prompt olustur (Tiffany tarzi, anonim model, yuz yok)
 function buildModelPrompt(outfit, pose, scene, style) {
     const parts = [
-        'Professional e-commerce jewelry product model photo, Tiffany & Co campaign style, elegant and classy'
+        'Close-up professional jewelry product photo in Tiffany & Co campaign style'
     ];
 
-    // Kiyafet (e-ticaret uyumlu, dekolte yok)
+    // Cerceveleme: yuz chin seviyesinde kesilmis, anonim model
+    parts.push('Photo cropped at chin level, face cut off at the chin, only lower lips barely visible at very top of frame. NO eyes, NO nose, NO forehead visible. Anonymous faceless model');
+
+    // Odak alani: boyun ve gogus ustu
+    parts.push('Focus area is the neck, collarbone, and upper chest. Clean bare skin on neck and decollete area clearly visible for jewelry placement');
+
+    // Kiyafet (e-ticaret uyumlu)
     if (outfit && outfit.prompt && outfit.id !== 'none') {
         parts.push(outfit.prompt);
     } else {
-        parts.push('wearing modest elegant black crew neck top, high neckline, no cleavage');
-    }
-
-    // Poz
-    if (pose && pose.prompt) {
-        parts.push(pose.prompt);
+        parts.push('wearing black shirt with open collar, showing neck and collarbone area');
     }
 
     // Sahne
@@ -961,8 +962,8 @@ function buildModelPrompt(outfit, pose, scene, style) {
         parts.push(`${style.lighting} lighting, ${style.mood} atmosphere`);
     }
 
-    // Tiffany tarzi model kimliği - e-ticaret uyumlu
-    parts.push('NO jewelry, no necklace, no earrings, no bracelet, no ring visible. Clean bare neck area visible for jewelry placement. Modest clothing, no cleavage, no revealing outfit. Tiffany style clean minimal aesthetic. Neutral makeup, natural beauty. Professional e-commerce catalog photography, sharp focus, 8K quality');
+    // Tiffany tarzi anonim model kurallari
+    parts.push('NO jewelry visible, no necklace, no earrings, no bracelet. Clean bare neck area for jewelry placement. Clean white or cream studio background. Professional studio lighting, soft shadows. Tiffany & Co aesthetic, minimal and elegant. Natural skin tone, no heavy makeup. The model is anonymous, face is NOT visible. 8K quality, sharp focus, professional e-commerce catalog photography');
 
     // Custom prompt
     const smartPrompt = document.getElementById('smartPromptInput')?.value?.trim();
@@ -1783,19 +1784,19 @@ const stylePresets = {
 const outfitPresets = {
     black_vneck: {
         id: 'black_vneck',
-        name: 'Siyah Yuvarlak Yaka',
+        name: 'Siyah Açık Yaka',
         color: '#000000',
-        style: 'Crew neck top',
-        description: 'Klasik siyah, Tiffany tarzı şık',
-        prompt: 'model wearing elegant black crew neck top, modest high neckline, no cleavage, Tiffany campaign style, clean and classy e-commerce look'
+        style: 'Open collar shirt',
+        description: 'Klasik siyah, Tiffany tarzı açık yaka',
+        prompt: 'wearing black shirt with open collar, unbuttoned at top showing neck and collarbone area, Tiffany campaign style, elegant and classy'
     },
     white_off: {
         id: 'white_off',
-        name: 'Beyaz Bluz',
+        name: 'Beyaz Gömlek',
         color: '#FFFFFF',
-        style: 'White blouse',
-        description: 'Beyaz şık bluz, zarif görünüm',
-        prompt: 'model wearing white elegant blouse with modest neckline, no cleavage, clean sophisticated e-commerce style'
+        style: 'White shirt',
+        description: 'Beyaz gömlek, zarif açık yaka',
+        prompt: 'wearing white elegant shirt with open collar, showing neck and collarbone, clean sophisticated Tiffany style'
     },
     cream_silk: {
         id: 'cream_silk',
@@ -1803,23 +1804,23 @@ const outfitPresets = {
         color: '#FFF8DC',
         style: 'Silk blouse',
         description: 'Lüks krem ipek, premium görünüm',
-        prompt: 'model wearing luxurious cream silk blouse, modest neckline, soft satin texture, premium Tiffany style catalog look'
+        prompt: 'wearing luxurious cream silk blouse with open neckline showing collarbone, soft satin texture, premium Tiffany style'
     },
     burgundy: {
         id: 'burgundy',
         name: 'Bordo',
         color: '#800020',
-        style: 'Crew neck',
+        style: 'Open collar top',
         description: 'Bordo, altın takı kontrastı',
-        prompt: 'model wearing rich burgundy wine-colored crew neck top, modest neckline, no cleavage, elegant contrast for gold jewelry'
+        prompt: 'wearing rich burgundy wine-colored top with open neckline showing neck and collarbone, elegant contrast for gold jewelry'
     },
     navy: {
         id: 'navy',
         name: 'Lacivert',
         color: '#000080',
-        style: 'Classic top',
+        style: 'Classic shirt',
         description: 'Lacivert, gümüş/inci takı için',
-        prompt: 'model wearing navy blue classic crew neck top, modest neckline, sophisticated dark blue, ideal for silver and pearl jewelry'
+        prompt: 'wearing navy blue classic shirt with open collar showing neck area, sophisticated dark blue, ideal for silver and pearl jewelry'
     },
     nude: {
         id: 'nude',
@@ -1827,7 +1828,7 @@ const outfitPresets = {
         color: '#E8D4C4',
         style: 'Simple top',
         description: 'Nötr ten rengi, çok yönlü',
-        prompt: 'model wearing nude beige simple crew neck top, modest neckline, neutral skin-tone color, minimal distraction from jewelry'
+        prompt: 'wearing nude beige simple top with open neckline showing collarbone, neutral skin-tone color, minimal distraction from jewelry'
     },
     forest: {
         id: 'forest',
@@ -1835,7 +1836,7 @@ const outfitPresets = {
         color: '#228B22',
         style: 'Elegant top',
         description: 'Yeşil, altın takı kontrastı',
-        prompt: 'model wearing forest green elegant crew neck top, modest neckline, rich emerald green, beautiful contrast for gold jewelry'
+        prompt: 'wearing forest green elegant top with open neckline showing neck and collarbone, rich emerald green, contrast for gold jewelry'
     },
     black_turtleneck: {
         id: 'black_turtleneck',
@@ -1843,15 +1844,15 @@ const outfitPresets = {
         color: '#000000',
         style: 'Turtleneck',
         description: 'Balıkçı yaka, küpe ve yüzük için ideal',
-        prompt: 'model wearing black turtleneck sweater, high neck fully covered, perfect modest backdrop for statement earrings'
+        prompt: 'wearing black turtleneck sweater, high neck fully covered, perfect backdrop for statement earrings, anonymous model'
     },
     black_blazer: {
         id: 'black_blazer',
         name: 'Siyah Blazer',
         color: '#1a1a1a',
         style: 'Blazer',
-        description: 'Profesyonel blazer, e-ticaret şıklığı',
-        prompt: 'model wearing black tailored blazer over white crew neck top, professional and modest, Tiffany catalog style'
+        description: 'Profesyonel blazer, Tiffany tarzı',
+        prompt: 'wearing black tailored blazer with open collar shirt underneath, showing neck and collarbone area, Tiffany & Co catalog style'
     },
     none: {
         id: 'none',
@@ -1859,7 +1860,7 @@ const outfitPresets = {
         color: 'transparent',
         style: 'Simple',
         description: 'Sade ve minimal sunum',
-        prompt: 'model wearing simple plain black crew neck top, very modest, minimal, clean background, focus entirely on jewelry'
+        prompt: 'wearing simple plain black top with open neckline showing neck and collarbone, minimal, clean, focus on jewelry placement area'
     }
 };
 
@@ -1927,8 +1928,8 @@ const posePresets = {
         id: 'front',
         name: 'Önden Görünüm',
         angle: 0,
-        description: 'Direct front facing',
-        prompt: 'front view, straight on camera angle, model facing camera directly, symmetrical composition'
+        description: 'Close-up front, neck focus',
+        prompt: 'front view close-up, camera focused on neck and collarbone area, face cropped at chin level, anonymous model, Tiffany style framing'
     },
     right: {
         id: 'right',
