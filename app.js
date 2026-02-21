@@ -959,34 +959,25 @@ function buildModelPrompt(outfit, pose, scene, style) {
 }
 
 // Sahne aciklamasi olustur
+// Product Photography icin sahne aciklamasi - SADECE urun odakli, model/kiyafet YOK
 function buildSceneDescription(outfit, pose, scene, style) {
     const parts = [];
 
-    // Kiyafet/Model
-    if (outfit && outfit.prompt && outfit.id !== 'none') {
-        parts.push(outfit.prompt);
-    }
-
-    // Cekim acisi
-    if (pose && pose.prompt) {
-        parts.push(pose.prompt);
-    }
+    // NOT: outfit ve pose EKLENMEZ - bu Product Photography icin
+    // Product Photography sadece urunu temiz cekmeli, manken/kiyafet bilgisi GITMEMELI
 
     // Sahne/Arka plan
     if (scene) {
         parts.push(`${scene.background}, ${scene.lighting}`);
-        if (scene.props && scene.props !== 'None') {
-            parts.push(`with ${scene.props}`);
-        }
     }
 
-    // Stil
+    // Stil (sadece isik ve atmosfer)
     if (style) {
-        parts.push(`${style.lighting} lighting, ${style.mood} atmosphere`);
+        parts.push(`${style.lighting} lighting`);
     }
 
-    // Genel kalite parametreleri
-    parts.push('professional jewelry photography, high-end commercial quality, sharp focus on jewelry details, beautiful lighting');
+    // Urun odakli kalite parametreleri
+    parts.push('clean product photo, jewelry only, white background, professional studio lighting, high-end commercial quality, sharp focus on jewelry details');
 
     // Custom prompt varsa ekle
     const customPrompt = document.getElementById('customPrompt')?.value?.trim();
