@@ -751,55 +751,24 @@ async function generateImage() {
         if (!productPhotoData?.images?.[0]?.url) throw new Error('Product Photography sonuç döndürmedi');
         const productPhotoBase64 = await fetchImageAsBase64(productPhotoData.images[0].url);
 
-        // ===== STEP 2: BiRefNet → seffaf taki (arka plan kaldir) =====
-        showLoader('Takı arka planı kaldırılıyor...');
-        const birefnetData = await callFalAPI('fal-ai/birefnet', {
-            image_url: productPhotoBase64,
-            model: 'General Use (Heavy)',
-            operating_resolution: '1024x1024',
-            output_format: 'png'
-        }, falKey);
+        // ===== STEP 2: FLUX Edit → taki fotografini modele giydir =====
+        showLoader('Takı modele giydiriliyor...');
+        const category = state.selectedCategory || 'necklace';
+        const editPrompt = buildJewelryEditPrompt(category, selectedOutfit, selectedPose, selectedScene, selectedStyle);
+        console.log('Edit prompt:', editPrompt);
 
-        if (!birefnetData?.image?.url) throw new Error('BiRefNet sonuç döndürmedi');
-        const transparentJewelry = await fetchImageAsBase64(birefnetData.image.url);
-
-        // ===== STEP 3: FLUX 2 Max → gercek manken olustur (takisiz) =====
-        showLoader('AI ile manken modeli oluşturuluyor...');
-        const modelPrompt = buildModelPrompt(selectedOutfit, selectedPose, selectedScene, selectedStyle);
-        console.log('Model prompt:', modelPrompt);
-
-        const modelResult = await callFalAPI('fal-ai/flux-2-max', {
-            prompt: modelPrompt,
+        const editResult = await callFalAPI('fal-ai/flux-2-max/edit', {
+            image_urls: [productPhotoBase64],
+            prompt: editPrompt,
             image_size: { width: 1024, height: 768 },
             output_format: 'jpeg',
             safety_tolerance: '5'
         }, falKey);
 
-        if (!modelResult?.images?.[0]?.url) throw new Error('Model oluşturulamadı');
-        const modelImage = await fetchImageAsBase64(modelResult.images[0].url);
-
-        // ===== STEP 4: Taki pozisyonla + bulanik manken ipucu + mask olustur =====
-        showLoader('Takı pozisyonlanıyor ve inpaint hazırlanıyor...');
-        const category = state.selectedCategory || 'necklace';
-        const { positionedImage, preservationMask } = await prepareInpaintImages(transparentJewelry, modelImage, category);
-
-        // ===== STEP 5: FLUX Pro Fill → taki korunuyor, TÜM model yeniden üretiliyor =====
-        showLoader('AI ile doğal model oluşturuluyor (takı korunuyor)...');
-        const fillPrompt = buildInpaintPrompt(category, selectedOutfit, selectedScene, selectedStyle);
-        console.log('Fill prompt:', fillPrompt);
-
-        const fillResult = await callFalAPI('fal-ai/flux-pro/v1/fill', {
-            image_url: positionedImage,
-            mask_url: preservationMask,
-            prompt: fillPrompt,
-            output_format: 'jpeg',
-            safety_tolerance: '5'
-        }, falKey);
-
-        if (fillResult?.images?.[0]?.url) {
-            resultBase64 = await fetchImageAsBase64(fillResult.images[0].url);
+        if (editResult?.images?.[0]?.url) {
+            resultBase64 = await fetchImageAsBase64(editResult.images[0].url);
         } else {
-            throw new Error('FLUX Fill sonuç döndürmedi');
+            throw new Error('FLUX Edit sonuç döndürmedi');
         }
 
         // Urun gorselini kaydet
@@ -876,7 +845,7 @@ async function analyzeJewelryImage(imageBase64) {
     return 'elegant jewelry piece';
 }
 
-// Tek varyasyon uret - ProductPhoto + BiRefNet + Manken + Inpaint pipeline (canvas yok)
+// Tek varyasyon uret - ProductPhoto + FLUX Edit (2 adim, basit)
 async function generateSingleVariation(sceneDescription, falKey) {
     // Step 1: Product Photography
     const prodResult = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
@@ -886,95 +855,77 @@ async function generateSingleVariation(sceneDescription, falKey) {
     if (!prodResult?.images?.[0]?.url) return null;
     const productPhoto = await fetchImageAsBase64(prodResult.images[0].url);
 
-    // Step 2: BiRefNet → seffaf taki
-    const birefnetResult = await callFalAPI('fal-ai/birefnet', {
-        image_url: productPhoto,
-        model: 'General Use (Heavy)',
-        operating_resolution: '1024x1024',
-        output_format: 'png'
-    }, falKey);
-    if (!birefnetResult?.image?.url) return null;
-    const transparentJewelry = await fetchImageAsBase64(birefnetResult.image.url);
-
-    // Step 3: Manken olustur
+    // Step 2: FLUX Edit → taki fotografini modele giydir
     const selectedOutfit = outfitPresets[state.selectedOutfit] || outfitPresets.black_vneck;
     const selectedPose = posePresets[state.selectedPose] || posePresets.front;
     const selectedScene = scenePresets[state.selectedScene] || scenePresets.studio_clean;
     const selectedStyle = stylePresets[state.selectedStyle] || stylePresets.studio;
-    const modelPrompt = buildModelPrompt(selectedOutfit, selectedPose, selectedScene, selectedStyle);
+    const category = state.selectedCategory || 'necklace';
+    const editPrompt = buildJewelryEditPrompt(category, selectedOutfit, selectedPose, selectedScene, selectedStyle);
 
-    const modelResult = await callFalAPI('fal-ai/flux-2-max', {
-        prompt: modelPrompt,
+    const editResult = await callFalAPI('fal-ai/flux-2-max/edit', {
+        image_urls: [productPhoto],
+        prompt: editPrompt,
         image_size: { width: 1024, height: 768 },
         output_format: 'jpeg',
         safety_tolerance: '5'
     }, falKey);
-    if (!modelResult?.images?.[0]?.url) return null;
-    const modelImage = await fetchImageAsBase64(modelResult.images[0].url);
 
-    // Step 4: Taki pozisyonla + bulanik manken ipucu + mask
-    const category = state.selectedCategory || 'necklace';
-    const { positionedImage, preservationMask } = await prepareInpaintImages(transparentJewelry, modelImage, category);
-
-    // Step 5: FLUX Fill → taki korunuyor, model yeniden uretiliyor
-    const fillPrompt = buildInpaintPrompt(category, selectedOutfit, selectedScene, selectedStyle);
-
-    const fillResult = await callFalAPI('fal-ai/flux-pro/v1/fill', {
-        image_url: positionedImage,
-        mask_url: preservationMask,
-        prompt: fillPrompt,
-        output_format: 'jpeg',
-        safety_tolerance: '5'
-    }, falKey);
-
-    if (fillResult?.images?.[0]?.url) {
-        return await fetchImageAsBase64(fillResult.images[0].url);
+    if (editResult?.images?.[0]?.url) {
+        return await fetchImageAsBase64(editResult.images[0].url);
     }
     return null;
 }
 
-// Inpainting prompt: FLUX Fill tum modeli sifirdan uretiyor, taki pikselleri korunuyor
-// Bu prompt BEYAZ alan icin - yani taki DISINDAKI her sey
-function buildInpaintPrompt(category, outfit, scene, style) {
+// FLUX Edit prompt: Taki fotografini modele giydir
+// ChatGPT yaklasimi: tek gorsel + edit prompt = sonuc
+function buildJewelryEditPrompt(category, outfit, pose, scene, style) {
     const cat = category || 'necklace';
 
-    // Kategori bazli vucut aciklamasi
-    const bodyContext = {
-        necklace: 'Professional close-up photo of a female model wearing a necklace. Focus on neck, collarbone and upper chest.',
-        bracelet: 'Professional photo of a female model wearing a bracelet. Focus on wrist and hand.',
-        ring: 'Professional photo of a female model wearing a ring. Focus on hand and fingers.',
-        earring: 'Professional photo of a female model wearing earrings. Focus on ear and face profile.',
-        set: 'Professional photo of a female model wearing a jewelry set. Upper body shot.'
+    // Kategori bazli giydirme talimati
+    const wearContext = {
+        necklace: 'Place this exact necklace on a female model. Show the necklace being worn on her neck and collarbone area. Close-up shot of neck and upper chest.',
+        bracelet: 'Place this exact bracelet on a female model. Show it being worn on her wrist. Close-up shot of wrist and hand.',
+        ring: 'Place this exact ring on a female model. Show it being worn on her finger. Close-up shot of hand.',
+        earring: 'Place these exact earrings on a female model. Show them being worn on her ears. Close-up of ear and jawline.',
+        set: 'Place this exact jewelry set on a female model. Show all pieces being worn. Upper body shot.'
     };
 
-    const parts = [bodyContext[cat] || bodyContext.necklace];
+    const parts = [wearContext[cat] || wearContext.necklace];
+
+    // KRITIK: urunu degistirme
+    parts.push('CRITICAL: Preserve the jewelry EXACTLY as shown in the image. Do NOT modify, redesign, simplify, or change any detail of the jewelry. Every bead, stone, chain, color, and pattern must remain identical');
 
     // Anonim model - Tiffany tarzi
-    parts.push('Photo cropped at chin level, face cut off at chin, only lower lips barely visible at very top of frame. NO eyes, NO nose, NO forehead. Anonymous faceless model');
+    parts.push('Photo cropped at chin level, face cut off at chin, only lower lips barely visible at top of frame. NO eyes, NO nose, NO forehead. Anonymous model');
 
-    // Gercekci cilt ve vucut
-    parts.push('Realistic smooth skin, natural skin tone, visible collarbone, realistic skin texture with natural light and shadow');
+    // Gercekci cilt
+    parts.push('Realistic smooth skin, natural skin tone, visible collarbone');
 
     // Kiyafet
     if (outfit && outfit.prompt && outfit.id !== 'none') {
         parts.push(outfit.prompt);
     } else {
-        parts.push('Wearing elegant black shirt with open collar, showing neck and decollete area');
+        parts.push('Wearing black shirt with open collar showing neck and decollete');
     }
 
-    // Sahne ve isik
+    // Poz
+    if (pose && pose.prompt) {
+        parts.push(pose.prompt);
+    }
+
+    // Sahne
     if (scene) {
         parts.push(`${scene.background}, ${scene.lighting}`);
     } else {
-        parts.push('Clean white studio background, soft diffused studio lighting');
+        parts.push('Clean white studio background, soft studio lighting');
     }
 
     if (style) {
-        parts.push(`${style.lighting} lighting, ${style.mood} atmosphere`);
+        parts.push(`${style.lighting} lighting`);
     }
 
-    // Kalite ve stil
-    parts.push('Tiffany & Co campaign style, luxury e-commerce catalog photography, 8K quality, sharp focus, professional studio photo. The jewelry in the image must be preserved exactly as-is, generate the model body around it naturally with proper shadows and reflections');
+    parts.push('Tiffany & Co campaign style, professional jewelry catalog photo, 8K, sharp focus');
 
     return parts.join('. ');
 }
