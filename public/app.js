@@ -751,17 +751,10 @@ async function generateImage() {
         if (!productPhotoData?.images?.[0]?.url) throw new Error('Product Photography sonuç döndürmedi');
         const productPhotoBase64 = await fetchImageAsBase64(productPhotoData.images[0].url);
 
-        // ===== STEP 2: BiRefNet → seffaf taki (arka plan kaldir) =====
-        showLoader('Takı arka planı kaldırılıyor...');
-        const birefnetData = await callFalAPI('fal-ai/birefnet', {
-            image_url: productPhotoBase64,
-            model: 'General Use (Heavy)',
-            operating_resolution: '1024x1024',
-            output_format: 'png'
-        }, falKey);
-
-        if (!birefnetData?.image?.url) throw new Error('BiRefNet sonuç döndürmedi');
-        const transparentJewelry = await fetchImageAsBase64(birefnetData.image.url);
+        // ===== STEP 2: Gemini → takiyi detayli analiz et =====
+        showLoader('Takı analiz ediliyor...');
+        const jewelryDescription = await analyzeJewelryImage(productPhotoBase64);
+        console.log('Jewelry analysis:', jewelryDescription);
 
         // ===== STEP 3: Manken gorseli belirle =====
         let modelImage = state.templateImage; // kullanici yuklediyse
@@ -786,18 +779,15 @@ async function generateImage() {
             }
         }
 
-        // ===== STEP 4: Canvas → seffaf takiyi manken uzerine pixel-perfect yapistir =====
+        // ===== STEP 4: Kontext Max Multi → product photo takisini mankene yerlestir =====
         showLoader('Takı mankene yerleştiriliyor...');
         const category = state.selectedCategory || 'necklace';
-        const compositeImage = await createComposite(modelImage, transparentJewelry, category);
+        const kontextPrompt = buildPlacementPrompt(category, jewelryDescription);
+        console.log('Kontext prompt:', kontextPrompt);
 
-        // ===== STEP 5: Kontext → sadece golge/dogallik refinement (tek gorsel) =====
-        showLoader('Doğal görünüm iyileştiriliyor...');
-        const refinementPrompt = `Make this jewelry product photo look completely natural and realistic. The jewelry is already placed on the model - just add subtle realistic shadows where the jewelry touches skin, natural light reflections on the metal and stones, and ensure seamless blending. Do NOT change the jewelry design, shape, or position. Do NOT change the model or framing. Tiffany & Co campaign quality, professional studio photography.`;
-
-        const kontextResult = await callFalAPI('fal-ai/flux-pro/kontext/max', {
-            image_url: compositeImage,
-            prompt: refinementPrompt,
+        const kontextResult = await callFalAPI('fal-ai/flux-pro/kontext/max/multi', {
+            image_urls: [modelImage, productPhotoBase64],
+            prompt: kontextPrompt,
             output_format: 'jpeg',
             safety_tolerance: '5'
         }, falKey);
@@ -805,9 +795,7 @@ async function generateImage() {
         if (kontextResult?.images?.[0]?.url) {
             resultBase64 = await fetchImageAsBase64(kontextResult.images[0].url);
         } else {
-            // Kontext basarisiz olursa composite'i kullan
-            console.warn('Kontext refinement failed, using canvas composite');
-            resultBase64 = compositeImage;
+            throw new Error('FLUX Kontext sonuç döndürmedi');
         }
 
         // Urun gorselini kaydet
@@ -884,7 +872,7 @@ async function analyzeJewelryImage(imageBase64) {
     return 'elegant jewelry piece';
 }
 
-// Tek varyasyon uret - ProductPhoto + BiRefNet + Manken + Canvas + Kontext pipeline
+// Tek varyasyon uret - ProductPhoto + Gemini + Manken + Kontext pipeline
 async function generateSingleVariation(sceneDescription, falKey) {
     // Step 1: Product Photography
     const prodResult = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
@@ -894,15 +882,8 @@ async function generateSingleVariation(sceneDescription, falKey) {
     if (!prodResult?.images?.[0]?.url) return null;
     const productPhoto = await fetchImageAsBase64(prodResult.images[0].url);
 
-    // Step 2: BiRefNet - seffaf taki (arka plan kaldir)
-    const birefnetResult = await callFalAPI('fal-ai/birefnet', {
-        image_url: productPhoto,
-        model: 'General Use (Heavy)',
-        operating_resolution: '1024x1024',
-        output_format: 'png'
-    }, falKey);
-    if (!birefnetResult?.image?.url) return null;
-    const transparentJewelry = await fetchImageAsBase64(birefnetResult.image.url);
+    // Step 2: Gemini - takiyi detayli analiz et
+    const jewelryDescription = await analyzeJewelryImage(productPhoto);
 
     // Step 3: Manken belirle (template veya AI ile olustur)
     let modelImage = state.templateImage;
@@ -926,16 +907,13 @@ async function generateSingleVariation(sceneDescription, falKey) {
         }
     }
 
-    // Step 4: Canvas - seffaf takiyi manken uzerine pixel-perfect yapistir
+    // Step 4: Kontext Max Multi - product photo takisini mankene yerlestir
     const category = state.selectedCategory || 'necklace';
-    const compositeImage = await createComposite(modelImage, transparentJewelry, category);
+    const kontextPrompt = buildPlacementPrompt(category, jewelryDescription);
 
-    // Step 5: Kontext - sadece golge/dogallik refinement (tek gorsel)
-    const refinementPrompt = `Make this jewelry product photo look completely natural and realistic. The jewelry is already placed on the model - just add subtle realistic shadows where the jewelry touches skin, natural light reflections on the metal and stones, and ensure seamless blending. Do NOT change the jewelry design, shape, or position. Do NOT change the model or framing. Tiffany & Co campaign quality, professional studio photography.`;
-
-    const kontextResult = await callFalAPI('fal-ai/flux-pro/kontext/max', {
-        image_url: compositeImage,
-        prompt: refinementPrompt,
+    const kontextResult = await callFalAPI('fal-ai/flux-pro/kontext/max/multi', {
+        image_urls: [modelImage, productPhoto],
+        prompt: kontextPrompt,
         output_format: 'jpeg',
         safety_tolerance: '5'
     }, falKey);
@@ -943,8 +921,25 @@ async function generateSingleVariation(sceneDescription, falKey) {
     if (kontextResult?.images?.[0]?.url) {
         return await fetchImageAsBase64(kontextResult.images[0].url);
     }
-    // Kontext basarisiz olursa composite'i dön
-    return compositeImage;
+    return null;
+}
+
+// Gemini jewelry analizini kullanarak Kontext icin ultra-detayli yerlesim promptu
+function buildPlacementPrompt(category, jewelryDescription) {
+    const cat = category || 'necklace';
+
+    // Kategori bazli yerlesim talimati
+    const placementInstructions = {
+        necklace: 'Put this exact necklace on the neck/collarbone of the model in @Image1.',
+        bracelet: 'Put this exact bracelet on the wrist of the model in @Image1.',
+        ring: 'Put this exact ring on the ring finger of the model in @Image1.',
+        earring: 'Put these exact earrings on the ears of the model in @Image1.',
+        set: 'Put this exact jewelry set on the model in @Image1 - necklace on neck, earrings on ears.'
+    };
+
+    const placement = placementInstructions[cat] || placementInstructions.necklace;
+
+    return `@Image1 is a model photo. @Image2 is a product photo of ${jewelryDescription}. ${placement} VERY IMPORTANT RULES: 1) The jewelry must be EXACTLY identical to @Image2 - same design, same metal color, same stones, same chain style, same pendant shape, same proportions. Copy the jewelry pixel-by-pixel from @Image2. 2) Do NOT redesign, reimagine, simplify, or modify the jewelry in any way. 3) The model pose, clothing, and framing must stay exactly as in @Image1. 4) Only add natural shadow where jewelry touches skin. Tiffany & Co campaign quality.`;
 }
 
 // AI ile manken olusturmak icin prompt olustur (Tiffany tarzi, anonim model, yuz yok)
