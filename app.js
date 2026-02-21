@@ -786,17 +786,18 @@ async function generateImage() {
         console.log('Kontext prompt:', kontextPrompt);
 
         const kontextResult = await callFalAPI('fal-ai/flux-2-max/edit', {
-            image_urls: [modelImage, productPhotoBase64],
+            image_urls: [productPhotoBase64, modelImage],
             prompt: kontextPrompt,
             image_size: 'auto',
             output_format: 'jpeg',
-            safety_tolerance: '5'
+            safety_tolerance: '5',
+            guidance_scale: 50
         }, falKey);
 
         if (kontextResult?.images?.[0]?.url) {
             resultBase64 = await fetchImageAsBase64(kontextResult.images[0].url);
         } else {
-            throw new Error('FLUX Kontext sonuç döndürmedi');
+            throw new Error('FLUX 2 Max Edit sonuç döndürmedi');
         }
 
         // Urun gorselini kaydet
@@ -850,11 +851,11 @@ async function analyzeJewelryImage(imageBase64) {
             body: JSON.stringify({
                 contents: [{
                     parts: [
-                        { text: 'Describe this jewelry item in ONE detailed English sentence for an AI image editor. Include: type (necklace/bracelet/ring/earring), metal color (gold/silver/rose gold), stone types, design style. Example: "a delicate rose gold chain necklace with a small diamond pendant". Be specific and concise. ONLY return the description, nothing else.' },
+                        { text: 'Describe this jewelry item in 2-3 detailed English sentences for an AI image editor that must reproduce it EXACTLY. Include: 1) Type (necklace/bracelet/ring/earring), 2) Number of strands/chains/rows, 3) Exact bead/stone count if visible, colors and arrangement pattern, 4) Metal color and type (gold/silver/rose gold), 5) Pendant/charm details if any, 6) Overall shape and length. Be extremely specific about quantities and arrangement. ONLY return the description, nothing else.' },
                         { inlineData: { mimeType: 'image/jpeg', data: imageBase64.split(',')[1] || imageBase64 } }
                     ]
                 }],
-                generationConfig: { temperature: 0.2, maxOutputTokens: 100 }
+                generationConfig: { temperature: 0.1, maxOutputTokens: 300 }
             })
         });
 
@@ -913,11 +914,12 @@ async function generateSingleVariation(sceneDescription, falKey) {
     const kontextPrompt = buildPlacementPrompt(category, jewelryDescription);
 
     const kontextResult = await callFalAPI('fal-ai/flux-2-max/edit', {
-        image_urls: [modelImage, productPhoto],
+        image_urls: [productPhoto, modelImage],
         prompt: kontextPrompt,
         image_size: 'auto',
         output_format: 'jpeg',
-        safety_tolerance: '5'
+        safety_tolerance: '5',
+        guidance_scale: 50
     }, falKey);
 
     if (kontextResult?.images?.[0]?.url) {
@@ -926,22 +928,22 @@ async function generateSingleVariation(sceneDescription, falKey) {
     return null;
 }
 
-// Gemini jewelry analizini kullanarak Kontext icin ultra-detayli yerlesim promptu
+// Gemini jewelry analizini kullanarak FLUX 2 Max Edit icin yerlesim promptu
+// @Image1 = taki (product photo), @Image2 = manken (model photo)
 function buildPlacementPrompt(category, jewelryDescription) {
     const cat = category || 'necklace';
 
-    // Kategori bazli yerlesim talimati
     const placementInstructions = {
-        necklace: 'Put this exact necklace on the neck/collarbone of the model in @Image1.',
-        bracelet: 'Put this exact bracelet on the wrist of the model in @Image1.',
-        ring: 'Put this exact ring on the ring finger of the model in @Image1.',
-        earring: 'Put these exact earrings on the ears of the model in @Image1.',
-        set: 'Put this exact jewelry set on the model in @Image1 - necklace on neck, earrings on ears.'
+        necklace: 'Show @Image1 (this exact necklace) being worn on the neck of the person in @Image2.',
+        bracelet: 'Show @Image1 (this exact bracelet) being worn on the wrist of the person in @Image2.',
+        ring: 'Show @Image1 (this exact ring) being worn on the finger of the person in @Image2.',
+        earring: 'Show @Image1 (this exact earrings) being worn on the ears of the person in @Image2.',
+        set: 'Show @Image1 (this exact jewelry set) being worn by the person in @Image2.'
     };
 
     const placement = placementInstructions[cat] || placementInstructions.necklace;
 
-    return `@Image1 is a model photo. @Image2 is a product photo of ${jewelryDescription}. ${placement} VERY IMPORTANT RULES: 1) The jewelry must be EXACTLY identical to @Image2 - same design, same metal color, same stones, same chain style, same pendant shape, same proportions. Copy the jewelry pixel-by-pixel from @Image2. 2) Do NOT redesign, reimagine, simplify, or modify the jewelry in any way. 3) The model pose, clothing, and framing must stay exactly as in @Image1. 4) Only add natural shadow where jewelry touches skin. Tiffany & Co campaign quality.`;
+    return `@Image1 is a product photo of ${jewelryDescription}. @Image2 is a model photo. ${placement} ABSOLUTE RULES: Transfer the EXACT jewelry from @Image1 onto the model. Do NOT add any extra jewelry pieces. Do NOT change the design, color, number of strands, bead count, stone arrangement, metal type, chain pattern, or any detail of the jewelry. The output jewelry must be a 1:1 copy of @Image1. Keep the model framing and clothing from @Image2. Only add realistic shadow where jewelry meets skin. Professional e-commerce product photography.`;
 }
 
 // AI ile manken olusturmak icin prompt olustur (Tiffany tarzi, anonim model, yuz yok)
