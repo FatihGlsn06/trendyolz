@@ -21,7 +21,16 @@ async function callFalAPI(endpoint, payload, apiKey) {
 
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || errorData.message || `Fal API error: ${response.status}`);
+        const detail = errorData.detail;
+        let errMsg;
+        if (typeof detail === 'string') {
+            errMsg = detail;
+        } else if (detail && typeof detail === 'object') {
+            errMsg = detail.msg || detail.message || JSON.stringify(detail);
+        } else {
+            errMsg = errorData.message || `HTTP ${response.status}`;
+        }
+        throw new Error(`Fal API (${endpoint}): ${errMsg}`);
     }
 
     return await response.json();
