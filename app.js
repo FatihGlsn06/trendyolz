@@ -751,27 +751,42 @@ async function generateImage() {
         if (!productPhotoData?.images?.[0]?.url) throw new Error('Product Photography sonuç döndürmedi');
         const productPhotoBase64 = await fetchImageAsBase64(productPhotoData.images[0].url);
 
-        // ===== STEP 2: FLUX 2 Max Edit → product photo'yu manken uzerinde goster =====
-        // Taki zaten görselde var. FLUX sadece etrafina model ekleyecek.
-        // Takiyi yeniden uretmeyecek, degistirmeyecek.
-        showLoader('Takı manken üzerinde gösteriliyor...');
-        const category = state.selectedCategory || 'necklace';
-        const editPrompt = buildWornPrompt(category, selectedOutfit, selectedScene, selectedStyle);
-        console.log('Edit prompt:', editPrompt);
-
-        const editResult = await callFalAPI('fal-ai/flux-2-max/edit', {
-            image_urls: [productPhotoBase64],
-            prompt: editPrompt,
-            image_size: { width: 1024, height: 768 },
-            output_format: 'jpeg',
-            safety_tolerance: '5',
-            guidance_scale: 30
+        // ===== STEP 2: BiRefNet → taki segmentasyonu (seffaf PNG) =====
+        showLoader('Takı segmentasyonu çıkartılıyor...');
+        const birefnetData = await callFalAPI('fal-ai/birefnet', {
+            image_url: productPhotoBase64,
+            model: 'General Use (Heavy)',
+            operating_resolution: '1024x1024',
+            output_format: 'png'
         }, falKey);
 
-        if (editResult?.images?.[0]?.url) {
-            resultBase64 = await fetchImageAsBase64(editResult.images[0].url);
+        if (!birefnetData?.image?.url) throw new Error('BiRefNet sonuç döndürmedi');
+        const transparentJewelry = await fetchImageAsBase64(birefnetData.image.url);
+
+        // ===== STEP 3: Ters mask olustur =====
+        // Jewelry pikselleri = SIYAH (koru), arka plan = BEYAZ (model uret)
+        showLoader('Inpainting maskesi oluşturuluyor...');
+        const jewelryMask = await createJewelryMask(transparentJewelry);
+        console.log('Mask created for inpainting');
+
+        // ===== STEP 4: FLUX Pro Fill → sadece BEYAZ alana model uret, takiya DOKUNMA =====
+        showLoader('Takının etrafına model oluşturuluyor (inpainting)...');
+        const category = state.selectedCategory || 'necklace';
+        const fillPrompt = buildInpaintPrompt(category, selectedOutfit, selectedScene, selectedStyle);
+        console.log('Inpaint prompt:', fillPrompt);
+
+        const fillResult = await callFalAPI('fal-ai/flux-pro/v1/fill', {
+            image_url: productPhotoBase64,
+            mask_url: jewelryMask,
+            prompt: fillPrompt,
+            output_format: 'jpeg',
+            safety_tolerance: '5'
+        }, falKey);
+
+        if (fillResult?.images?.[0]?.url) {
+            resultBase64 = await fetchImageAsBase64(fillResult.images[0].url);
         } else {
-            throw new Error('FLUX 2 Max Edit sonuç döndürmedi');
+            throw new Error('FLUX Fill sonuç döndürmedi');
         }
 
         // Urun gorselini kaydet
@@ -848,7 +863,7 @@ async function analyzeJewelryImage(imageBase64) {
     return 'elegant jewelry piece';
 }
 
-// Tek varyasyon uret - ProductPhoto + FLUX Edit (tek gorsel) pipeline
+// Tek varyasyon uret - ProductPhoto + BiRefNet + Mask + FLUX Fill (inpainting) pipeline
 async function generateSingleVariation(sceneDescription, falKey) {
     // Step 1: Product Photography
     const prodResult = await callFalAPI('fal-ai/image-apps-v2/product-photography', {
@@ -858,61 +873,74 @@ async function generateSingleVariation(sceneDescription, falKey) {
     if (!prodResult?.images?.[0]?.url) return null;
     const productPhoto = await fetchImageAsBase64(prodResult.images[0].url);
 
-    // Step 2: FLUX 2 Max Edit - product photo'yu manken uzerinde goster
+    // Step 2: BiRefNet → taki segmentasyonu
+    const birefnetResult = await callFalAPI('fal-ai/birefnet', {
+        image_url: productPhoto,
+        model: 'General Use (Heavy)',
+        operating_resolution: '1024x1024',
+        output_format: 'png'
+    }, falKey);
+    if (!birefnetResult?.image?.url) return null;
+    const transparentJewelry = await fetchImageAsBase64(birefnetResult.image.url);
+
+    // Step 3: Ters mask olustur
+    const jewelryMask = await createJewelryMask(transparentJewelry);
+
+    // Step 4: FLUX Pro Fill → taki korunuyor, etraf model olarak uretiliyor
     const selectedOutfit = outfitPresets[state.selectedOutfit] || outfitPresets.black_vneck;
     const selectedScene = scenePresets[state.selectedScene] || scenePresets.studio_clean;
     const selectedStyle = stylePresets[state.selectedStyle] || stylePresets.studio;
     const category = state.selectedCategory || 'necklace';
-    const editPrompt = buildWornPrompt(category, selectedOutfit, selectedScene, selectedStyle);
+    const fillPrompt = buildInpaintPrompt(category, selectedOutfit, selectedScene, selectedStyle);
 
-    const editResult = await callFalAPI('fal-ai/flux-2-max/edit', {
-        image_urls: [productPhoto],
-        prompt: editPrompt,
-        image_size: { width: 1024, height: 768 },
+    const fillResult = await callFalAPI('fal-ai/flux-pro/v1/fill', {
+        image_url: productPhoto,
+        mask_url: jewelryMask,
+        prompt: fillPrompt,
         output_format: 'jpeg',
-        safety_tolerance: '5',
-        guidance_scale: 30
+        safety_tolerance: '5'
     }, falKey);
 
-    if (editResult?.images?.[0]?.url) {
-        return await fetchImageAsBase64(editResult.images[0].url);
+    if (fillResult?.images?.[0]?.url) {
+        return await fetchImageAsBase64(fillResult.images[0].url);
     }
     return null;
 }
 
-// Product photo'yu manken uzerinde gosteren tek-gorsel edit promptu olustur
-// Taki zaten gorselde, FLUX sadece etrafina model ekleyecek
-function buildWornPrompt(category, outfit, scene, style) {
+// Inpainting prompt: maskeli alana (BEYAZ) ne uretilecek
+// Taki pikselleri korunuyor (SIYAH mask), sadece etraf uretiliyor
+function buildInpaintPrompt(category, outfit, scene, style) {
     const cat = category || 'necklace';
 
-    // Kategori bazli yerlesim
-    const wornInstructions = {
-        necklace: 'Show this exact necklace being worn on the neck and collarbone of an anonymous female model.',
-        bracelet: 'Show this exact bracelet being worn on the wrist of an anonymous female model.',
-        ring: 'Show this exact ring being worn on the finger of an anonymous female model.',
-        earring: 'Show these exact earrings being worn on the ears of an anonymous female model.',
-        set: 'Show this exact jewelry set being worn by an anonymous female model.'
+    // Kategori bazli vücut bolumu
+    const bodyContext = {
+        necklace: 'Female model neck, collarbone and upper chest area wearing this necklace.',
+        bracelet: 'Female model wrist and hand area wearing this bracelet.',
+        ring: 'Female model hand and fingers wearing this ring.',
+        earring: 'Female model face profile and ear area wearing these earrings.',
+        set: 'Female model upper body wearing this jewelry set.'
     };
 
-    const parts = [wornInstructions[cat] || wornInstructions.necklace];
+    const parts = [bodyContext[cat] || bodyContext.necklace];
 
-    // Model ozellikleri
-    parts.push('The model is anonymous - face cropped at chin level, only lower lips barely visible, NO eyes or nose visible');
+    // Anonim model
+    parts.push('Anonymous model, face cropped at chin level, only lower lips barely visible, NO eyes or nose');
 
     // Kiyafet
     if (outfit && outfit.prompt && outfit.id !== 'none') {
-        parts.push(`Model is ${outfit.prompt}`);
+        parts.push(outfit.prompt);
     } else {
-        parts.push('Model wearing black shirt with open collar showing neck and collarbone');
+        parts.push('Black shirt with open collar showing neck and collarbone');
     }
 
     // Arka plan
     if (scene) {
         parts.push(`${scene.background}, ${scene.lighting}`);
+    } else {
+        parts.push('Clean white studio background, soft even lighting');
     }
 
-    // KRITIK: takiyi degistirme
-    parts.push('CRITICAL: Do NOT modify, redesign, simplify or change the jewelry in any way. The jewelry must remain EXACTLY as shown in the input image - same design, same colors, same stones, same number of strands, same chain pattern. You are only adding a model around/behind the jewelry. Tiffany & Co campaign style, professional e-commerce photography');
+    parts.push('Tiffany & Co campaign style, professional e-commerce catalog photography, natural skin tone, realistic lighting');
 
     return parts.join('. ');
 }
@@ -1395,6 +1423,41 @@ function loadImage(src) {
         img.onerror = reject;
         img.src = src;
     });
+}
+
+// BiRefNet transparent PNG'den ters mask olustur
+// Jewelry pikselleri = SIYAH (koru/dokunma), arka plan = BEYAZ (inpaint/uret)
+async function createJewelryMask(transparentImageBase64) {
+    const img = await loadImage(transparentImageBase64);
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+
+    // Transparent gorseli ciz
+    ctx.drawImage(img, 0, 0);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+
+    // Ters mask: alpha > 0 (jewelry var) = SIYAH, alpha = 0 (bos) = BEYAZ
+    for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] > 20) {
+            // Jewelry pikseli - SIYAH (FLUX Fill burayi koruyacak)
+            data[i] = 0;
+            data[i + 1] = 0;
+            data[i + 2] = 0;
+            data[i + 3] = 255;
+        } else {
+            // Bos alan - BEYAZ (FLUX Fill buraya model uretecek)
+            data[i] = 255;
+            data[i + 1] = 255;
+            data[i + 2] = 255;
+            data[i + 3] = 255;
+        }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+    return canvas.toDataURL('image/png');
 }
 
 // ============================================
