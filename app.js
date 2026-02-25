@@ -749,16 +749,17 @@ async function generateImage() {
         }, falKey);
 
         if (!productPhotoData?.images?.[0]?.url) throw new Error('Product Photography sonuç döndürmedi');
-        const productPhotoBase64 = await fetchImageAsBase64(productPhotoData.images[0].url);
+        const productPhotoUrl = productPhotoData.images[0].url;
+        console.log('Product photo URL:', productPhotoUrl);
 
         // ===== STEP 2: FLUX Edit → taki fotografini modele giydir =====
-        showLoader('Takı modele giydiriliyor...');
+        showLoader('Takı modele giydiriliyor (bu işlem 1-2 dakika sürebilir)...');
         const category = state.selectedCategory || 'necklace';
         const editPrompt = buildJewelryEditPrompt(category, selectedOutfit, selectedPose, selectedScene, selectedStyle);
         console.log('Edit prompt:', editPrompt);
 
         const editResult = await callFalAPI('fal-ai/flux-2-max/edit', {
-            image_urls: [productPhotoBase64],
+            image_urls: [productPhotoUrl],
             prompt: editPrompt,
             image_size: { width: 2048, height: 1536 },
             output_format: 'jpeg',
@@ -853,7 +854,7 @@ async function generateSingleVariation(sceneDescription, falKey) {
         prompt: sceneDescription
     }, falKey);
     if (!prodResult?.images?.[0]?.url) return null;
-    const productPhoto = await fetchImageAsBase64(prodResult.images[0].url);
+    const productPhotoUrl = prodResult.images[0].url;
 
     // Step 2: FLUX Edit → taki fotografini modele giydir
     const selectedOutfit = outfitPresets[state.selectedOutfit] || outfitPresets.black_vneck;
@@ -864,7 +865,7 @@ async function generateSingleVariation(sceneDescription, falKey) {
     const editPrompt = buildJewelryEditPrompt(category, selectedOutfit, selectedPose, selectedScene, selectedStyle);
 
     const editResult = await callFalAPI('fal-ai/flux-2-max/edit', {
-        image_urls: [productPhoto],
+        image_urls: [productPhotoUrl],
         prompt: editPrompt,
         image_size: { width: 2048, height: 1536 },
         output_format: 'jpeg',
