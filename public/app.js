@@ -1064,7 +1064,7 @@ async function generateSEO() {
         return;
     }
 
-    showLoader('SEO Pro+ oluşturuluyor... AI görsel analizi yapılıyor');
+    showLoader('Trendyol SEO Pro+ oluşturuluyor... AI analiz yapıyor');
 
     try {
         // Kullanıcının girdiği ek özellikler
@@ -1073,52 +1073,148 @@ async function generateSEO() {
             ? `\n\n===== KULLANICININ GİRDİĞİ ÜRÜN ÖZELLİKLERİ =====\n${productFeatures}\n\nBu özellikleri SEO içeriğinde MUTLAKA kullan ve vurgula!`
             : '';
 
-        const seoPrompt = `SEN BİR TRENDYOL SEO UZMANSIN.
+        const category = state.selectedCategory || 'necklace';
+        const categoryTR = {
+            necklace: 'Kolye', earring: 'Küpe', bracelet: 'Bileklik',
+            ring: 'Yüzük', set: 'Takı Seti', anklet: 'Halhal'
+        }[category] || 'Kolye';
 
-===== TRENDYOL ÜRÜN YAPISI =====
-1️⃣ BAŞLIK (99 karakter) → SADECE ARAMA KELİMELERİ
-2️⃣ AÇIKLAMA → Detaylı bilgi ve hikaye
-3️⃣ BARKOD → 8680 ile başlayan 13 haneli kod
-4️⃣ MODEL KODU → KLY-RG-001 formatında
+        const seoPrompt = `SEN TÜRKIYE'NIN EN İYİ TRENDYOL SEO UZMANSIN. Takı/mücevher kategorisinde 10+ yıl deneyimin var.
 
-===== BAŞLIK FORMÜLÜ =====
-[Cinsiyet] + [Malzeme] + [Ürün Tipi] + [Taş] + [Tasarım] + [Stil kelimeleri]
+===== TRENDYOL ALGORİTMA BİLGİSİ =====
+- Başlık MAX 100 karakter (ilk 30 karakter EN KRİTİK - mobilde görünen kısım)
+- Açıklama MAX 30.000 karakter (HTML destekli)
+- Başlık formülü: [Marka Alanı] + [Ürün Tipi] + [Malzeme] + [Özellik] + [Taş] + [Tasarım] + [Cinsiyet]
+- Trendyol arama: başlık + açıklama + özellikler (attributes) hepsi indexleniyor
+- Filtre aramaları: Malzeme, Renk, Taş Türü, Cinsiyet - bunlar ZORUNLU attribute alanları
+- Google/Yandex/Bing'de de indexleniyor - dış SEO da önemli
 
-===== GÖRSEL ANALİZ REHBERİ =====
-🎨 RENK: Metal rengi, taş renkleri, genel ton
-💎 TASARIM: Şekil/Motif, doku, stil
-📏 YAPI: Zincir tipi, pendant, boyut
-🔍 MALZEME TAHMİNİ: Görünüme göre
+===== TAKİ KATEGORİSİ: ${categoryTR} =====
+
+===== GÖRSEL ANALİZ TALİMATI =====
+Görseli ÇOK DETAYLı analiz et:
+🎨 RENK: Metal rengi (altın/gümüş/rose gold/antik), taş renkleri, genel ton
+💎 TAŞ: Taş türü, sayısı, kesimi, yerleşimi
+📏 YAPI: Zincir tipi, kalınlık, pendant şekli/boyutu, kilit tipi
+🔍 MALZEME: Görünüme göre malzeme tahmini (925 ayar gümüş, çelik, altın kaplama vb.)
+✨ TASARIM: Motif, doku, stil (minimal/bohem/vintage/statement)
+📐 BOYUT TAHMİNİ: Yaklaşık ölçüler
 
 ${userInputSection}
 
-===== JSON ÇIKTISI =====
+===== TRENDYOL UYUMLU JSON ÇIKTISI =====
 {
     "visualAnalysis": {
-        "productType": "Kolye/Yüzük/Bileklik/Küpe/Set",
-        "metalColor": "Altın/Gümüş/Rose Gold/Antik",
-        "stoneType": "Zirkon/İnci/Doğal Taş/Yok",
-        "stoneColor": "Şeffaf/Mavi/Yeşil/Siyah vb.",
-        "designMotif": "Çiçek/Kalp/Yaprak/Geometrik vb.",
-        "style": "Minimal/Bohem/Vintage/Statement",
-        "chainType": "İnce zincir/Boncuklu/Örgü vb."
+        "productType": "${categoryTR}",
+        "metalColor": "Altın Rengi/Gümüş Rengi/Rose Gold/Antik Gümüş",
+        "material": "925 Ayar Gümüş/Çelik/Altın Kaplama/Pirinç/Paslanmaz Çelik",
+        "stoneType": "Zirkon/İnci/Doğal Taş/Akik/Turkuaz/Yok",
+        "stoneColor": "Şeffaf/Mavi/Yeşil/Siyah/Çok Renkli",
+        "designMotif": "Çiçek/Kalp/Yaprak/Geometrik/Nazar/Minimal",
+        "style": "Minimal/Bohem/Vintage/Statement/Klasik/Modern",
+        "chainType": "İnce zincir/Boncuklu/Örgü/Halat/Yok",
+        "estimatedSize": "Yaklaşık 45cm kolye / 18mm pendant vb.",
+        "weight": "Tahmini ağırlık (gr)"
     },
-    "barcode": "8680XXXXXXXXX",
-    "modelCode": "KLY-RG-001",
-    "title": "99 karakterlik SEO başlık",
-    "altTitles": ["3 alternatif başlık"],
-    "category": "Takı > Alt Kategori",
-    "description": "Teknik açıklama",
-    "storyDescription": "Duygusal hikaye açıklaması",
-    "keywords": ["15 anahtar kelime"],
-    "longTail": ["5 uzun kuyruk arama"],
-    "hashtags": "#trendyol #kolye #takı"
+
+    "barcode": "8680XXXXXXXXX (13 haneli, 8680 ile başla)",
+    "modelCode": "KLY-RG-001 formatında",
+
+    "title": "TRENDYOL BAŞLIK KURALLARI: Max 100 karakter. İlk 30 karakter en önemli. Marka alanı bırak + Ürün tipi + Malzeme + Özellik + Cinsiyet. Türkçe karakter kullan. Keyword stuffing YAPMA.",
+
+    "altTitles": [
+        "3 farklı alternatif başlık - her biri farklı anahtar kelime stratejisi ile",
+        "Uzun kuyruk odaklı alternatif",
+        "Özellik odaklı alternatif"
+    ],
+
+    "category": "Kadın Takı & Mücevher > ${categoryTR} > Alt Kategori (en alt seviye leaf kategori)",
+
+    "trendyolAttributes": {
+        "Malzeme": "925 Ayar Gümüş / Çelik / Altın Kaplama vb.",
+        "Renk": "Altın Rengi / Gümüş Rengi / Rose Gold vb.",
+        "Cinsiyet": "Kadın / Erkek / Unisex",
+        "Yaş Grubu": "Yetişkin",
+        "Taş Türü": "Zirkon / İnci / Doğal Taş / Yok",
+        "Uzunluk": "45cm / 50cm vb. (kolye/bileklik için)",
+        "Stil": "Minimal / Vintage / Klasik / Modern",
+        "Antialerjik": "Evet / Hayır"
+    },
+
+    "description": "TRENDYOL ÜRÜN AÇIKLAMASI (500-2000 karakter): Teknik detay + malzeme bilgisi + boyut + bakım talimatı + kullanım alanları. Doğal keyword yerleşimi. Bullet point kullan. Kargo/iletişim bilgisi YASAK.",
+
+    "storyDescription": "Duygusal/hikayeli açıklama - sosyal medya ve ürün sayfası alt bölümü için. Ürünün verdiği hissi, hangi anları tamamladığını anlat. 200-400 karakter.",
+
+    "bulletPoints": [
+        "✨ Malzeme ve kalite bilgisi",
+        "📏 Boyut ve ağırlık detayı",
+        "🎁 Hediye seçeneği / özel gün uygunluğu",
+        "💧 Bakım ve kullanım talimatı",
+        "📦 Paketleme ve sunum bilgisi"
+    ],
+
+    "keywords": ["20 adet en yüksek arama hacimli Trendyol anahtar kelime - Türkçe, küçük harf"],
+
+    "longTail": [
+        "7 adet uzun kuyruk arama terimi - gerçek kullanıcı aramaları",
+        "örn: kadın gümüş zincir kolye hediye",
+        "örn: 925 ayar gümüş minimal kolye"
+    ],
+
+    "searchTerms": [
+        "10 adet Trendyol arama çubuğu otomatik tamamlama terimleri",
+        "Kullanıcıların Trendyol'da gerçekten aradığı terimler"
+    ],
+
+    "hashtags": "#trendyol #kolye #takı #mücevher #hediye (15+ hashtag)",
+
+    "competitorKeywords": [
+        "5 adet rakip analizi - bu kategoride en çok satan ürünlerin kullandığı kelimeler"
+    ],
+
+    "seasonalTags": ["Yılbaşı hediye", "Sevgililer günü", "Anneler günü", "Mezuniyet hediyesi"],
+
+    "priceRange": "Bu tür ürün için Trendyol'daki tahmini fiyat aralığı (TL)",
+
+    "seoScore": {
+        "titleScore": "10 üzerinden başlık puanı",
+        "descriptionScore": "10 üzerinden açıklama puanı",
+        "keywordScore": "10 üzerinden keyword puanı",
+        "overallScore": "10 üzerinden genel SEO puanı",
+        "tips": ["İyileştirme önerileri - en az 3 adet"]
+    }
 }
 
-MODEL KODU: KLY (Kolye), YZK (Yüzük), BLK (Bileklik), KPE (Küpe), SET, HLH (Halhal)
-RENK: RG (Rose Gold), GMS (Gümüş), ALT (Altın), ANT (Antik)
+===== BAŞLIK YAZMA KURALLARI =====
+1. Max 100 karakter - AŞMA
+2. İlk 30 karakter = en kritik anahtar kelimeler (mobilde görünen kısım)
+3. Formül: [Ürün Tipi] + [Malzeme] + [Özellik/Taş] + [Tasarım/Stil] + [Cinsiyet] + [Kullanım]
+4. Türkçe karakterler KULLAN (ş, ç, ğ, ı, ö, ü)
+5. Her kelime arama potansiyeli taşımalı - boş kelime OLMASIN
+6. Keyword stuffing YAPMA - doğal oku
+7. Marka alanını BOŞ bırak (satıcı kendi ekleyecek)
 
-SADECE JSON döndür!`;
+===== AÇIKLAMA YAZMA KURALLARI =====
+1. İlk paragraf: Ürün özeti + ana anahtar kelimeler
+2. Malzeme detayı: Ne malzeme, ayar, kaplama, antialerjik mi
+3. Boyut bilgisi: Uzunluk, genişlik, ağırlık, zincir kalınlığı
+4. Kullanım: Günlük, özel gün, hediye, kombin önerisi
+5. Bakım talimatı: Nasıl temizlenir, nelerden uzak tutulmalı
+6. Paketleme: Hediye kutusu, özel paketleme
+7. Garanti/iade bilgisi kısa not
+8. YASAK: Kargo firması adı, teslimat süresi, iletişim bilgisi, dış link, kampanya bilgisi
+
+===== MODEL KODU FORMATI =====
+KLY (Kolye), YZK (Yüzük), BLK (Bileklik), KPE (Küpe), SET (Set), HLH (Halhal)
+RENK: RG (Rose Gold), GMS (Gümüş), ALT (Altın), ANT (Antik), SYH (Siyah)
+Sıra no: 001-999
+
+===== KRİTİK =====
+- SADECE JSON döndür, başka bir şey yazma
+- Tüm içerik TÜRKÇE olmalı
+- Gerçek Trendyol arama davranışını baz al
+- Keywords gerçek arama hacmine göre sırala
+- SEO score DÜRÜST olsun - eksikleri söyle`;
 
         let seoData;
         const imageBase64 = state.processedImage || state.originalImage;
@@ -1144,8 +1240,8 @@ SADECE JSON döndür!`;
                         ]
                     }],
                     generationConfig: {
-                        temperature: 0.3,
-                        maxOutputTokens: 4096,
+                        temperature: 0.4,
+                        maxOutputTokens: 8192,
                         responseMimeType: 'application/json'
                     }
                 };
@@ -1197,7 +1293,7 @@ SADECE JSON döndür!`;
         if (seoResults) seoResults.classList.remove('hidden');
 
         hideLoader();
-        showToast('SEO Pro+ başarıyla oluşturuldu!', 'success');
+        showToast('Trendyol SEO Pro+ başarıyla oluşturuldu!', 'success');
 
     } catch (error) {
         console.error('SEO generation error:', error);
@@ -1225,7 +1321,7 @@ function parseSEOJson(text) {
     return null;
 }
 
-// SEO UI güncelleme
+// SEO UI güncelleme - Trendyol Pro+
 function updateSEOUI(seoData) {
     // 1. Görsel Analiz Sonuçları
     const vaContainer = document.getElementById('visualAnalysisContent');
@@ -1235,11 +1331,14 @@ function updateSEOUI(seoData) {
         const analysisLabels = {
             productType: '📦 Ürün Tipi',
             metalColor: '🎨 Metal Rengi',
+            material: '🔧 Malzeme',
             stoneType: '💎 Taş Tipi',
             stoneColor: '🔮 Taş Rengi',
             designMotif: '✨ Tasarım',
             style: '🏷️ Stil',
-            chainType: '⛓️ Zincir'
+            chainType: '⛓️ Zincir',
+            estimatedSize: '📏 Boyut',
+            weight: '⚖️ Ağırlık'
         };
         Object.entries(va).forEach(([key, value]) => {
             if (value && value !== 'Yok' && value !== '-') {
@@ -1274,6 +1373,7 @@ function updateSEOUI(seoData) {
             div.innerHTML = `
                 <span class="text-slate-500 text-xs">${idx + 1}.</span>
                 <span class="flex-1 text-xs">${title}</span>
+                <span class="text-slate-600 text-[9px]">${title.length}/100</span>
                 <button onclick="copyText('${title.replace(/'/g, "\\'")}')" class="text-emerald-400 hover:text-emerald-300">
                     <i class="fa-solid fa-copy text-xs"></i>
                 </button>
@@ -1286,18 +1386,47 @@ function updateSEOUI(seoData) {
     const categoryEl = document.getElementById('seoCategory');
     if (categoryEl) categoryEl.value = seoData.category || '';
 
-    // 6. Teknik Açıklama
+    // 6. Trendyol Attributes
+    const attrsContainer = document.getElementById('seoAttributes');
+    if (attrsContainer && seoData.trendyolAttributes) {
+        attrsContainer.innerHTML = '';
+        Object.entries(seoData.trendyolAttributes).forEach(([key, value]) => {
+            if (value && value !== 'Yok' && value !== '-') {
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between bg-slate-800/50 rounded px-2 py-1.5';
+                div.innerHTML = `
+                    <span class="text-orange-300 text-xs font-medium">${key}</span>
+                    <span class="text-white text-xs">${value}</span>
+                `;
+                attrsContainer.appendChild(div);
+            }
+        });
+    }
+
+    // 7. Teknik Açıklama
     const descEl = document.getElementById('seoDescription');
     if (descEl) {
         descEl.value = seoData.description || '';
         updateCharCount('desc');
     }
 
-    // 7. Hikayeleştirilmiş Açıklama
+    // 8. Hikayeleştirilmiş Açıklama
     const storyEl = document.getElementById('seoStoryDescription');
     if (storyEl) storyEl.textContent = seoData.storyDescription || '';
 
-    // 8. Anahtar Kelimeler (tag olarak)
+    // 9. Bullet Points
+    const bulletsContainer = document.getElementById('seoBulletPoints');
+    if (bulletsContainer && seoData.bulletPoints) {
+        bulletsContainer.innerHTML = '';
+        seoData.bulletPoints.forEach(point => {
+            const div = document.createElement('div');
+            div.className = 'text-xs text-slate-300 py-0.5';
+            div.textContent = point;
+            bulletsContainer.appendChild(div);
+        });
+    }
+
+    // 10. Anahtar Kelimeler (tag olarak)
     const keywordsContainer = document.getElementById('seoKeywords');
     if (keywordsContainer && seoData.keywords) {
         keywordsContainer.innerHTML = '';
@@ -1311,7 +1440,7 @@ function updateSEOUI(seoData) {
         });
     }
 
-    // 9. Long-tail Keywords
+    // 11. Long-tail Keywords
     const longTailContainer = document.getElementById('seoLongTail');
     if (longTailContainer && seoData.longTail) {
         longTailContainer.innerHTML = '';
@@ -1324,10 +1453,87 @@ function updateSEOUI(seoData) {
         });
     }
 
-    // 10. Hashtags
+    // 12. Search Terms (Trendyol arama çubuğu)
+    const searchTermsContainer = document.getElementById('seoSearchTerms');
+    if (searchTermsContainer && seoData.searchTerms) {
+        searchTermsContainer.innerHTML = '';
+        seoData.searchTerms.forEach(term => {
+            const span = document.createElement('span');
+            span.className = 'px-2 py-1 bg-amber-600/20 text-amber-400 rounded text-xs cursor-pointer hover:bg-amber-600/40';
+            span.textContent = term;
+            span.onclick = () => copyText(term);
+            searchTermsContainer.appendChild(span);
+        });
+    }
+
+    // 13. Rakip Anahtar Kelimeler
+    const competitorContainer = document.getElementById('seoCompetitorKeywords');
+    if (competitorContainer && seoData.competitorKeywords) {
+        competitorContainer.innerHTML = '';
+        seoData.competitorKeywords.forEach(term => {
+            const span = document.createElement('span');
+            span.className = 'px-2 py-1 bg-red-600/20 text-red-400 rounded text-xs cursor-pointer hover:bg-red-600/40';
+            span.textContent = term;
+            span.onclick = () => copyText(term);
+            competitorContainer.appendChild(span);
+        });
+    }
+
+    // 14. Sezonsal Etiketler
+    const seasonalContainer = document.getElementById('seoSeasonalTags');
+    if (seasonalContainer && seoData.seasonalTags) {
+        seasonalContainer.innerHTML = '';
+        seoData.seasonalTags.forEach(tag => {
+            const span = document.createElement('span');
+            span.className = 'px-2 py-1 bg-pink-600/20 text-pink-400 rounded text-xs cursor-pointer hover:bg-pink-600/40';
+            span.textContent = tag;
+            span.onclick = () => copyText(tag);
+            seasonalContainer.appendChild(span);
+        });
+    }
+
+    // 15. Hashtags
     const hashtagsEl = document.getElementById('seoHashtags');
     if (hashtagsEl) {
         hashtagsEl.textContent = seoData.hashtags || '';
+    }
+
+    // 16. Fiyat Aralığı
+    const priceEl = document.getElementById('seoPriceRange');
+    if (priceEl && seoData.priceRange) {
+        priceEl.textContent = seoData.priceRange;
+    }
+
+    // 17. SEO Skor
+    const scoreContainer = document.getElementById('seoScoreContainer');
+    if (scoreContainer && seoData.seoScore) {
+        const s = seoData.seoScore;
+        const overall = parseInt(s.overallScore) || 0;
+        const color = overall >= 8 ? 'emerald' : overall >= 6 ? 'amber' : 'red';
+
+        scoreContainer.innerHTML = `
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-lg font-bold text-${color}-400">${s.overallScore}/10</span>
+                <span class="text-xs text-slate-400">Genel SEO Puanı</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2 mb-3">
+                <div class="text-center">
+                    <div class="text-sm font-bold text-blue-400">${s.titleScore || '-'}</div>
+                    <div class="text-[9px] text-slate-500">Başlık</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-sm font-bold text-purple-400">${s.descriptionScore || '-'}</div>
+                    <div class="text-[9px] text-slate-500">Açıklama</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-sm font-bold text-teal-400">${s.keywordScore || '-'}</div>
+                    <div class="text-[9px] text-slate-500">Keyword</div>
+                </div>
+            </div>
+            ${s.tips ? `<div class="space-y-1">
+                ${s.tips.map(tip => `<div class="text-[10px] text-amber-300/80">💡 ${tip}</div>`).join('')}
+            </div>` : ''}
+        `;
     }
 }
 
