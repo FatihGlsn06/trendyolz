@@ -1865,16 +1865,16 @@ function updateCharCount(type) {
         const counter = document.getElementById('titleCharCount');
         if (input && counter) {
             const length = input.value.length;
-            counter.textContent = `${length}/99`;
-            counter.style.color = length > 99 ? '#ff4444' : length > 90 ? '#ffaa00' : '#10b981';
+            counter.textContent = `${length}/100`;
+            counter.style.color = length > 100 ? '#ff4444' : length > 90 ? '#ffaa00' : '#10b981';
         }
     } else if (type === 'desc') {
         const input = document.getElementById('seoDescription');
         const counter = document.getElementById('descCharCount');
         if (input && counter) {
             const length = input.value.length;
-            counter.textContent = `${length}/500`;
-            counter.style.color = length > 500 ? '#ff4444' : length > 450 ? '#ffaa00' : '#10b981';
+            counter.textContent = `${length}/30000`;
+            counter.style.color = length > 30000 ? '#ff4444' : length > 25000 ? '#ffaa00' : '#10b981';
         }
     }
 }
@@ -1933,16 +1933,52 @@ function copyAllSEO() {
     const description = document.getElementById('seoDescription')?.value || seo.description || '';
     const story = document.getElementById('seoStoryDescription')?.textContent || seo.storyDescription || '';
     const keywords = Array.isArray(seo.keywords) ? seo.keywords.join(', ') : (seo.keywords || '');
+    const longTail = Array.isArray(seo.longTail) ? seo.longTail.join(', ') : (seo.longTail || '');
+    const searchTerms = Array.isArray(seo.searchTerms) ? seo.searchTerms.join(', ') : (seo.searchTerms || '');
+    const competitorKeywords = Array.isArray(seo.competitorKeywords) ? seo.competitorKeywords.join(', ') : '';
+    const seasonalTags = Array.isArray(seo.seasonalTags) ? seo.seasonalTags.join(', ') : '';
+    const bulletPoints = Array.isArray(seo.bulletPoints) ? seo.bulletPoints.join('\n') : '';
     const hashtags = document.getElementById('seoHashtags')?.textContent || seo.hashtags || '';
+    const priceRange = seo.priceRange || '';
 
-    const allSEO = `📦 BARKOD: ${barcode}
+    // Trendyol Attributes
+    let attrsText = '';
+    if (seo.trendyolAttributes) {
+        attrsText = Object.entries(seo.trendyolAttributes)
+            .filter(([, v]) => v && v !== 'Yok' && v !== '-')
+            .map(([k, v]) => `  ${k}: ${v}`)
+            .join('\n');
+    }
+
+    // Alt başlıklar
+    const altTitles = Array.isArray(seo.altTitles) ? seo.altTitles.map((t, i) => `  ${i + 1}. ${t}`).join('\n') : '';
+
+    // SEO Skor
+    let scoreText = '';
+    if (seo.seoScore) {
+        const s = seo.seoScore;
+        scoreText = `Genel: ${s.overallScore}/10 | Başlık: ${s.titleScore}/10 | Açıklama: ${s.descriptionScore}/10 | Keyword: ${s.keywordScore}/10`;
+        if (s.tips && s.tips.length > 0) {
+            scoreText += '\n  İpuçları:\n' + s.tips.map(t => `  - ${t}`).join('\n');
+        }
+    }
+
+    const allSEO = `═══ TRENDYOL SEO PRO+ ═══
+
+📦 BARKOD: ${barcode}
 🏷️ MODEL KODU: ${modelCode}
 
-📝 BAŞLIK:
+📝 ANA BAŞLIK (${title.length}/100):
 ${title}
+
+📝 ALTERNATİF BAŞLIKLAR:
+${altTitles}
 
 📁 KATEGORİ:
 ${category}
+
+📊 TRENDYOL ÖZELLİKLERİ:
+${attrsText}
 
 📋 TEKNİK AÇIKLAMA:
 ${description}
@@ -1950,11 +1986,31 @@ ${description}
 💝 HİKAYE AÇIKLAMA:
 ${story}
 
+📌 BULLET POINTS:
+${bulletPoints}
+
 🔑 ANAHTAR KELİMELER:
 ${keywords}
 
+🔍 UZUN KUYRUK ARAMALAR:
+${longTail}
+
+🔎 TRENDYOL ARAMA TERİMLERİ:
+${searchTerms}
+
+⚔️ RAKİP ANAHTAR KELİMELER:
+${competitorKeywords}
+
+📅 SEZONSAL ETİKETLER:
+${seasonalTags}
+
 #️⃣ HASHTAGS:
-${hashtags}`;
+${hashtags}
+
+💰 FİYAT ARALIĞI: ${priceRange}
+
+📈 SEO SKOR:
+${scoreText}`;
 
     copyText(allSEO);
 }

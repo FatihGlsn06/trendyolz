@@ -885,7 +885,7 @@
                                             <i class="fa-solid fa-barcode mr-1"></i>Barkod
                                         </label>
                                         <div class="flex items-center gap-2">
-                                            <input type="text" id="seoBarcode" class="flex-1 bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs font-mono" readonly>
+                                            <input type="text" id="seoBarcode" class="flex-1 bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs font-mono" readonly aria-label="Barkod">
                                             <button onclick="copySEO('barcode')" class="p-1.5 bg-emerald-600 hover:bg-emerald-500 rounded text-xs" title="Kopyala">
                                                 <i class="fa-solid fa-copy"></i>
                                             </button>
@@ -896,7 +896,7 @@
                                             <i class="fa-solid fa-tag mr-1"></i>Model Kodu
                                         </label>
                                         <div class="flex items-center gap-2">
-                                            <input type="text" id="seoModelCode" class="flex-1 bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs font-mono" readonly>
+                                            <input type="text" id="seoModelCode" class="flex-1 bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs font-mono" readonly aria-label="Model Kodu">
                                             <button onclick="copySEO('modelCode')" class="p-1.5 bg-emerald-600 hover:bg-emerald-500 rounded text-xs" title="Kopyala">
                                                 <i class="fa-solid fa-copy"></i>
                                             </button>
@@ -906,11 +906,11 @@
 
                                 <div>
                                     <label class="text-xs text-slate-400 flex justify-between mb-1">
-                                        <span><i class="fa-solid fa-heading mr-1"></i>Ürün Başlığı (max 99 kar.)</span>
-                                        <span id="titleCharCount" class="text-emerald-400">0/99</span>
+                                        <span><i class="fa-solid fa-heading mr-1"></i>Ürün Başlığı (max 100 kar.)</span>
+                                        <span id="titleCharCount" class="text-emerald-400">0/100</span>
                                     </label>
                                     <input type="text" id="seoTitle" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm"
-                                           oninput="updateCharCount('title')" maxlength="105">
+                                           oninput="updateCharCount('title')" maxlength="105" aria-label="Ürün Başlığı">
                                     <button onclick="copySEO('title')" class="text-[10px] text-emerald-400 hover:text-emerald-300 mt-1">
                                         <i class="fa-solid fa-copy mr-1"></i>Kopyala
                                     </button>
@@ -930,16 +930,16 @@
                                             <i class="fa-solid fa-copy"></i>
                                         </button>
                                     </label>
-                                    <input type="text" id="seoCategory" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs" readonly>
+                                    <input type="text" id="seoCategory" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs" readonly aria-label="Kategori Yolu">
                                 </div>
 
                                 <div>
                                     <label class="text-xs text-slate-400 flex justify-between mb-1">
                                         <span><i class="fa-solid fa-align-left mr-1"></i>Teknik Açıklama</span>
-                                        <span id="descCharCount" class="text-emerald-400">0/500</span>
+                                        <span id="descCharCount" class="text-emerald-400">0/30000</span>
                                     </label>
-                                    <textarea id="seoDescription" rows="3" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm resize-none"
-                                              oninput="updateCharCount('desc')" maxlength="500"></textarea>
+                                    <textarea id="seoDescription" rows="5" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm resize-y"
+                                              oninput="updateCharCount('desc')" maxlength="30000" aria-label="Ürün Açıklaması"></textarea>
                                     <button onclick="copySEO('description')" class="text-[10px] text-emerald-400 hover:text-emerald-300">
                                         <i class="fa-solid fa-copy mr-1"></i>Kopyala
                                     </button>
@@ -953,6 +953,30 @@
                                         </button>
                                     </label>
                                     <div id="seoStoryDescription" class="bg-slate-800/50 border border-pink-500/30 rounded-lg px-3 py-2 text-sm text-pink-200"></div>
+                                </div>
+
+                                <!-- Trendyol Attributes -->
+                                <div class="p-3 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+                                    <label class="text-xs text-orange-400 mb-2 block font-semibold">
+                                        <i class="fa-solid fa-list-check mr-1"></i>Trendyol Ürün Özellikleri
+                                    </label>
+                                    <div id="seoAttributes" class="grid grid-cols-2 gap-1.5 text-[10px]"></div>
+                                </div>
+
+                                <!-- Bullet Points -->
+                                <div>
+                                    <label class="text-xs text-slate-400 mb-1 block">
+                                        <i class="fa-solid fa-list-ul mr-1"></i>Ürün Maddeleri
+                                    </label>
+                                    <div id="seoBulletPoints" class="bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 space-y-0.5"></div>
+                                </div>
+
+                                <!-- SEO Skor -->
+                                <div class="p-3 bg-indigo-500/10 border border-indigo-500/30 rounded-lg">
+                                    <label class="text-xs text-indigo-400 mb-2 block font-semibold">
+                                        <i class="fa-solid fa-chart-line mr-1"></i>SEO Performans Skoru
+                                    </label>
+                                    <div id="seoScoreContainer"></div>
                                 </div>
 
                                 <div>
@@ -969,17 +993,49 @@
                                     <label class="text-xs text-slate-400 mb-1 block">
                                         <i class="fa-solid fa-magnifying-glass mr-1"></i>Long-tail Aramalar
                                     </label>
-                                    <div id="seoLongTail" class="space-y-1 text-xs"></div>
+                                    <div id="seoLongTail" class="flex flex-wrap gap-1"></div>
+                                </div>
+
+                                <!-- Trendyol Search Terms -->
+                                <div>
+                                    <label class="text-xs text-slate-400 mb-1 block">
+                                        <i class="fa-solid fa-search mr-1 text-amber-400"></i>Trendyol Arama Terimleri
+                                    </label>
+                                    <div id="seoSearchTerms" class="flex flex-wrap gap-1"></div>
+                                </div>
+
+                                <!-- Competitor Keywords -->
+                                <div>
+                                    <label class="text-xs text-slate-400 mb-1 block">
+                                        <i class="fa-solid fa-crosshairs mr-1 text-red-400"></i>Rakip Anahtar Kelimeler
+                                    </label>
+                                    <div id="seoCompetitorKeywords" class="flex flex-wrap gap-1"></div>
+                                </div>
+
+                                <!-- Seasonal Tags -->
+                                <div>
+                                    <label class="text-xs text-slate-400 mb-1 block">
+                                        <i class="fa-solid fa-calendar-days mr-1 text-pink-400"></i>Sezonsal Etiketler
+                                    </label>
+                                    <div id="seoSeasonalTags" class="flex flex-wrap gap-1"></div>
                                 </div>
 
                                 <div>
                                     <label class="text-xs text-slate-400 flex justify-between mb-1">
-                                        <span><i class="fa-brands fa-instagram mr-1"></i>Sosyal Medya</span>
+                                        <span><i class="fa-brands fa-instagram mr-1"></i>Sosyal Medya Hashtags</span>
                                         <button onclick="copySEO('hashtags')" class="text-emerald-400 hover:text-emerald-300">
                                             <i class="fa-solid fa-copy"></i>
                                         </button>
                                     </label>
                                     <div id="seoHashtags" class="text-xs text-pink-400"></div>
+                                </div>
+
+                                <!-- Price Range -->
+                                <div class="p-2 bg-slate-800/50 rounded-lg border border-slate-700">
+                                    <label class="text-[10px] text-slate-400 mb-1 block">
+                                        <i class="fa-solid fa-turkish-lira-sign mr-1 text-green-400"></i>Tahmini Fiyat Aralığı
+                                    </label>
+                                    <div id="seoPriceRange" class="text-sm text-green-400 font-medium"></div>
                                 </div>
 
                                 <div class="flex gap-2 pt-2">
